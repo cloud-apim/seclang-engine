@@ -163,8 +163,3 @@ SecRule REQUEST_URI "@streq /admin" "id:3001,phase:1,skip:2"
 SecRule REQUEST_HEADERS:Authorization "!@rx ^Bearer " "id:3002,phase:1,deny,status:401,msg:'Missing or invalid auth'"
 SecRule REQUEST_HEADERS:Authorization "!@rx ^Bearer\s+secret123" "id:3003,phase:1,deny,status:403,msg:'Invalid token'"
 ```
-
-here is a full grammar of the language
-
-https://raw.githubusercontent.com/coreruleset/secrules_parsing/refs/heads/main/src/secrules_parsing/model/secrules.tx
-
