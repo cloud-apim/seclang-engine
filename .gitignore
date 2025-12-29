@@ -6,6 +6,8 @@ target/
 .idea
 .metals
 .vscode
+*.interp
+*.tokens
 target
 node_modules
 antlr-4.13.2-complete.jar
