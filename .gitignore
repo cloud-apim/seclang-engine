@@ -1,0 +1,11 @@
+/.bsp/
+target/
+.bsp
+.bloop
+.DS_Store
+.idea
+.metals
+.vscode
+target
+node_modules
+antlr-4.13.2-complete.jar
