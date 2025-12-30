@@ -2,13 +2,12 @@ package com.cloud.apim.seclang.test
 
 import com.cloud.apim.seclang.impl.model.Disposition._
 import com.cloud.apim.seclang.impl.model._
+import com.cloud.apim.seclang.model.Configuration
 import com.cloud.apim.seclang.scaladsl.SecLang
 import play.api.libs.json.Json
 
-import java.io.File
 import java.net.URI
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
-import java.nio.file.Files
 
 class SecLangBasicTest extends munit.FunSuite {
 
@@ -183,8 +182,10 @@ class SecLangBasicTest extends munit.FunSuite {
     SecLang.parseAntlr(rules) match {
       case Left(err) => println("parse error: " + err)
       case Right(config) => {
-        println("parse success")
-        Files.writeString(new File("./crs.json").toPath, Json.prettyPrint(config.json))
+        val out1 = Json.prettyPrint(config.json)
+        val config2 = Configuration.format.reads(Json.parse(out1)).get
+        val out2 = Json.prettyPrint(config2.json)
+        assertEquals(out1, out2)
       }
     }
   }

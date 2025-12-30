@@ -23,10 +23,12 @@ object Configuration {
   val format: Format[Configuration] = new Format[Configuration] {
     def reads(json: JsValue): JsResult[Configuration] = Try {
       Configuration((json \ "statements").asOpt[List[JsValue]].getOrElse(List.empty).flatMap { statement =>
-        Statement.format.reads(json).asOpt
+        Statement.format.reads(statement).asOpt
       })
     } match {
-      case Failure(ex) => JsError(ex.getMessage)
+      case Failure(ex) => 
+        ex.printStackTrace()
+        JsError(ex.getMessage)
       case Success(config) => JsSuccess(config)
     }
     
@@ -54,7 +56,9 @@ object Statement {
         case other => throw new RuntimeException(s"Unknown statement type: $other")
       }
     } match {
-      case Failure(ex) => JsError(ex.getMessage)
+      case Failure(ex) => 
+        ex.printStackTrace()
+        JsError(ex.getMessage)
       case Success(statement) => JsSuccess(statement)
     }
 
@@ -71,7 +75,9 @@ object SecRule {
       val actions = (json \ "actions").asOpt[JsObject].flatMap(Actions.format.reads(_).asOpt)
       SecRule(commentBlock, variables, operator, actions)
     } match {
-      case Failure(ex) => JsError(ex.getMessage)
+      case Failure(ex) => 
+        ex.printStackTrace()
+        JsError(ex.getMessage)
       case Success(rule) => JsSuccess(rule)
     }
     def writes(rule: SecRule): JsValue = rule.json
@@ -114,7 +120,9 @@ object SecRuleScript {
       val actions = (json \ "actions").asOpt[JsObject].flatMap(Actions.format.reads(_).asOpt)
       SecRuleScript(commentBlock, filePath, actions)
     } match {
-      case Failure(ex) => JsError(ex.getMessage)
+      case Failure(ex) => 
+        ex.printStackTrace()
+        JsError(ex.getMessage)
       case Success(script) => JsSuccess(script)
     }
     def writes(script: SecRuleScript): JsValue = script.json
@@ -141,7 +149,9 @@ object SecAction {
       val actions = Actions.format.reads((json \ "actions").as[JsObject]).get
       SecAction(commentBlock, actions)
     } match {
-      case Failure(ex) => JsError(ex.getMessage)
+      case Failure(ex) => 
+        ex.printStackTrace()
+        JsError(ex.getMessage)
       case Success(action) => JsSuccess(action)
     }
     def writes(action: SecAction): JsValue = action.json
@@ -166,7 +176,9 @@ object SecRuleRemoveById {
       val ids = (json \ "ids").as[List[Int]]
       SecRuleRemoveById(commentBlock, ids)
     } match {
-      case Failure(ex) => JsError(ex.getMessage)
+      case Failure(ex) => 
+        ex.printStackTrace()
+        JsError(ex.getMessage)
       case Success(remove) => JsSuccess(remove)
     }
     def writes(remove: SecRuleRemoveById): JsValue = remove.json
@@ -191,7 +203,9 @@ object SecRuleRemoveByMsg {
       val value = (json \ "value").as[String]
       SecRuleRemoveByMsg(commentBlock, value)
     } match {
-      case Failure(ex) => JsError(ex.getMessage)
+      case Failure(ex) => 
+        ex.printStackTrace()
+        JsError(ex.getMessage)
       case Success(remove) => JsSuccess(remove)
     }
     def writes(remove: SecRuleRemoveByMsg): JsValue = remove.json
@@ -216,7 +230,9 @@ object SecRuleRemoveByTag {
       val value = (json \ "value").as[String]
       SecRuleRemoveByTag(commentBlock, value)
     } match {
-      case Failure(ex) => JsError(ex.getMessage)
+      case Failure(ex) => 
+        ex.printStackTrace()
+        JsError(ex.getMessage)
       case Success(remove) => JsSuccess(remove)
     }
     def writes(remove: SecRuleRemoveByTag): JsValue = remove.json
@@ -280,7 +296,9 @@ object SecRuleUpdateActionById {
       val actions = Actions.format.reads((json \ "actions").as[JsObject]).get
       SecRuleUpdateActionById(commentBlock, id, actions)
     } match {
-      case Failure(ex) => JsError(ex.getMessage)
+      case Failure(ex) => 
+        ex.printStackTrace()
+        JsError(ex.getMessage)
       case Success(update) => JsSuccess(update)
     }
     def writes(update: SecRuleUpdateActionById): JsValue = update.json
@@ -307,7 +325,9 @@ object SecMarker {
       val name = (json \ "name").as[String]
       SecMarker(commentBlock, name)
     } match {
-      case Failure(ex) => JsError(ex.getMessage)
+      case Failure(ex) => 
+        ex.printStackTrace()
+        JsError(ex.getMessage)
       case Success(marker) => JsSuccess(marker)
     }
     def writes(marker: SecMarker): JsValue = marker.json
@@ -332,7 +352,9 @@ object EngineConfigDirective {
       val directive = ConfigDirective.format.reads((json \ "directive").as[JsObject]).get
       EngineConfigDirective(commentBlock, directive)
     } match {
-      case Failure(ex) => JsError(ex.getMessage)
+      case Failure(ex) => 
+        ex.printStackTrace()
+        JsError(ex.getMessage)
       case Success(config) => JsSuccess(config)
     }
     def writes(config: EngineConfigDirective): JsValue = config.json
@@ -358,7 +380,9 @@ object CommentBlock {
       }
       CommentBlock(comments)
     } match {
-      case Failure(ex) => JsError(ex.getMessage)
+      case Failure(ex) => 
+        ex.printStackTrace()
+        JsError(ex.getMessage)
       case Success(block) => JsSuccess(block)
     }
     def writes(block: CommentBlock): JsValue = block.json
@@ -380,7 +404,9 @@ object Comment {
       val text = (json \ "text").as[String]
       Comment(text)
     } match {
-      case Failure(ex) => JsError(ex.getMessage)
+      case Failure(ex) => 
+        ex.printStackTrace()
+        JsError(ex.getMessage)
       case Success(comment) => JsSuccess(comment)
     }
     def writes(comment: Comment): JsValue = comment.json
@@ -432,7 +458,9 @@ object ConfigDirective {
         case other => throw new RuntimeException(s"Unknown ConfigDirective type: $other")
       }
     } match {
-      case Failure(ex) => JsError(ex.getMessage)
+      case Failure(ex) => 
+        ex.printStackTrace()
+        JsError(ex.getMessage)
       case Success(directive) => JsSuccess(directive)
     }
     def writes(directive: ConfigDirective): JsValue = directive.json
@@ -519,7 +547,9 @@ object ConfigOption {
       val value = (json \ "value").asOpt[String]
       ConfigOption(name, value)
     } match {
-      case Failure(ex) => JsError(ex.getMessage)
+      case Failure(ex) => 
+        ex.printStackTrace()
+        JsError(ex.getMessage)
       case Success(option) => JsSuccess(option)
     }
     def writes(option: ConfigOption): JsValue = option.json
@@ -541,7 +571,9 @@ object Variables {
       val variables = (json \ "variables").as[List[JsValue]].flatMap(Variable.format.reads(_).asOpt)
       Variables(negated, count, variables)
     } match {
-      case Failure(ex) => JsError(ex.getMessage)
+      case Failure(ex) => 
+        ex.printStackTrace()
+        JsError(ex.getMessage)
       case Success(vars) => JsSuccess(vars)
     }
     def writes(vars: Variables): JsValue = vars.json
@@ -569,7 +601,9 @@ object UpdateVariables {
       val variables = (json \ "variables").as[List[JsValue]].flatMap(Variable.format.reads(_).asOpt)
       UpdateVariables(negated, count, variables)
     } match {
-      case Failure(ex) => JsError(ex.getMessage)
+      case Failure(ex) => 
+        ex.printStackTrace()
+        JsError(ex.getMessage)
       case Success(vars) => JsSuccess(vars)
     }
     def writes(vars: UpdateVariables): JsValue = vars.json
@@ -604,7 +638,9 @@ object Variable {
         case other => throw new RuntimeException(s"Unknown Variable type: $other")
       }
     } match {
-      case Failure(ex) => JsError(ex.getMessage)
+      case Failure(ex) => 
+        ex.printStackTrace()
+        JsError(ex.getMessage)
       case Success(variable) => JsSuccess(variable)
     }
     def writes(variable: Variable): JsValue = variable.json
@@ -671,7 +707,9 @@ object Operator {
         case other => throw new RuntimeException(s"Unknown Operator type: $other")
       }
     } match {
-      case Failure(ex) => JsError(ex.getMessage)
+      case Failure(ex) => 
+        ex.printStackTrace()
+        JsError(ex.getMessage)
       case Success(operator) => JsSuccess(operator)
     }
     def writes(operator: Operator): JsValue = operator.json
@@ -803,7 +841,9 @@ object Actions {
       val actions = (json \ "actions").as[List[JsValue]].flatMap(Action.format.reads(_).asOpt)
       Actions(actions)
     } match {
-      case Failure(ex) => JsError(ex.getMessage)
+      case Failure(ex) => 
+        ex.printStackTrace()
+        JsError(ex.getMessage)
       case Success(actions) => JsSuccess(actions)
     }
     def writes(actions: Actions): JsValue = actions.json
@@ -887,7 +927,9 @@ object Action {
         case other => throw new RuntimeException(s"Unknown Action type: $other")
       }
     } match {
-      case Failure(ex) => JsError(ex.getMessage)
+      case Failure(ex) => 
+        ex.printStackTrace()
+        JsError(ex.getMessage)
       case Success(action) => JsSuccess(action)
     }
     def writes(action: Action): JsValue = action.json
