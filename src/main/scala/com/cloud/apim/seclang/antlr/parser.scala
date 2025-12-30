@@ -34,7 +34,6 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
     } else if (ctx.remove_rule_by_id() != null) {
       val ids = ctx.remove_rule_by_id_values().asScala.toList.map {
         case idCtx: Remove_rule_by_id_intContext if idCtx.INT() != null => idCtx.INT().getText.toInt
-        // case idCtx: String_remove_rules_valuesContext if idCtx.STRING() != null => idCtx.STRING().getText.replaceAll("\"", "").toInt // TODO: fix it
         case _ => 0
       }
       SecRuleRemoveById(commentBlock, ids)
@@ -223,9 +222,12 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
   }
   
   def visitActionWithParams(ctx: SecLangParser.Action_with_paramsContext): Option[Action] = {
-    if (ctx.metadata_action_with_params() != null) {
+    val actionContext = ctx.getParent.asInstanceOf[ActionContext]
+    val value = actionContext.action_value().getText.replaceAll("\"", "").replaceAll("'", "")
+    if (actionContext.ACTION_TRANSFORMATION() != null) {
+      Some(Action.Transform(actionContext.transformation_action_value().getText))
+    } else if (ctx.metadata_action_with_params() != null) {
       val meta = ctx.metadata_action_with_params()
-      val value = meta.getParent.getParent.asInstanceOf[ActionContext].action_value().getText.replaceAll("\"", "").replaceAll("'", "")
       meta match {
         case m: SecLangParser.ACTION_IDContext if m.ACTION_ID() != null => Some(Action.Id(value.toIntOption.getOrElse(0)))
         case m: SecLangParser.ACTION_PHASEContext if m.ACTION_PHASE() != null => Some(Action.Phase(value.toIntOption.getOrElse(2)))
@@ -239,20 +241,14 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
       }
     } else if (ctx.disruptive_action_with_params() != null) {
       val disruptive = ctx.disruptive_action_with_params()
-      val value = disruptive.getParent.getParent.asInstanceOf[ActionContext].action_value().getText.replaceAll("\"", "").replaceAll("'", "")
-        if (disruptive.ACTION_REDIRECT() != null) Some(Action.Redirect(value))
+      if (disruptive.ACTION_REDIRECT() != null) Some(Action.Redirect(value))
       else if (disruptive.ACTION_PROXY() != null) Some(Action.Proxy(value))
       else None
     } else if (ctx.non_disruptive_action_with_params() != null) {
       val nonDisruptive = ctx.non_disruptive_action_with_params()
-      val value = nonDisruptive.getParent.getParent.asInstanceOf[ActionContext].action_value().getText.replaceAll("\"", "").replaceAll("'", "")
       if (nonDisruptive.ACTION_INITCOL() != null) Some(Action.InitCol(value))
       else if (nonDisruptive.ACTION_APPEND() != null) Some(Action.Append(value))
-      else if (nonDisruptive.ACTION_CTL() != null) {
-        println("ACTION_CTL here")
-        // visitCtlAction(nonDisruptive.ACTION_CTL()) TODO: fix it
-        None
-      }
+      else if (nonDisruptive.ACTION_CTL() != null)  visitCtlAction(actionContext.action_value().action_value_types().ctl_action())
       else if (nonDisruptive.ACTION_EXEC() != null) Some(Action.Exec(value))
       else if (nonDisruptive.ACTION_EXPIRE_VAR() != null) Some(Action.ExpireVar(value))
       else if (nonDisruptive.ACTION_DEPRECATE_VAR() != null) Some(Action.DeprecateVar(value))
@@ -271,52 +267,49 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
       else None
     } else if (ctx.data_action_with_params() != null) {
       val data = ctx.data_action_with_params()
-      val value = data.getParent.getParent.asInstanceOf[ActionContext].action_value().getText.replaceAll("\"", "").replaceAll("'", "")
       if (data.ACTION_XMLNS() != null) Some(Action.Xmlns(value))
       else if (data.ACTION_STATUS() != null) Some(Action.Status(value.toIntOption.getOrElse(0)))
       else None
     } else if (ctx.flow_action_with_params() != null) {
       val flow = ctx.flow_action_with_params()
-      val value = flow.getParent.getParent.asInstanceOf[ActionContext].action_value().getText.replaceAll("\"", "").replaceAll("'", "")
       if (flow.ACTION_SKIP() != null) Some(Action.Skip(value.toIntOption.getOrElse(0)))
       else if (flow.ACTION_SKIP_AFTER() != null) Some(Action.SkipAfter(value))
       else None
-    } /*else if (ctx.ctl_action() != null) {
-      visitCtlAction(ctx.ctl_action())
-    } else if (ctx.() != null) {
-      Some(Action.Transform(ctx.transformation_action_value().getText))
-    }*/ else {
+    } else {
       None
     }
   }
   
   def visitCtlAction(ctx: SecLangParser.Ctl_actionContext): Option[Action] = {
-
-    // TODO: fix it
-    //val value = if (ctx.action_ctl_target_value() != null) {
-    //  ctx.action_ctl_target_value().getText.replaceAll("\"", "")
-    //} else ""
-
-    val value = ctx.getText.replaceAll("\"", "")
-    
-    if (ctx.ACTION_CTL_AUDIT_ENGINE() != null) {
-      Some(Action.CtlAction.AuditEngine(value))
-    } else if (ctx.ACTION_CTL_RULE_ENGINE() != null) {
-      Some(Action.CtlAction.RuleEngine(value))
-    } else if (ctx.ACTION_CTL_RULE_REMOVE_BY_ID() != null) {
-      Some(Action.CtlAction.RuleRemoveById(value.toIntOption.getOrElse(0)))
-    } else if (ctx.ACTION_CTL_RULE_REMOVE_BY_TAG() != null) {
-      Some(Action.CtlAction.RuleRemoveByTag(value))
-    } else if (ctx.ACTION_CTL_REQUEST_BODY_PROCESSOR() != null) {
-      Some(Action.CtlAction.RequestBodyProcessor(value))
-    } else {
-      None
+    val value = ctx.getParent.getText.split("=").tail.mkString("=")
+    if (ctx.ACTION_CTL_FORCE_REQ_BODY_VAR() != null) Some(Action.CtlAction.ForceRequestBodyVariable(value))
+    else if (ctx.ACTION_CTL_REQUEST_BODY_ACCESS() != null) Some(Action.CtlAction.RequestBodyAccess(value))
+    else if (ctx.ACTION_CTL_RULE_ENGINE() != null) Some(Action.CtlAction.RuleEngine(value))
+    else if (ctx.ACTION_CTL_RULE_REMOVE_BY_ID() != null) Some(Action.CtlAction.RuleRemoveById(value.toIntOption.getOrElse(0)))
+    else if (ctx.ACTION_CTL_RULE_REMOVE_BY_TAG() != null) Some(Action.CtlAction.RuleRemoveByTag(value))
+    else if (ctx.ACTION_CTL_RULE_REMOVE_TARGET_BY_ID() != null) {
+      val parts = value.split(";")
+      val id = parts.headOption.flatMap(_.toIntOption).getOrElse(0)
+      val target  = parts.lastOption.getOrElse("--")
+      println(s"ruleRemoveTargetById: ${id} - ${target}")
+      Some(Action.CtlAction.RuleRemoveTargetById(id, target))
     }
+    else if (ctx.ACTION_CTL_RULE_REMOVE_TARGET_BY_TAG() != null) {
+      val parts = value.split(";")
+      val tag = parts.headOption.getOrElse("--")
+      val target = parts.lastOption.getOrElse("--")
+      println(s"ruleRemoveTargetByTag: ${tag} - ${target}")
+      Some(Action.CtlAction.RuleRemoveTargetByTag(tag, target))
+    }
+    else if (ctx.ACTION_CTL_AUDIT_ENGINE() != null) Some(Action.CtlAction.AuditEngine(value))
+    else if (ctx.ACTION_CTL_AUDIT_LOG_PARTS() != null) Some(Action.CtlAction.AuditLogParts(value))
+    else if (ctx.ACTION_CTL_REQUEST_BODY_PROCESSOR() != null) Some(Action.CtlAction.RequestBodyProcessor(value))
+    else None
   }
 }
 
 object AntlrParser {
-  def parse(in: String): Either[String, List[Directive]] = {
+  def parse(in: String): Either[String, Configuration] = {
     import org.antlr.v4.runtime._
     
     try {
@@ -343,11 +336,7 @@ object AntlrParser {
       val tree = parser.configuration()
       val visitor = new AstBuilderVisitor()
       val result = visitor.visitConfiguration(tree)
-
-      println("configuration parsed")
-      // println(result)
-      
-      Right(List.empty)
+      Right(result)
     } catch {
       case e: Exception => Left(s"Parse error: ${e.getMessage}")
     }

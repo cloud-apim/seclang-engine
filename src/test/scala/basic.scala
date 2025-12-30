@@ -65,7 +65,7 @@ class SecLangBasicTest extends munit.FunSuite {
     assertEquals(passing_res.disposition, Continue)
   }
 
-  test("antlr".ignore) {
+  test("antlr") {
     val rules =
       """
         |SecRule ARGS|ARGS_NAMES|REQUEST_COOKIES|REQUEST_COOKIES_NAMES|REQUEST_BODY|REQUEST_HEADERS|XML:/*|XML://@* \
@@ -179,7 +179,7 @@ class SecLangBasicTest extends munit.FunSuite {
     println("fetching CRS done !\n\n")
     SecLang.parseAntlr(rules) match {
       case Left(err) => println("parse error: " + err)
-      case Right(config) => println("parse success: " + config)
+      case Right(config) => println("parse success: ")
     }
   }
 }
