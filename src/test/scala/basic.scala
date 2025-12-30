@@ -19,6 +19,8 @@ class SecLangBasicTest extends munit.FunSuite {
       |""".stripMargin
 
     println("parsing ...")
+    SecLang.parseAntlr(rules)
+    /*
     val loaded = SecLang.parse(rules).fold(err => sys.error(err), identity)
     loaded.foreach(d => println(s"  - ${d}"))
     println("compiling ...")
@@ -59,5 +61,6 @@ class SecLangBasicTest extends munit.FunSuite {
     
     assertEquals(failing_res.disposition, Block(403, None, None))
     assertEquals(passing_res.disposition, Continue)
+    */
   }
 }

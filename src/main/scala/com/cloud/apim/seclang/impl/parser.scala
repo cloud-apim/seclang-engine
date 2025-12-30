@@ -178,7 +178,7 @@ object FastParseParser {
   }
 }
 
-object Parser2 extends scala.util.parsing.combinator.RegexParsers {
+object ScalaParser extends scala.util.parsing.combinator.RegexParsers {
 
   import Implicits._
 
