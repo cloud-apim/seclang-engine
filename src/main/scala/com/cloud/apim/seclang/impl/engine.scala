@@ -1,10 +1,10 @@
 
 package com.cloud.apim.seclang.impl.engine
 
-import com.cloud.apim.seclang.impl.model._
-import com.cloud.apim.seclang.impl.model.Operator._
-import com.cloud.apim.seclang.impl.model.Action._
 import com.cloud.apim.seclang.impl.compiler._
+import com.cloud.apim.seclang.model.Action.{CtlAction, Msg}
+import com.cloud.apim.seclang.model._
+import play.api.libs.json.Json
 
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
@@ -72,7 +72,7 @@ final class SecRulesEngine(program: CompiledProgram) {
   }
 
   private def evalChain(
-      rules: List[Rule],
+      rules: List[SecRule],
       phase: Int,
       ctx: RequestContext,
       st0: RuntimeState,
@@ -93,30 +93,36 @@ final class SecRulesEngine(program: CompiledProgram) {
       if (allMatched) {
         val matched = evalRule(r, ctx)
         if (matched) {
-          val msg = r.actions.collectFirst { case Msg(m) => m }
+          val msg = r.actions.toList.flatMap(_.actions).collectFirst {
+            case Action.Msg(m) => m
+          }
           if (msg.nonEmpty) collectedMsg = msg
 
-          val status = r.actions.collectFirst { case Status(s) => s }
+          val status = r.actions.toList.flatMap(_.actions).collectFirst {
+            case Action.Status(s) => s
+          }
           if (status.nonEmpty) collectedStatus = status
 
           // disruptive action can appear anywhere, but we keep last
-          val dis = r.actions.collectFirst {
-            case Deny => Deny
-            case Drop => Drop
-            case Pass => Pass
+          val dis = r.actions.toList.flatMap(_.actions).collectFirst {
+            case Action.Block() => Action.Block()
+            case Action.Deny => Action.Deny
+            case Action.Drop => Action.Drop
+            case Action.Pass => Action.Pass
+            case Action.Allow(m) => Action.Allow(m)
           }
           if (dis.nonEmpty) disruptive = dis
 
           // skipAfter
-          val sk = r.actions.collectFirst { case SkipAfter(m) => m }
+          val sk = r.actions.toList.flatMap(_.actions).collectFirst { case Action.SkipAfter(m) => m }
           if (sk.nonEmpty) skipAfter = sk
 
           // runtime ctl disable
-          r.actions.collect { case CtlRuleRemoveById(id) => id }.foreach { id =>
+          r.actions.toList.flatMap(_.actions).collect { case CtlAction.RuleRemoveById(id) => id }.foreach { id =>
             st = st.copy(disabledIds = st.disabledIds + id)
           }
 
-          st = st.copy(events = MatchEvent(r.id, msg, phase, r.raw) :: st.events)
+          st = st.copy(events = MatchEvent(r.id, msg, phase, Json.stringify(r.json)) :: st.events)
         } else {
           allMatched = false
         }
@@ -128,7 +134,7 @@ final class SecRulesEngine(program: CompiledProgram) {
     } else {
       val disp =
         disruptive match {
-          case Some(Deny) | Some(Drop) =>
+          case Some(Action.Deny) | Some(Action.Drop) | Some(Action.Block()) =>
             Some(Disposition.Block(
               status = collectedStatus.getOrElse(403),
               msg = collectedMsg,
@@ -143,21 +149,23 @@ final class SecRulesEngine(program: CompiledProgram) {
     }
   }
 
-  private def evalRule(rule: Rule, ctx: RequestContext): Boolean = {
+  private def evalRule(rule: SecRule, ctx: RequestContext): Boolean = {
     // 1) extract values from variables
-    val extracted: List[String] = rule.variables.flatMap(v => resolveVariable(v, ctx))
+    val extracted: List[String] = rule.variables.variables.flatMap(v => resolveVariable(v, ctx))
 
     // 2) apply transformations
-    val transforms = rule.actions.collect { case Transform(name) => name }.filterNot(_ == "none")
+    val transforms = rule.actions.toList.flatMap(_.actions).toList.collect { case Action.Transform(name) => name }.filterNot(_ == "none")
     val transformed = extracted.map(v => applyTransforms(v, transforms))
 
     // 3) operator match on ANY extracted value
     transformed.exists(v => evalOperator(rule.operator, v))
   }
 
-  private def resolveVariable(sel: VariableSelector, ctx: RequestContext): List[String] = {
-    val col = sel.collection
-    val key = sel.key.map(_.toLowerCase)
+  private def resolveVariable(sel: Variable, ctx: RequestContext): List[String] = {
+    val (col, key) = sel match {
+      case Variable.Simple(name) => (name, None)
+      case Variable.Collection(collection, key) => (collection, key.map(_.toLowerCase()))
+    }
 
     col match {
       case "REQUEST_URI" => List(ctx.uri)
@@ -198,11 +206,11 @@ final class SecRulesEngine(program: CompiledProgram) {
   }
 
   private def evalOperator(op: Operator, value: String): Boolean = op match {
-    case UnconditionalTrue() => true
-    case Contains(x)         => value.contains(x)
-    case Streq(x)            => value == x
-    case Pm(xs)              => xs.exists(value.contains)
-    case Rx(pattern) =>
+    case Operator.UnconditionalMatch() => true
+    case Operator.Contains(x)         => value.contains(x)
+    case Operator.Streq(x)            => value == x
+    case Operator.Pm(xs)              => xs.split(" ").exists(it => value.toLowerCase().contains(it.toLowerCase))
+    case Operator.Rx(pattern) =>
       try {
         val r: Regex = pattern.r
         r.findFirstIn(value).nonEmpty

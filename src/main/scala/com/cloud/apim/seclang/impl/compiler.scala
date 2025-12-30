@@ -1,10 +1,10 @@
 package com.cloud.apim.seclang.impl.compiler
 
-import com.cloud.apim.seclang.impl.model._
+import com.cloud.apim.seclang.model._
 
 sealed trait CompiledItem
 
-final case class RuleChain(rules: List[Rule]) extends CompiledItem {
+final case class RuleChain(rules: List[SecRule]) extends CompiledItem {
   require(rules.nonEmpty)
   lazy val phase: Int = rules.head.phase
   lazy val id: Option[Int] = rules.last.id.orElse(rules.head.id)
@@ -18,27 +18,28 @@ final case class CompiledProgram(
 )
 
 object Compiler {
-  def compile(directives: List[Directive]): CompiledProgram = {
-    val removed = directives.collect { case RuleRemoveById(ids, _) => ids }.flatten.toSet
+  def compile(configuration: Configuration): CompiledProgram = {
+    val statements = configuration.statements
+    val removed = statements.collect { case SecRuleRemoveById(_, ids) => ids }.flatten.toSet
 
     // flatten into CompiledItem with chain logic
     val items = scala.collection.mutable.ArrayBuffer.empty[CompiledItem]
-    val it = directives.iterator
+    val it = statements.iterator
 
     while (it.hasNext) {
       it.next() match {
-        case r: Rule =>
+        case r: SecRule =>
           if (removed.contains(r.id.getOrElse(-1))) {
             // skip removed (if no id, can't remove)
           } else if (r.isChain) {
-            val chain = scala.collection.mutable.ListBuffer[Rule](r)
+            val chain = scala.collection.mutable.ListBuffer[SecRule](r)
             var done = false
             while (!done && it.hasNext) {
               it.next() match {
-                case rr: Rule =>
+                case rr: SecRule =>
                   chain += rr
                   done = !rr.isChain
-                case m: Marker =>
+                case m: SecMarker =>
                   // chain interrupted by marker -> still close chain
                   items += RuleChain(chain.toList)
                   items += MarkerItem(m.name)
@@ -47,7 +48,7 @@ object Compiler {
                   // chain interrupted by non rule -> close chain, then keep other
                   items += RuleChain(chain.toList)
                   other match {
-                    case mm: Marker => items += MarkerItem(mm.name)
+                    case mm: SecMarker => items += MarkerItem(mm.name)
                     case _                => // ignore other directives for now
                   }
                   done = true
@@ -58,7 +59,7 @@ object Compiler {
             items += RuleChain(List(r))
           }
 
-        case m: Marker =>
+        case m: SecMarker =>
           items += MarkerItem(m.name)
 
         case _ =>

@@ -1,19 +1,19 @@
 package com.cloud.apim.seclang.test
 
-import com.cloud.apim.seclang.impl.model.Disposition._
-import com.cloud.apim.seclang.impl.model._
+import com.cloud.apim.seclang.model.Disposition._
+import com.cloud.apim.seclang.model._
 import com.cloud.apim.seclang.model.Configuration
 import com.cloud.apim.seclang.scaladsl.SecLang
 import play.api.libs.json.Json
 
+import java.io.File
 import java.net.URI
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
+import java.nio.file.Files
 
 class SecLangBasicTest extends munit.FunSuite {
 
   test("simple rule".ignore) {
-
-    println("\n\n\nRunning tests ... \n\n")
 
     val rules = """
       |SecRule REMOTE_ADDR "127.0.0.1" "id:1, phase:1, pass, log, logdata:'Request from localhost'"
@@ -24,17 +24,8 @@ class SecLangBasicTest extends munit.FunSuite {
       |SecRule REQUEST_URI "@contains /health" "id:10,phase:1,pass,log"
       |""".stripMargin
 
-    println("parsing ...")
     val loaded = SecLang.parse(rules).fold(err => sys.error(err), identity)
-    loaded.foreach(d => println(s"  - ${d}"))
-    println("compiling ...")
     val program = SecLang.compile(loaded)
-    program.itemsByPhase.foreach {
-      case (phase, directives) => directives.foreach { directive =>
-        println(s"    - ${phase} - ${directive}")
-      }
-    }
-    println("loading ...")
     val engine = SecLang.engine(program)
 
     val failing_ctx = RequestContext(
@@ -91,7 +82,7 @@ class SecLangBasicTest extends munit.FunSuite {
         |    setvar:'tx.rce_score=+%{tx.critical_anomaly_score}',\
         |    setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}'"
         |""".stripMargin
-    SecLang.parseAntlr(rules) match {
+    SecLang.parse(rules) match {
       case Left(err) => println("parse error: " + err)
       case Right(config) => println("parse success: " + Json.prettyPrint(config.json))
     }
@@ -179,10 +170,11 @@ class SecLangBasicTest extends munit.FunSuite {
       }
       .mkString("\n")
     println("fetching CRS done !\n\n")
-    SecLang.parseAntlr(rules) match {
+    SecLang.parse(rules) match {
       case Left(err) => println("parse error: " + err)
       case Right(config) => {
         val out1 = Json.prettyPrint(config.json)
+        Files.writeString(new File("./crs.json").toPath, out1)
         val config2 = Configuration.format.reads(Json.parse(out1)).get
         val out2 = Json.prettyPrint(config2.json)
         assertEquals(out1, out2)

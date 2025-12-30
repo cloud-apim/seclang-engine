@@ -1150,7 +1150,7 @@ object SeverityValue {
   }
 
   def apply(value: String): SeverityValue = {
-    import com.cloud.apim.seclang.impl.parser.Implicits._
+    import com.cloud.apim.seclang.impl.Implicits._
     value.toLowerCase match {
       case "emergency" | "0" => SeverityValue.Emergency
       case "alert" | "1" => SeverityValue.Alert

@@ -1,9 +1,10 @@
-package  com.cloud.apim.seclang.impl.parser
+package com.cloud.apim.seclang.impl
 
-import com.cloud.apim.seclang.impl.model._
-import fastparse.NoWhitespace._
-import fastparse._
+import com.cloud.apim.seclang.antlr.SecLangParser._
+import com.cloud.apim.seclang.antlr._
+import com.cloud.apim.seclang.model._
 
+import scala.collection.JavaConverters._
 import scala.util.Try
 
 object Implicits {
@@ -14,278 +15,341 @@ object Implicits {
   }
 }
 
-object Utils {
+// https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29
+class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
+
   import Implicits._
-  // ---------- helpers ----------
-  def stripQuotes(s: String): String = {
-    val t = s.trim
-    if ((t.startsWith("\"") && t.endsWith("\"")) || (t.startsWith("'") && t.endsWith("'")))
-      t.substring(1, t.length - 1)
-    else t
-  }
-
-  // split "a,b,'c,d',e" -> respects quotes
-  def splitActions(s: String): List[String] = {
-    val out = scala.collection.mutable.ListBuffer.empty[String]
-    val cur = new StringBuilder
-    var inSingle = false
-    var inDouble = false
-    var i = 0
-    while (i < s.length) {
-      val ch = s.charAt(i)
-      ch match {
-        case '\'' if !inDouble =>
-          inSingle = !inSingle; cur.append(ch)
-        case '"' if !inSingle =>
-          inDouble = !inDouble; cur.append(ch)
-        case ',' if !inSingle && !inDouble =>
-          out += cur.toString.trim
-          cur.clear()
-        case _ =>
-          cur.append(ch)
-      }
-      i += 1
+  
+  override def visitConfiguration(ctx: SecLangParser.ConfigurationContext): Configuration = {
+    val statements = ctx.stmt().asScala.toList.flatMap { stmtCtx =>
+      Option(visitStmt(stmtCtx)).collect { case s: Statement => s }
     }
-    val last = cur.toString.trim
-    if (last.nonEmpty) out += last
-    out.toList.filter(_.nonEmpty)
+    Configuration(statements)
   }
-
-  def parseActionToken(tok: String): Action = {
-    val t = tok.trim
-    if (t.equalsIgnoreCase("deny")) Action.Deny
-    else if (t.equalsIgnoreCase("drop")) Action.Drop
-    else if (t.equalsIgnoreCase("pass")) Action.Pass
-    else if (t.equalsIgnoreCase("log")) Action.Log
-    else if (t.equalsIgnoreCase("nolog")) Action.NoLog
-    else if (t.equalsIgnoreCase("chain")) Action.Chain
-    else {
-      val idx = t.indexOf(':')
-      if (idx < 0) {
-        // ctl:xxx=yyy without ':', or just unknown bareword
-        if (t.startsWith("ctl:") && t.contains("=")) {
-          val ctl = t.drop(4)
-          val parts = ctl.split("=", 2)
-          if (parts.length == 2 && parts(0) == "ruleRemoveById") {
-            parts(1).trim.toIntOption.map(Action.CtlRuleRemoveById).getOrElse(Action.Raw("ctl", Some(t)))
-          } else Action.Raw("ctl", Some(t))
-        } else Action.Raw(t, None)
+  
+  override def visitStmt(ctx: SecLangParser.StmtContext): Statement = {
+    val commentBlock = Option(ctx.comment_block()).map(visitCommentBlock)
+    
+    if (ctx.engine_config_rule_directive() != null && ctx.variables() != null && ctx.operator() != null) {
+      val variables = visitVariables(ctx.variables())
+      val operator = visitOperator(ctx.operator())
+      val actions = Option(ctx.actions()).map(visitActions)
+      SecRule(commentBlock, variables, operator, actions)
+      
+    } else if (ctx.rule_script_directive() != null && ctx.file_path() != null) {
+      val filePath = ctx.file_path().getText
+      val actions = Option(ctx.actions()).map(visitActions)
+      SecRuleScript(commentBlock, filePath, actions)
+      
+    } else if (ctx.remove_rule_by_id() != null) {
+      val ids = ctx.remove_rule_by_id_values().asScala.toList.map {
+        case idCtx: Remove_rule_by_id_intContext if idCtx.INT() != null => idCtx.INT().getText.toInt
+        case _ => 0
+      }
+      SecRuleRemoveById(commentBlock, ids)
+      
+    } else if (ctx.string_remove_rules() != null && ctx.string_remove_rules_values() != null) {
+      val directive = ctx.string_remove_rules()
+      val value = ctx.string_remove_rules_values().getText.replaceAll("\"", "")
+      directive match {
+        case d: Remove_rule_by_msgContext if d.CONFIG_SEC_RULE_REMOVE_BY_MSG() != null =>
+          SecRuleRemoveByMsg(commentBlock, value)
+        case d: Remove_rule_by_tagContext if d.CONFIG_SEC_RULE_REMOVE_BY_TAG() != null =>
+          SecRuleRemoveByTag(commentBlock, value)
+        case _ =>
+          SecRuleRemoveByMsg(commentBlock, value)
+      }
+    } else if (ctx.update_target_rules() != null && ctx.update_variables() != null) {
+      val updateRules = ctx.update_target_rules()
+      val variables = visitUpdateVariables(ctx.update_variables())
+      if (ctx.update_target_rules_values() != null) {
+        val value = ctx.update_target_rules_values().getText.replaceAll("\"", "")
+        updateRules match {
+          case ur: Update_target_by_idContext if ur.CONFIG_SEC_RULE_UPDATE_TARGET_BY_ID() != null =>
+            SecRuleUpdateTargetById(commentBlock, value.toInt, variables)
+          case ur: Update_target_by_msgContext if ur.CONFIG_SEC_RULE_UPDATE_TARGET_BY_MSG() != null =>
+            SecRuleUpdateTargetByMsg(commentBlock, value, variables)
+          case ur: Update_target_by_tagContext if ur.CONFIG_SEC_RULE_UPDATE_TARGET_BY_TAG() != null =>
+            SecRuleUpdateTargetByTag(commentBlock, value, variables)
+          case _ =>
+            SecRuleUpdateTargetByMsg(commentBlock, value, variables)
+        }
       } else {
-        val name = t.substring(0, idx).trim
-        val value = t.substring(idx + 1).trim
-        name match {
-          case "id"       => value.toIntOption.map(Action.Id).getOrElse(Action.Raw(name, Some(value)))
-          case "phase"    => value.toIntOption.map(Action.Phase).getOrElse(Action.Raw(name, Some(value)))
-          case "msg"      => Action.Msg(stripQuotes(value))
-          case "status"   => value.toIntOption.map(Action.Status).getOrElse(Action.Raw(name, Some(value)))
-          case "severity" => value.toIntOption.map(Action.Severity).getOrElse(Action.Raw(name, Some(value)))
-          case "t"        => Action.Transform(stripQuotes(value))
-          case "skipAfter" => Action.SkipAfter(stripQuotes(value))
-          case "setvar"   => Action.SetVar(stripQuotes(value))
-          case "ctl" =>
-            // ctl:ruleRemoveById=123 (si écrit ctl:... dans value)
-            if (value.startsWith("ruleRemoveById=")) {
-              value.stripPrefix("ruleRemoveById=").trim.toIntOption
-                .map(Action.CtlRuleRemoveById).getOrElse(Action.Raw(name, Some(value)))
-            } else Action.Raw(name, Some(value))
-          case other => Action.Raw(other, Some(stripQuotes(value)))
+        SecRuleUpdateTargetByMsg(commentBlock, "", variables)
+      }
+    } else if (ctx.update_action_rule() != null && ctx.id() != null && ctx.actions() != null) {
+      val id = ctx.id().INT().getText.toInt
+      val actions = visitActions(ctx.actions())
+      SecRuleUpdateActionById(commentBlock, id, actions)
+    } else if (ctx.engine_config_directive() != null && ctx.engine_config_directive().sec_marker_directive() != null) {
+      val name = ctx.getText.split("SecMarker").tail.mkString("SecMarker").replaceAll("\"", "").replaceAll("'", "")
+      SecMarker(commentBlock, name)
+    } else if (ctx.engine_config_directive() != null) {
+      val directive = visitEngineConfigDirective(ctx.engine_config_directive())
+      EngineConfigDirective(commentBlock, directive)
+    } else {
+      SecMarker(commentBlock, "unknown")
+    }
+  }
+  
+  def visitCommentBlock(ctx: SecLangParser.Comment_blockContext): CommentBlock = {
+    val comments = ctx.comment().asScala.toList.map(visitComment)
+    CommentBlock(comments)
+  }
+  
+  override def visitComment(ctx: SecLangParser.CommentContext): Comment = {
+    val text = if (ctx.COMMENT() != null) ctx.COMMENT().getText else ""
+    Comment(text)
+  }
+  
+  def visitEngineConfigDirective(ctx: SecLangParser.Engine_config_directiveContext): ConfigDirective = {
+    if (ctx.stmt_audit_log() != null) {
+      val value = ctx.values().getText.replaceAll("\"", "")
+      ConfigDirective.AuditLog(value)
+    } else if (ctx.engine_config_action_directive() != null && ctx.actions() != null) {
+      val actions = visitActions(ctx.actions())
+      ConfigDirective.DefaultAction(actions)
+    } else {
+      ConfigDirective.Raw("unknown", "")
+    }
+  }
+  
+  override def visitVariables(ctx: SecLangParser.VariablesContext): Variables = {
+    val negated = ctx.var_not() != null
+    val count = ctx.var_count() != null
+    val variables = ctx.var_stmt().asScala.toList.map(visitVarStmt)
+    Variables(negated, count, variables)
+  }
+  
+  def visitUpdateVariables(ctx: SecLangParser.Update_variablesContext): UpdateVariables = {
+    val negated = ctx.var_not().asScala.nonEmpty
+    val count = ctx.var_count() != null
+    val variables = ctx.var_stmt().asScala.toList.map(visitVarStmt)
+    UpdateVariables(negated, count, variables)
+  }
+  
+  def visitVarStmt(ctx: SecLangParser.Var_stmtContext): Variable = {
+    if (ctx.variable_enum() != null) {
+      Variable.Simple(ctx.variable_enum().getText)
+    } else if (ctx.collection_enum() != null) {
+      val collection = ctx.collection_enum().getText
+      val key = Option(ctx.collection_value()).map(_.getText)
+      Variable.Collection(collection, key)
+    } else {
+      Variable.Simple("UNKNOWN")
+    }
+  }
+  
+  override def visitOperator(ctx: SecLangParser.OperatorContext): Operator = {
+    val negated = ctx.operator_not() != null
+    val op = visitOperatorInner(ctx)
+    if (negated) Operator.Negated(op) else op
+  }
+  
+  def visitOperatorInner(ctx: SecLangParser.OperatorContext): Operator = {
+    val opName = ctx.operator_name()
+    val opValue = if (ctx.operator_value() != null) {
+      ctx.operator_value().getText.replaceAll("\"", "")
+    } else ""
+    
+    if (opName.OPERATOR_RX() != null) Operator.Rx(opValue)
+    else if (opName.OPERATOR_CONTAINS() != null) Operator.Contains(opValue)
+    else if (opName.OPERATOR_STR_EQ() != null) Operator.Streq(opValue)
+    else if (opName.OPERATOR_PM() != null) Operator.Pm(opValue)
+    else if (opName.OPERATOR_BEGINS_WITH() != null) Operator.BeginsWith(opValue)
+    else if (opName.OPERATOR_ENDS_WITH() != null) Operator.EndsWith(opValue)
+    else if (opName.OPERATOR_CONTAINS_WORD() != null) Operator.ContainsWord(opValue)
+    else if (opName.OPERATOR_DETECT_SQLI() != null) Operator.DetectSQLi(opValue)
+    else if (opName.OPERATOR_DETECT_XSS() != null) Operator.DetectXSS(opValue)
+    else if (opName.OPERATOR_EQ() != null) Operator.Eq(opValue)
+    else if (opName.OPERATOR_GE() != null) Operator.Ge(opValue)
+    else if (opName.OPERATOR_GT() != null) Operator.Gt(opValue)
+    else if (opName.OPERATOR_LE() != null) Operator.Le(opValue)
+    else if (opName.OPERATOR_LT() != null) Operator.Lt(opValue)
+    else if (opName.OPERATOR_IP_MATCH() != null) Operator.IpMatch(opValue)
+    else if (opName.OPERATOR_IP_MATCH_FROM_FILE() != null) Operator.IpMatchFromFile(opValue)
+    else if (opName.OPERATOR_PM_FROM_FILE() != null) Operator.PmFromFile(opValue)
+    else if (opName.OPERATOR_RX_GLOBAL() != null) Operator.RxGlobal(opValue)
+    else if (opName.OPERATOR_STR_MATCH() != null) Operator.StrMatch(opValue)
+    else if (opName.OPERATOR_UNCONDITIONAL_MATCH() != null) Operator.UnconditionalMatch()
+    else if (opName.OPERATOR_WITHIN() != null) Operator.Within(opValue)
+    else if (opName.OPERATOR_VALIDATE_URL_ENCODING != null) Operator.ValidateUrlEncoding(opValue)
+    else if (opName.OPERATOR_VALIDATE_UTF8_ENCODING != null) Operator.ValidateUtf8Encoding(opValue)
+    else if (opName.OPERATOR_INSPECT_FILE != null) Operator.InspectFile(opValue)
+    else if (opName.OPERATOR_FUZZY_HASH != null) Operator.FuzzyHash(opValue)
+    else if (opName.OPERATOR_VALIDATE_BYTE_RANGE != null) Operator.ValidateByteRange(opValue)
+    else if (opName.OPERATOR_VALIDATE_DTD != null) Operator.ValidateDTD(opValue)
+    else if (opName.OPERATOR_VALIDATE_HASH != null) Operator.ValidateHash(opValue)
+    else if (opName.OPERATOR_VALIDATE_SCHEMA != null) Operator.ValidateSchema(opValue)
+    else if (opName.OPERATOR_VERIFY_CC != null) Operator.VerifyCC(opValue)
+    else if (opName.OPERATOR_VERIFY_CPF != null) Operator.VerifyCPF(opValue)
+    else if (opName.OPERATOR_VERIFY_SSN != null) Operator.VerifySSN(opValue)
+    else if (opName.OPERATOR_VERIFY_SVNR != null) Operator.VerifySVNR(opValue)
+    else if (opName.OPERATOR_GSB_LOOKUP != null) Operator.GsbLookup(opValue)
+    else if (opName.OPERATOR_RSUB != null) Operator.Rsub(opValue)
+    else if (opName.OPERATOR_RBL != null) Operator.Rbl(opValue)
+    else if (opName.OPERATOR_GEOLOOKUP != null) Operator.GeoLookup(opValue)
+    else Operator.Raw(opName.getText, opValue)
+  }
+  
+  override def visitActions(ctx: SecLangParser.ActionsContext): Actions = {
+    val actions = ctx.action().asScala.toList.flatMap(visitOneAction)
+    Actions(actions)
+  }
+  
+  def visitOneAction(ctx: SecLangParser.ActionContext): Option[Action] = {
+    if (ctx.action_only() != null) {
+      visitActionOnly(ctx.action_only())
+    } else if (ctx.action_with_params() != null) {
+      visitActionWithParams(ctx.action_with_params())
+    } else {
+      None
+    }
+  }
+  
+  def visitActionOnly(ctx: SecLangParser.Action_onlyContext): Option[Action] = {
+    if (ctx.disruptive_action_only() != null) {
+      val disruptive = ctx.disruptive_action_only()
+      if (disruptive.ACTION_DENY() != null) Some(Action.Deny)
+      else if (disruptive.ACTION_DROP() != null) Some(Action.Drop)
+      else if (disruptive.ACTION_PASS() != null) Some(Action.Pass)
+      else if (disruptive.ACTION_BLOCK() != null) Some(Action.Block())
+      else None
+    } else if (ctx.non_disruptive_action_only() != null) {
+      val nonDisruptive = ctx.non_disruptive_action_only()
+      if (nonDisruptive.ACTION_LOG() != null) Some(Action.Log)
+      else if (nonDisruptive.ACTION_NO_LOG() != null) Some(Action.NoLog)
+      else if (nonDisruptive.ACTION_NO_AUDIT_LOG() != null) Some(Action.NoAuditLog)
+      else if (nonDisruptive.ACTION_AUDIT_LOG() != null) Some(Action.AuditLog())
+      else if (nonDisruptive.ACTION_CAPTURE() != null) Some(Action.Capture())
+      else if (nonDisruptive.ACTION_MULTI_MATCH() != null) Some(Action.MultiMatch)
+      else if (nonDisruptive.ACTION_SANITISE_MATCHED() != null) Some(Action.SanitiseMatched())
+      else None
+    } else if (ctx.flow_action_only() != null) {
+      val flow = ctx.flow_action_only()
+      if (flow.ACTION_CHAIN() != null) Some(Action.Chain)
+      else None
+    } else {
+      None
+    }
+  }
+  
+  def visitActionWithParams(ctx: SecLangParser.Action_with_paramsContext): Option[Action] = {
+    val actionContext = ctx.getParent.asInstanceOf[ActionContext]
+    val value = actionContext.action_value().getText.replaceAll("\"", "").replaceAll("'", "")
+    if (actionContext.ACTION_TRANSFORMATION() != null) {
+      Some(Action.Transform(actionContext.transformation_action_value().getText))
+    } else if (ctx.metadata_action_with_params() != null) {
+      val meta = ctx.metadata_action_with_params()
+      meta match {
+        case m: SecLangParser.ACTION_IDContext if m.ACTION_ID() != null => Some(Action.Id(value.toIntOption.getOrElse(0)))
+        case m: SecLangParser.ACTION_PHASEContext if m.ACTION_PHASE() != null => Some(Action.Phase(value.toIntOption.getOrElse(2)))
+        case m: SecLangParser.ACTION_MSGContext if m.ACTION_MSG() != null => Some(Action.Msg(value))
+        case m: SecLangParser.ACTION_TAGContext if m.ACTION_TAG() != null => Some(Action.Tag(value))
+        case m: SecLangParser.ACTION_REVContext if m.ACTION_REV() != null => Some(Action.Rev(value))
+        case m: SecLangParser.ACTION_VERContext if m.ACTION_VER() != null => Some(Action.Ver(value))
+        case m: SecLangParser.ACTION_MATURITYContext if m.ACTION_MATURITY() != null => Some(Action.Maturity(value.toIntOption.getOrElse(0)))
+        case m: SecLangParser.ACTION_SEVERITYContext if m.ACTION_SEVERITY() != null => Some(Action.Severity(SeverityValue(value)))
+        case _ => None
+      }
+    } else if (ctx.disruptive_action_with_params() != null) {
+      val disruptive = ctx.disruptive_action_with_params()
+      if (disruptive.ACTION_REDIRECT() != null) Some(Action.Redirect(value))
+      else if (disruptive.ACTION_PROXY() != null) Some(Action.Proxy(value))
+      else None
+    } else if (ctx.non_disruptive_action_with_params() != null) {
+      val nonDisruptive = ctx.non_disruptive_action_with_params()
+      if (nonDisruptive.ACTION_INITCOL() != null) Some(Action.InitCol(value))
+      else if (nonDisruptive.ACTION_APPEND() != null) Some(Action.Append(value))
+      else if (nonDisruptive.ACTION_CTL() != null)  visitCtlAction(actionContext.action_value().action_value_types().ctl_action())
+      else if (nonDisruptive.ACTION_EXEC() != null) Some(Action.Exec(value))
+      else if (nonDisruptive.ACTION_EXPIRE_VAR() != null) Some(Action.ExpireVar(value))
+      else if (nonDisruptive.ACTION_DEPRECATE_VAR() != null) Some(Action.DeprecateVar(value))
+      else if (nonDisruptive.ACTION_INITCOL() != null) Some(Action.InitCol(value))
+      else if (nonDisruptive.ACTION_LOG_DATA() != null) Some(Action.LogData(value))
+      else if (nonDisruptive.ACTION_PREPEND() != null) Some(Action.Prepend(value))
+      else if (nonDisruptive.ACTION_SANITISE_ARG() != null) Some(Action.SanitiseArg(value))
+      else if (nonDisruptive.ACTION_SANITISE_MATCHED_BYTES() != null) Some(Action.SanitiseMatchedBytes(value))
+      else if (nonDisruptive.ACTION_SANITISE_REQUEST_HEADER() != null) Some(Action.SanitiseRequestHeader(value))
+      else if (nonDisruptive.ACTION_SANITISE_RESPONSE_HEADER() != null) Some(Action.SanitiseResponseHeader(value))
+      else if (nonDisruptive.ACTION_SETUID() != null) Some(Action.SetUid(value))
+      else if (nonDisruptive.ACTION_SETRSC() != null) Some(Action.SetRsc(value))
+      else if (nonDisruptive.ACTION_SETSID() != null) Some(Action.SetSid(value))
+      else if (nonDisruptive.ACTION_SETENV() != null) Some(Action.SetEnv(value))
+      else if (nonDisruptive.ACTION_SETVAR() != null) Some(Action.SetVar(value))
+      else None
+    } else if (ctx.data_action_with_params() != null) {
+      val data = ctx.data_action_with_params()
+      if (data.ACTION_XMLNS() != null) Some(Action.Xmlns(value))
+      else if (data.ACTION_STATUS() != null) Some(Action.Status(value.toIntOption.getOrElse(0)))
+      else None
+    } else if (ctx.flow_action_with_params() != null) {
+      val flow = ctx.flow_action_with_params()
+      if (flow.ACTION_SKIP() != null) Some(Action.Skip(value.toIntOption.getOrElse(0)))
+      else if (flow.ACTION_SKIP_AFTER() != null) Some(Action.SkipAfter(value))
+      else None
+    } else {
+      None
+    }
+  }
+  
+  def visitCtlAction(ctx: SecLangParser.Ctl_actionContext): Option[Action] = {
+    val value = ctx.getParent.getText.split("=").tail.mkString("=")
+    if (ctx.ACTION_CTL_FORCE_REQ_BODY_VAR() != null) Some(Action.CtlAction.ForceRequestBodyVariable(value))
+    else if (ctx.ACTION_CTL_REQUEST_BODY_ACCESS() != null) Some(Action.CtlAction.RequestBodyAccess(value))
+    else if (ctx.ACTION_CTL_RULE_ENGINE() != null) Some(Action.CtlAction.RuleEngine(value))
+    else if (ctx.ACTION_CTL_RULE_REMOVE_BY_ID() != null) Some(Action.CtlAction.RuleRemoveById(value.toIntOption.getOrElse(0)))
+    else if (ctx.ACTION_CTL_RULE_REMOVE_BY_TAG() != null) Some(Action.CtlAction.RuleRemoveByTag(value))
+    else if (ctx.ACTION_CTL_RULE_REMOVE_TARGET_BY_ID() != null) {
+      val parts = value.split(";")
+      val id = parts.headOption.flatMap(_.toIntOption).getOrElse(0)
+      val target  = parts.lastOption.getOrElse("--")
+      Some(Action.CtlAction.RuleRemoveTargetById(id, target))
+    }
+    else if (ctx.ACTION_CTL_RULE_REMOVE_TARGET_BY_TAG() != null) {
+      val parts = value.split(";")
+      val tag = parts.headOption.getOrElse("--")
+      val target = parts.lastOption.getOrElse("--")
+      Some(Action.CtlAction.RuleRemoveTargetByTag(tag, target))
+    }
+    else if (ctx.ACTION_CTL_AUDIT_ENGINE() != null) Some(Action.CtlAction.AuditEngine(value))
+    else if (ctx.ACTION_CTL_AUDIT_LOG_PARTS() != null) Some(Action.CtlAction.AuditLogParts(value))
+    else if (ctx.ACTION_CTL_REQUEST_BODY_PROCESSOR() != null) Some(Action.CtlAction.RequestBodyProcessor(value))
+    else None
+  }
+}
+
+object AntlrParser {
+  def parse(in: String): Either[String, Configuration] = {
+    import org.antlr.v4.runtime._
+    
+    try {
+      val input = CharStreams.fromString(in)
+      val lexer = new SecLangLexer(input)
+      val tokens = new CommonTokenStream(lexer)
+      val parser = new SecLangParser(tokens)
+      
+      parser.removeErrorListeners()
+      val errorListener = new BaseErrorListener {
+        override def syntaxError(
+            recognizer: Recognizer[_, _],
+            offendingSymbol: Any,
+            line: Int,
+            charPositionInLine: Int,
+            msg: String,
+            e: RecognitionException
+        ): Unit = {
+          throw new RuntimeException(s"Parse error at line $line:$charPositionInLine - $msg")
         }
       }
+      parser.addErrorListener(errorListener)
+      
+      val tree = parser.configuration()
+      val visitor = new AstBuilderVisitor()
+      val result = visitor.visitConfiguration(tree)
+      Right(result)
+    } catch {
+      case e: Exception => Left(s"Parse error: ${e.getMessage}")
     }
   }
-
-  def parseActions(actionsStr: String): List[Action] =
-    splitActions(stripQuotes(actionsStr)).map(parseActionToken)
-}
-
-object FastParseParser {
-
-  import Implicits._
-
-  // ---------- fastparse grammar ----------
-  private def wsp[_: P] = P( CharsWhileIn(" \t").rep )
-  private def nl[_: P]  = P( ("\r\n" | "\n").rep(1) )
-
-  private def comment[_: P]: P[Directive] =
-    P( wsp ~ "#" ~ CharsWhile(_ != '\n', 0).! ).map(s => Comment("#" + s)).opaque("comment")
-
-  private def bareword[_: P]: P[String] =
-    P( CharsWhile(c => !c.isWhitespace && c != '"', 1).! )
-
-  private def quoted[_: P]: P[String] =
-    P(
-      ("\"" ~/ CharsWhile(_ != '"', 0).! ~ "\"") |
-      ("'" ~/ CharsWhile(_ != '\'', 0).! ~ "'")
-    )
-
-  private def variables[_: P]: P[List[VariableSelector]] =
-    P( (bareword.rep(1, sep = wsp ~ "|" ~ wsp)).! ).map { s =>
-      s.split("\\|").toList.map(_.trim).filter(_.nonEmpty).map { v =>
-        val parts = v.split(":", 2)
-        if (parts.length == 2) VariableSelector(parts(0), Some(parts(1)))
-        else VariableSelector(parts(0), None)
-      }
-    }
-
-  private def operator[_: P]: P[Operator] =
-    P(
-      ("@rx" ~ wsp ~ (quoted | bareword)).map(p => Operator.Rx(Utils.stripQuotes(p))) |
-      ("@contains" ~ wsp ~ (quoted | bareword)).map(v => Operator.Contains(Utils.stripQuotes(v))) |
-      ("@streq" ~ wsp ~ (quoted | bareword)).map(v => Operator.Streq(Utils.stripQuotes(v))) |
-      ("@pm" ~ wsp ~ (quoted | bareword)).map(v => Operator.Pm(Utils.stripQuotes(v).split("\\s+").toList.filter(_.nonEmpty))) |
-      ("@unconditionalMatch").!.map(_ => Operator.UnconditionalTrue()) |
-      ("@" ~ bareword ~ wsp ~ (quoted | bareword)).map { case (op, arg) => Operator.Raw("@"+op, Utils.stripQuotes(arg)) }
-    )
-
-  private def secrule[_: P]: P[Directive] =
-    P( wsp ~ "SecRule" ~ wsp ~ variables ~ wsp ~ operator ~ wsp ~ quoted.! ).map {
-      case (vars, op, actStr) =>
-        Rule(vars, op, Utils.parseActions(actStr), raw = s"SecRule ${vars.mkString("|")} $op $actStr")
-    }
-
-  private def secaction[_: P]: P[Directive] =
-    P( wsp ~ "SecAction" ~ wsp ~ quoted.! ).map { actStr =>
-      SecAction(Utils.parseActions(actStr), raw = s"SecAction $actStr")
-    }
-
-  private def secruleremovebyid[_: P]: P[Directive] =
-    P( wsp ~ "SecRuleRemoveById" ~ wsp ~ CharsWhile(_ != '\n', 1).! ).map { rest =>
-      val ids = rest.split("\\s+").toList.flatMap(_.trim.toIntOption)
-      RuleRemoveById(ids, raw = s"SecRuleRemoveById $rest")
-    }
-
-  private def secmarker[_: P]: P[Directive] =
-    P( wsp ~ "SecMarker" ~ wsp ~ bareword.! ).map { name =>
-      Marker(name, raw = s"SecMarker $name")
-    }
-
-  private def unknownLine[_: P]: P[Directive] =
-    P( wsp ~ CharsWhile(_ != '\n', 0).! ).map { s =>
-      val t = s.trim
-      if (t.isEmpty) Comment("")
-      else Unknown(t)
-    }
-
-  private def line[_: P]: P[Directive] =
-    P( comment | secruleremovebyid | secmarker | secaction | secrule | unknownLine )
-
-  def parse(input: String): Either[String, List[Directive]] = {
-    def p[_: P] = P((line ~ (nl | End)).rep.map(_.toList) ~ End )
-    fastparse.parse(input, p(_)) match {
-      case Parsed.Success(value, _) => Right(value.filterNot(_.isInstanceOf[Comment]).filter(_.raw.trim.nonEmpty))
-      case f: Parsed.Failure        => Left(f.trace().longMsg)
-    }
-  }
-}
-
-object ScalaParser extends scala.util.parsing.combinator.RegexParsers {
-
-  import Implicits._
-
-  override def skipWhitespace = false
-
-  private def wsp: Parser[String] = """[ \t]*""".r
-
-  private def nl: Parser[String] = """\r?\n""".r
-
-  private def comment: Parser[Directive] =
-    wsp ~> "#" ~> """[^\n]*""".r <~ opt(nl) ^^ { s => Comment("#" + s) }
-
-  private def bareword: Parser[String] =
-    """[^\s"']+""".r
-
-  private def quotedDouble: Parser[String] =
-    "\"" ~> """[^"]*""".r <~ "\""
-
-  private def quotedSingle: Parser[String] =
-    "'" ~> """[^']*""".r <~ "'"
-
-  private def quoted: Parser[String] =
-    quotedDouble | quotedSingle
-
-  private def variableSelector: Parser[VariableSelector] =
-    """[^|\s:]+""".r ~ opt(":" ~> """[^|\s]+""".r) ^^ {
-      case collection ~ keyOpt => VariableSelector(collection, keyOpt)
-    }
-
-  private def variables: Parser[List[VariableSelector]] =
-    rep1sep(variableSelector, wsp ~ "|" ~ wsp)
-
-  private def operator: Parser[Operator] = {
-    def rxOp: Parser[Operator] =
-      "@rx" ~> wsp ~> (quoted | bareword) ^^ { p => Operator.Rx(Utils.stripQuotes(p)) }
-
-    def containsOp: Parser[Operator] =
-      "@contains" ~> wsp ~> (quoted | bareword) ^^ { v => Operator.Contains(Utils.stripQuotes(v)) }
-
-    def streqOp: Parser[Operator] =
-      "@streq" ~> wsp ~> (quoted | bareword) ^^ { v => Operator.Streq(Utils.stripQuotes(v)) }
-
-    def pmOp: Parser[Operator] =
-      "@pm" ~> wsp ~> (quoted | bareword) ^^ { v =>
-        Operator.Pm(Utils.stripQuotes(v).split("\\s+").toList.filter(_.nonEmpty))
-      }
-
-    def unconditionalOp: Parser[Operator] =
-      "@unconditionalMatch" ^^ { _ => Operator.UnconditionalTrue() }
-
-    def rawOp: Parser[Operator] =
-      "@" ~> bareword ~ wsp ~ (quoted | bareword) ^^ {
-        case op ~ _ ~ arg => Operator.Raw("@" + op, Utils.stripQuotes(arg))
-      }
-
-    rxOp | containsOp | streqOp | pmOp | unconditionalOp | rawOp
-  }
-
-  private def secRule: Parser[Directive] =
-    wsp ~> "SecRule" ~> wsp ~> variables ~ wsp ~ operator ~ wsp ~ quoted <~ opt(nl) ^^ {
-      case vars ~ _ ~ op ~ _ ~ actStr =>
-        Rule(vars, op, Utils.parseActions(actStr), raw = s"SecRule ${vars.mkString("|")} $op $actStr")
-    }
-
-  private def secAction: Parser[Directive] =
-    wsp ~> "SecAction" ~> wsp ~> quoted <~ opt(nl) ^^ { actStr =>
-      SecAction(Utils.parseActions(actStr), raw = s"SecAction $actStr")
-    }
-
-  private def secRuleRemoveById: Parser[Directive] =
-    wsp ~> "SecRuleRemoveById" ~> wsp ~> """[^\n]+""".r <~ opt(nl) ^^ { rest =>
-      val ids = rest.split("\\s+").toList.flatMap(_.trim.toIntOption)
-      RuleRemoveById(ids, raw = s"SecRuleRemoveById $rest")
-    }
-
-  private def secMarker: Parser[Directive] =
-    wsp ~> "SecMarker" ~> wsp ~> bareword <~ opt(nl) ^^ { name =>
-      Marker(name, raw = s"SecMarker $name")
-    }
-
-  private def emptyLine: Parser[Directive] =
-    wsp <~ nl ^^ { _ => Comment("") }
-
-  private def unknownLine: Parser[Directive] =
-    wsp ~> """[^\n]+""".r <~ opt(nl) ^^ { s =>
-      val t = s.trim
-      if (t.isEmpty) Comment("")
-      else Unknown(t)
-    }
-
-  private def line: Parser[Directive] =
-    comment | secRuleRemoveById | secMarker | secAction | secRule | emptyLine | unknownLine
-
-  private def document: Parser[List[Directive]] =
-    rep(line) <~ opt(wsp)
-
-  def parse(input: String): Either[String, List[Directive]] = {
-    parseAll(document, input) match {
-      case Success(directives, _) =>
-        Right(directives.filterNot(_.isInstanceOf[Comment]).filter(_.raw.trim.nonEmpty))
-      case NoSuccess(msg, next) =>
-        Left(s"Parse error at line ${next.pos.line}, column ${next.pos.column}: $msg")
-    }
-  }
-
-  private def stripQuotes(s: String): String = Utils.stripQuotes(s)
-  private def splitActions(s: String): List[String] = Utils.splitActions(s)
-  private def parseActionToken(tok: String): Action = Utils.parseActionToken(tok)
-  private def parseActions(actionsStr: String): List[Action] = Utils.parseActions(actionsStr)
 }

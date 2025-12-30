@@ -1,5 +1,6 @@
 package com.cloud.apim.seclang.impl.model
 
+/*
 sealed trait Directive { def raw: String }
 
 final case class Rule(
@@ -108,3 +109,4 @@ final case class EngineResult(
     events: List[MatchEvent]
 )
 
+*/
