@@ -7,7 +7,7 @@ ThisBuild / organizationName := "Cloud-APIM"
 
 lazy val root = (project in file("."))
   .settings(
-    name := "scala-seclang-engine",
+    name := "seclang-engine",
     libraryDependencies ++= Seq(
       "com.lihaoyi" %% "fastparse" % "3.1.1",
       "org.scala-lang.modules" %% "scala-parser-combinators" % "2.4.0",
