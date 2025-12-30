@@ -2,7 +2,7 @@
 
 ## 📌 Project Overview
 
-This repository implements a **standalone Scala library** for parsing, representing, and evaluating **SecLang** (the OWASP ModSecurity rule syntax, https://coraza.io/docs/seclang/syntax/). The goal is to enable:
+This repository implements a **standalone Scala library** for parsing, representing, and evaluating **SecLang** (the OWASP ModSecurity rule syntax,  https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29). The goal is to enable:
 
 * **Parsing SecLang rule files** into an internal AST or IR.
 * **Evaluating SecLang logic** in a SecLang engine for testing and tooling.
@@ -89,23 +89,6 @@ Agents must implement an engine which:
 * Applies rules to input contexts (e.g., simulated HTTP transaction).
 * Outputs matches, actions taken, and disrupt actions (block, audit, etc.).
 * Respects rule priorities, overrides, and disable/enable flags.
-
-## 📜 Required File Structure
-
-```
-.
-├── src/
-│   ├── main/scala/…
-│   │   ├── parser/        # SecLang parser implementation
-│   │   ├── model/         # AST/IR representations
-│   │   ├── engine/        # Evaluation engine
-│   │   └── util/          # Helpers & utilities
-│   └── test/scala/…       # ScalaTest/MUnit suites
-├── test/resources/        # Sample SecLang files
-├── AGENTS.md              # This agent guidance
-├── build.sbt              # sbt build definition
-└── README.md              # Human-oriented overview
-```
 
 ## 🎯 Agent Instructions
 
