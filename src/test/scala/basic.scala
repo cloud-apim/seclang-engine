@@ -194,7 +194,6 @@ class SecLangBasicTest extends munit.FunSuite {
   }
 
   test("chain of rules") {
-
     val rules = """
                   |SecRule REQUEST_HEADERS:User-Agent "@pm firefox" \
                   |    "id:00001,\
@@ -235,10 +234,9 @@ class SecLangBasicTest extends munit.FunSuite {
                   |      severity:'CRITICAL'"
                   |""".stripMargin
 
-    val loaded = SecLang.parse(rules).fold(err => sys.error(err), identity)
+    val loaded  = SecLang.parse(rules).fold(err => sys.error(err), identity)
     val program = SecLang.compile(loaded)
-    val engine = SecLang.engine(program)
-
+    val engine  = SecLang.engine(program)
     val failing_ctx_1 = RequestContext(
       method = "GET",
       uri = "/admin",
@@ -267,12 +265,10 @@ class SecLangBasicTest extends munit.FunSuite {
       query = Map("q" -> List("test")),
       body = None
     )
-
     val failing_res_1 = engine.evaluate(failing_ctx_1, phases = List(1, 2)).displayPrintln()
     val failing_res_2 = engine.evaluate(failing_ctx_2, phases = List(1, 2)).displayPrintln()
     val passing_res_1 = engine.evaluate(passing_ctx_1, phases = List(1, 2)).displayPrintln()
     val passing_res_2 = engine.evaluate(passing_ctx_2, phases = List(1, 2)).displayPrintln()
-
     assertEquals(failing_res_1.disposition, Block(403, None, None))
     assertEquals(failing_res_2.disposition, Block(403, None, None))
     assertEquals(passing_res_1.disposition, Continue)
