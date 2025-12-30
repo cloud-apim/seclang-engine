@@ -12,6 +12,7 @@ lazy val root = (project in file("."))
       "com.lihaoyi" %% "fastparse" % "3.1.1",
       "org.scala-lang.modules" %% "scala-parser-combinators" % "2.4.0",
       "org.antlr" % "antlr4" % "4.13.2",
+      "com.typesafe.play" %% "play-json" % "2.9.3",
       munit % Test
     )
   )

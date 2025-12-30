@@ -3,9 +3,12 @@ package com.cloud.apim.seclang.test
 import com.cloud.apim.seclang.impl.model.Disposition._
 import com.cloud.apim.seclang.impl.model._
 import com.cloud.apim.seclang.scaladsl.SecLang
+import play.api.libs.json.Json
 
+import java.io.File
 import java.net.URI
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
+import java.nio.file.Files
 
 class SecLangBasicTest extends munit.FunSuite {
 
@@ -91,7 +94,7 @@ class SecLangBasicTest extends munit.FunSuite {
         |""".stripMargin
     SecLang.parseAntlr(rules) match {
       case Left(err) => println("parse error: " + err)
-      case Right(config) => println("parse success: " + config)
+      case Right(config) => println("parse success: " + Json.prettyPrint(config.json))
     }
   }
 
@@ -179,7 +182,10 @@ class SecLangBasicTest extends munit.FunSuite {
     println("fetching CRS done !\n\n")
     SecLang.parseAntlr(rules) match {
       case Left(err) => println("parse error: " + err)
-      case Right(config) => println("parse success: ")
+      case Right(config) => {
+        println("parse success")
+        Files.writeString(new File("./crs.json").toPath, Json.prettyPrint(config.json))
+      }
     }
   }
 }
