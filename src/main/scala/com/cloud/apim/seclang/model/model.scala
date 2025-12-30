@@ -2,6 +2,8 @@ package com.cloud.apim.seclang.model
 
 import play.api.libs.json._
 
+import scala.util.{Failure, Success, Try}
+
 sealed trait AstNode {
   def json: JsValue
 }
@@ -15,7 +17,66 @@ final case class Configuration(
   )
 }
 
+object Configuration {
+  def empty: Configuration = Configuration(List.empty)
+  
+  val format: Format[Configuration] = new Format[Configuration] {
+    def reads(json: JsValue): JsResult[Configuration] = Try {
+      Configuration((json \ "statements").asOpt[List[JsValue]].getOrElse(List.empty).flatMap { statement =>
+        Statement.format.reads(json).asOpt
+      })
+    } match {
+      case Failure(ex) => JsError(ex.getMessage)
+      case Success(config) => JsSuccess(config)
+    }
+    
+    def writes(config: Configuration): JsValue = config.json
+  }
+
+}
+
 sealed trait Statement extends AstNode
+
+object Statement {
+  val format = new Format[Statement] {
+    override def reads(json: JsValue): JsResult[Statement] = Try {
+      val typ = (json \ "type").as[String]
+      typ match {
+        case "SecRule" => SecRule.format.reads(json).get
+        case "SecRuleScript" => SecRuleScript.format.reads(json).get
+        case "SecAction" => SecAction.format.reads(json).get
+        case "SecRuleRemoveById" => SecRuleRemoveById.format.reads(json).get
+        case "SecRuleRemoveByMsg" => SecRuleRemoveByMsg.format.reads(json).get
+        case "SecRuleRemoveByTag" => SecRuleRemoveByTag.format.reads(json).get
+        case "SecRuleUpdateActionById" => SecRuleUpdateActionById.format.reads(json).get
+        case "SecMarker" => SecMarker.format.reads(json).get
+        case "EngineConfigDirective" => EngineConfigDirective.format.reads(json).get
+        case other => throw new RuntimeException(s"Unknown statement type: $other")
+      }
+    } match {
+      case Failure(ex) => JsError(ex.getMessage)
+      case Success(statement) => JsSuccess(statement)
+    }
+
+    override def writes(o: Statement): JsValue = o.json
+  }
+}
+
+object SecRule {
+  val format: Format[SecRule] = new Format[SecRule] {
+    def reads(json: JsValue): JsResult[SecRule] = Try {
+      val commentBlock = (json \ "comment_block").asOpt[JsObject].flatMap(CommentBlock.format.reads(_).asOpt)
+      val variables = Variables.format.reads((json \ "variables").as[JsObject]).get
+      val operator = Operator.format.reads((json \ "operator").as[JsObject]).get
+      val actions = (json \ "actions").asOpt[JsObject].flatMap(Actions.format.reads(_).asOpt)
+      SecRule(commentBlock, variables, operator, actions)
+    } match {
+      case Failure(ex) => JsError(ex.getMessage)
+      case Success(rule) => JsSuccess(rule)
+    }
+    def writes(rule: SecRule): JsValue = rule.json
+  }
+}
 
 final case class SecRule(
     commentBlock: Option[CommentBlock],
@@ -45,6 +106,21 @@ final case class SecRule(
   )
 }
 
+object SecRuleScript {
+  val format: Format[SecRuleScript] = new Format[SecRuleScript] {
+    def reads(json: JsValue): JsResult[SecRuleScript] = Try {
+      val commentBlock = (json \ "comment_block").asOpt[JsObject].flatMap(CommentBlock.format.reads(_).asOpt)
+      val filePath = (json \ "file_path").as[String]
+      val actions = (json \ "actions").asOpt[JsObject].flatMap(Actions.format.reads(_).asOpt)
+      SecRuleScript(commentBlock, filePath, actions)
+    } match {
+      case Failure(ex) => JsError(ex.getMessage)
+      case Success(script) => JsSuccess(script)
+    }
+    def writes(script: SecRuleScript): JsValue = script.json
+  }
+}
+
 final case class SecRuleScript(
     commentBlock: Option[CommentBlock],
     filePath: String,
@@ -58,6 +134,20 @@ final case class SecRuleScript(
   )
 }
 
+object SecAction {
+  val format: Format[SecAction] = new Format[SecAction] {
+    def reads(json: JsValue): JsResult[SecAction] = Try {
+      val commentBlock = (json \ "comment_block").asOpt[JsObject].flatMap(CommentBlock.format.reads(_).asOpt)
+      val actions = Actions.format.reads((json \ "actions").as[JsObject]).get
+      SecAction(commentBlock, actions)
+    } match {
+      case Failure(ex) => JsError(ex.getMessage)
+      case Success(action) => JsSuccess(action)
+    }
+    def writes(action: SecAction): JsValue = action.json
+  }
+}
+
 final case class SecAction(
     commentBlock: Option[CommentBlock],
     actions: Actions
@@ -67,6 +157,20 @@ final case class SecAction(
     "actions" -> actions.json,
     "comment_block" -> commentBlock.map(_.json).getOrElse(JsNull).as[JsValue],
   )
+}
+
+object SecRuleRemoveById {
+  val format: Format[SecRuleRemoveById] = new Format[SecRuleRemoveById] {
+    def reads(json: JsValue): JsResult[SecRuleRemoveById] = Try {
+      val commentBlock = (json \ "comment_block").asOpt[JsObject].flatMap(CommentBlock.format.reads(_).asOpt)
+      val ids = (json \ "ids").as[List[Int]]
+      SecRuleRemoveById(commentBlock, ids)
+    } match {
+      case Failure(ex) => JsError(ex.getMessage)
+      case Success(remove) => JsSuccess(remove)
+    }
+    def writes(remove: SecRuleRemoveById): JsValue = remove.json
+  }
 }
 
 final case class SecRuleRemoveById(
@@ -80,6 +184,20 @@ final case class SecRuleRemoveById(
   )
 }
 
+object SecRuleRemoveByMsg {
+  val format: Format[SecRuleRemoveByMsg] = new Format[SecRuleRemoveByMsg] {
+    def reads(json: JsValue): JsResult[SecRuleRemoveByMsg] = Try {
+      val commentBlock = (json \ "comment_block").asOpt[JsObject].flatMap(CommentBlock.format.reads(_).asOpt)
+      val value = (json \ "value").as[String]
+      SecRuleRemoveByMsg(commentBlock, value)
+    } match {
+      case Failure(ex) => JsError(ex.getMessage)
+      case Success(remove) => JsSuccess(remove)
+    }
+    def writes(remove: SecRuleRemoveByMsg): JsValue = remove.json
+  }
+}
+
 final case class SecRuleRemoveByMsg(
     commentBlock: Option[CommentBlock],
     value: String
@@ -89,6 +207,20 @@ final case class SecRuleRemoveByMsg(
     "value" -> value,
     "comment_block" -> commentBlock.map(_.json).getOrElse(JsNull).as[JsValue],
   )
+}
+
+object SecRuleRemoveByTag {
+  val format: Format[SecRuleRemoveByTag] = new Format[SecRuleRemoveByTag] {
+    def reads(json: JsValue): JsResult[SecRuleRemoveByTag] = Try {
+      val commentBlock = (json \ "comment_block").asOpt[JsObject].flatMap(CommentBlock.format.reads(_).asOpt)
+      val value = (json \ "value").as[String]
+      SecRuleRemoveByTag(commentBlock, value)
+    } match {
+      case Failure(ex) => JsError(ex.getMessage)
+      case Success(remove) => JsSuccess(remove)
+    }
+    def writes(remove: SecRuleRemoveByTag): JsValue = remove.json
+  }
 }
 
 final case class SecRuleRemoveByTag(
@@ -140,6 +272,21 @@ final case class SecRuleUpdateTargetByTag(
   )
 }
 
+object SecRuleUpdateActionById {
+  val format: Format[SecRuleUpdateActionById] = new Format[SecRuleUpdateActionById] {
+    def reads(json: JsValue): JsResult[SecRuleUpdateActionById] = Try {
+      val commentBlock = (json \ "comment_block").asOpt[JsObject].flatMap(CommentBlock.format.reads(_).asOpt)
+      val id = (json \ "id").as[Int]
+      val actions = Actions.format.reads((json \ "actions").as[JsObject]).get
+      SecRuleUpdateActionById(commentBlock, id, actions)
+    } match {
+      case Failure(ex) => JsError(ex.getMessage)
+      case Success(update) => JsSuccess(update)
+    }
+    def writes(update: SecRuleUpdateActionById): JsValue = update.json
+  }
+}
+
 final case class SecRuleUpdateActionById(
     commentBlock: Option[CommentBlock],
     id: Int,
@@ -153,6 +300,20 @@ final case class SecRuleUpdateActionById(
   )
 }
 
+object SecMarker {
+  val format: Format[SecMarker] = new Format[SecMarker] {
+    def reads(json: JsValue): JsResult[SecMarker] = Try {
+      val commentBlock = (json \ "comment_block").asOpt[JsObject].flatMap(CommentBlock.format.reads(_).asOpt)
+      val name = (json \ "name").as[String]
+      SecMarker(commentBlock, name)
+    } match {
+      case Failure(ex) => JsError(ex.getMessage)
+      case Success(marker) => JsSuccess(marker)
+    }
+    def writes(marker: SecMarker): JsValue = marker.json
+  }
+}
+
 final case class SecMarker(
     commentBlock: Option[CommentBlock],
     name: String
@@ -162,6 +323,20 @@ final case class SecMarker(
     "name" -> name,
     "comment_block" -> commentBlock.map(_.json).getOrElse(JsNull).as[JsValue],
   )
+}
+
+object EngineConfigDirective {
+  val format: Format[EngineConfigDirective] = new Format[EngineConfigDirective] {
+    def reads(json: JsValue): JsResult[EngineConfigDirective] = Try {
+      val commentBlock = (json \ "comment_block").asOpt[JsObject].flatMap(CommentBlock.format.reads(_).asOpt)
+      val directive = ConfigDirective.format.reads((json \ "directive").as[JsObject]).get
+      EngineConfigDirective(commentBlock, directive)
+    } match {
+      case Failure(ex) => JsError(ex.getMessage)
+      case Success(config) => JsSuccess(config)
+    }
+    def writes(config: EngineConfigDirective): JsValue = config.json
+  }
 }
 
 final case class EngineConfigDirective(
@@ -175,6 +350,21 @@ final case class EngineConfigDirective(
   )
 }
 
+object CommentBlock {
+  val format: Format[CommentBlock] = new Format[CommentBlock] {
+    def reads(json: JsValue): JsResult[CommentBlock] = Try {
+      val comments = (json \ "comments").as[List[JsValue]].flatMap { c =>
+        Comment.format.reads(c).asOpt
+      }
+      CommentBlock(comments)
+    } match {
+      case Failure(ex) => JsError(ex.getMessage)
+      case Success(block) => JsSuccess(block)
+    }
+    def writes(block: CommentBlock): JsValue = block.json
+  }
+}
+
 final case class CommentBlock(
     comments: List[Comment]
 ) extends AstNode {
@@ -182,6 +372,19 @@ final case class CommentBlock(
     "type" -> "CommentBlock",
     "comments" -> JsArray(comments.map(_.json))
   )
+}
+
+object Comment {
+  val format: Format[Comment] = new Format[Comment] {
+    def reads(json: JsValue): JsResult[Comment] = Try {
+      val text = (json \ "text").as[String]
+      Comment(text)
+    } match {
+      case Failure(ex) => JsError(ex.getMessage)
+      case Success(comment) => JsSuccess(comment)
+    }
+    def writes(comment: Comment): JsValue = comment.json
+  }
 }
 
 final case class Comment(
@@ -198,6 +401,43 @@ sealed trait ConfigDirective extends AstNode {
 }
 
 object ConfigDirective {
+  val format: Format[ConfigDirective] = new Format[ConfigDirective] {
+    def reads(json: JsValue): JsResult[ConfigDirective] = Try {
+      val typ = (json \ "type").as[String]
+      typ match {
+        case "AuditLog" => AuditLog((json \ "value").as[String])
+        case "AuditEngine" => AuditEngine((json \ "value").as[String])
+        case "AuditLogParts" => AuditLogParts((json \ "parts").as[List[String]])
+        case "ComponentSignature" => ComponentSignature((json \ "value").as[String])
+        case "ServerSignature" => ServerSignature((json \ "value").as[String])
+        case "WebAppId" => WebAppId((json \ "value").as[String])
+        case "CacheTransformations" => CacheTransformations((json \ "options").as[List[JsValue]].flatMap(ConfigOption.format.reads(_).asOpt))
+        case "ChrootDir" => ChrootDir((json \ "value").as[String])
+        case "ConnEngine" => ConnEngine((json \ "value").as[String])
+        case "ArgumentSeparator" => ArgumentSeparator((json \ "value").as[String])
+        case "DebugLog" => DebugLog((json \ "value").as[String])
+        case "DebugLogLevel" => DebugLogLevel((json \ "value").as[Int])
+        case "GeoLookupDb" => GeoLookupDb((json \ "value").as[String])
+        case "RuleEngine" => RuleEngine((json \ "value").as[String])
+        case "RequestBodyAccess" => RequestBodyAccess((json \ "value").as[String])
+        case "RequestBodyLimit" => RequestBodyLimit((json \ "value").as[Int])
+        case "ResponseBodyAccess" => ResponseBodyAccess((json \ "value").as[String])
+        case "ResponseBodyLimit" => ResponseBodyLimit((json \ "value").as[Int])
+        case "DefaultAction" => DefaultAction(Actions.format.reads((json \ "actions").as[JsObject]).get)
+        case "CollectionTimeout" => CollectionTimeout((json \ "value").as[Int])
+        case "Include" => Include((json \ "path").as[String])
+        case "DataDir" => DataDir((json \ "value").as[String])
+        case "TmpDir" => TmpDir((json \ "value").as[String])
+        case "Raw" => Raw((json \ "name").as[String], (json \ "value").as[String])
+        case other => throw new RuntimeException(s"Unknown ConfigDirective type: $other")
+      }
+    } match {
+      case Failure(ex) => JsError(ex.getMessage)
+      case Success(directive) => JsSuccess(directive)
+    }
+    def writes(directive: ConfigDirective): JsValue = directive.json
+  }
+
   final case class AuditLog(value: String) extends ConfigDirective {
     def json: JsValue = Json.obj("type" -> "AuditLog", "value" -> value)
   }
@@ -272,11 +512,40 @@ object ConfigDirective {
   }
 }
 
+object ConfigOption {
+  val format: Format[ConfigOption] = new Format[ConfigOption] {
+    def reads(json: JsValue): JsResult[ConfigOption] = Try {
+      val name = (json \ "name").as[String]
+      val value = (json \ "value").asOpt[String]
+      ConfigOption(name, value)
+    } match {
+      case Failure(ex) => JsError(ex.getMessage)
+      case Success(option) => JsSuccess(option)
+    }
+    def writes(option: ConfigOption): JsValue = option.json
+  }
+}
+
 final case class ConfigOption(
     name: String,
     value: Option[String]
 ) extends AstNode {
   def json: JsValue = Json.obj("type" -> "ConfigOption", "name" -> name, "value" -> value)
+}
+
+object Variables {
+  val format: Format[Variables] = new Format[Variables] {
+    def reads(json: JsValue): JsResult[Variables] = Try {
+      val negated = (json \ "negated").as[Boolean]
+      val count = (json \ "count").as[Boolean]
+      val variables = (json \ "variables").as[List[JsValue]].flatMap(Variable.format.reads(_).asOpt)
+      Variables(negated, count, variables)
+    } match {
+      case Failure(ex) => JsError(ex.getMessage)
+      case Success(vars) => JsSuccess(vars)
+    }
+    def writes(vars: Variables): JsValue = vars.json
+  }
 }
 
 final case class Variables(
@@ -290,6 +559,21 @@ final case class Variables(
     "count" -> count,
     "variables" -> JsArray(variables.map(_.json))
   )
+}
+
+object UpdateVariables {
+  val format: Format[UpdateVariables] = new Format[UpdateVariables] {
+    def reads(json: JsValue): JsResult[UpdateVariables] = Try {
+      val negated = (json \ "negated").as[Boolean]
+      val count = (json \ "count").as[Boolean]
+      val variables = (json \ "variables").as[List[JsValue]].flatMap(Variable.format.reads(_).asOpt)
+      UpdateVariables(negated, count, variables)
+    } match {
+      case Failure(ex) => JsError(ex.getMessage)
+      case Success(vars) => JsSuccess(vars)
+    }
+    def writes(vars: UpdateVariables): JsValue = vars.json
+  }
 }
 
 final case class UpdateVariables(
@@ -308,6 +592,24 @@ final case class UpdateVariables(
 sealed trait Variable extends AstNode
 
 object Variable {
+  val format: Format[Variable] = new Format[Variable] {
+    def reads(json: JsValue): JsResult[Variable] = Try {
+      val typ = (json \ "type").as[String]
+      typ match {
+        case "SimpleVariable" => Simple((json \ "name").as[String])
+        case "CollectionVariable" => Collection(
+          (json \ "collection").as[String],
+          (json \ "key").asOpt[String]
+        )
+        case other => throw new RuntimeException(s"Unknown Variable type: $other")
+      }
+    } match {
+      case Failure(ex) => JsError(ex.getMessage)
+      case Success(variable) => JsSuccess(variable)
+    }
+    def writes(variable: Variable): JsValue = variable.json
+  }
+
   final case class Simple(name: String) extends Variable {
     def json: JsValue = Json.obj("type" -> "SimpleVariable", "name" -> name)
   }
@@ -323,6 +625,58 @@ object Variable {
 sealed trait Operator extends AstNode
 
 object Operator {
+  val format: Format[Operator] = new Format[Operator] {
+    def reads(json: JsValue): JsResult[Operator] = Try {
+      val operatorType = (json \ "operator_type").as[String]
+      operatorType match {
+        case "negated" => Negated(format.reads((json \ "operator").as[JsObject]).get)
+        case "begins_with" => BeginsWith((json \ "value").as[String])
+        case "contains" => Contains((json \ "value").as[String])
+        case "contains_word" => ContainsWord((json \ "value").as[String])
+        case "detect_sqli" => DetectSQLi((json \ "value").as[String])
+        case "detect_xss" => DetectXSS((json \ "value").as[String])
+        case "ends_with" => EndsWith((json \ "value").as[String])
+        case "eq" => Eq((json \ "value").as[String])
+        case "fuzzy_hash" => FuzzyHash((json \ "value").as[String])
+        case "ge" => Ge((json \ "value").as[String])
+        case "geo_lookup" => GeoLookup((json \ "value").as[String])
+        case "gsb_lookup" => GsbLookup((json \ "value").as[String])
+        case "gt" => Gt((json \ "value").as[String])
+        case "inspect_file" => InspectFile((json \ "value").as[String])
+        case "ip_match" => IpMatch((json \ "value").as[String])
+        case "ip_match_from_file" => IpMatchFromFile((json \ "value").as[String])
+        case "le" => Le((json \ "value").as[String])
+        case "lt" => Lt((json \ "value").as[String])
+        case "pm" => Pm((json \ "value").as[String])
+        case "pm_from_file" => PmFromFile((json \ "value").as[String])
+        case "rbl" => Rbl((json \ "value").as[String])
+        case "rsub" => Rsub((json \ "value").as[String])
+        case "rx" => Rx((json \ "pattern").as[String])
+        case "rx_global" => RxGlobal((json \ "pattern").as[String])
+        case "streq" => Streq((json \ "value").as[String])
+        case "strmatch" => StrMatch((json \ "value").as[String])
+        case "unconditional_match" => UnconditionalMatch()
+        case "validate_byte_range" => ValidateByteRange((json \ "value").as[String])
+        case "validate_dtd" => ValidateDTD((json \ "value").as[String])
+        case "validate_hash" => ValidateHash((json \ "value").as[String])
+        case "validate_schema" => ValidateSchema((json \ "value").as[String])
+        case "validate_url_encoding" => ValidateUrlEncoding((json \ "value").as[String])
+        case "validate_utf8_encoding" => ValidateUtf8Encoding((json \ "value").as[String])
+        case "verify_cc" => VerifyCC((json \ "value").as[String])
+        case "verify_cpf" => VerifyCPF((json \ "value").as[String])
+        case "verify_ssn" => VerifySSN((json \ "value").as[String])
+        case "verify_svnr" => VerifySVNR((json \ "value").as[String])
+        case "within" => Within((json \ "value").as[String])
+        case "raw" => Raw((json \ "name").as[String], (json \ "value").as[String])
+        case other => throw new RuntimeException(s"Unknown Operator type: $other")
+      }
+    } match {
+      case Failure(ex) => JsError(ex.getMessage)
+      case Success(operator) => JsSuccess(operator)
+    }
+    def writes(operator: Operator): JsValue = operator.json
+  }
+  
   final case class Negated(operator: Operator) extends Operator {
     def json: JsValue = Json.obj("type" -> "Operator", "operator_type" -> "negated", "operator" -> operator.json)
   }
@@ -443,6 +797,19 @@ object Operator {
   }
 }
 
+object Actions {
+  val format: Format[Actions] = new Format[Actions] {
+    def reads(json: JsValue): JsResult[Actions] = Try {
+      val actions = (json \ "actions").as[List[JsValue]].flatMap(Action.format.reads(_).asOpt)
+      Actions(actions)
+    } match {
+      case Failure(ex) => JsError(ex.getMessage)
+      case Success(actions) => JsSuccess(actions)
+    }
+    def writes(actions: Actions): JsValue = actions.json
+  }
+}
+
 final case class Actions(
     actions: List[Action]
 ) extends AstNode {
@@ -454,6 +821,78 @@ sealed trait Action extends AstNode {
 }
 
 object Action {
+  val format: Format[Action] = new Format[Action] {
+    def reads(json: JsValue): JsResult[Action] = Try {
+      val typ = (json \ "type").as[String]
+      val actionType = (json \ "action_type").as[String]
+      
+      (typ, actionType) match {
+        case ("Action", "accuracy") => Accuracy((json \ "value").as[Int])
+        case ("Action", "allow") => Allow((json \ "value").as[String])
+        case ("Action", "append") => Append((json \ "value").as[String])
+        case ("Action", "audit_log") => AuditLog()
+        case ("Action", "block") => Block()
+        case ("Action", "capture") => Capture()
+        case ("Action", "chain") => Chain
+        case ("Action", "deny") => Deny
+        case ("Action", "deprecate_var") => DeprecateVar((json \ "expr").as[String])
+        case ("Action", "drop") => Drop
+        case ("Action", "exec") => Exec((json \ "value").as[String])
+        case ("Action", "expire_var") => ExpireVar((json \ "expr").as[String])
+        case ("Action", "id") => Id((json \ "value").as[Int])
+        case ("Action", "init_col") => InitCol((json \ "value").as[String])
+        case ("Action", "log_data") => LogData((json \ "value").as[String])
+        case ("Action", "log") => Log
+        case ("Action", "maturity") => Maturity((json \ "value").as[Int])
+        case ("Action", "msg") => Msg((json \ "value").as[String])
+        case ("Action", "multi_match") => MultiMatch
+        case ("Action", "no_audit_log") => NoAuditLog
+        case ("Action", "no_log") => NoLog
+        case ("Action", "pass") => Pass
+        case ("Action", "pause") => Pause((json \ "value").as[Int])
+        case ("Action", "phase") => Phase((json \ "value").as[Int])
+        case ("Action", "prepend") => Prepend((json \ "value").as[String])
+        case ("Action", "proxy") => Proxy((json \ "value").as[String])
+        case ("Action", "redirect") => Redirect((json \ "value").as[String])
+        case ("Action", "rev") => Rev((json \ "value").as[String])
+        case ("Action", "sanitise_arg") => SanitiseArg((json \ "value").as[String])
+        case ("Action", "sanitise_matched_bytes") => SanitiseMatchedBytes((json \ "value").as[String])
+        case ("Action", "sanitise_matched") => SanitiseMatched()
+        case ("Action", "sanitise_request_header") => SanitiseRequestHeader((json \ "value").as[String])
+        case ("Action", "sanitise_response_header") => SanitiseResponseHeader((json \ "value").as[String])
+        case ("Action", "set_env") => SetEnv((json \ "value").as[String])
+        case ("Action", "set_rsc") => SetRsc((json \ "value").as[String])
+        case ("Action", "set_sid") => SetSid((json \ "value").as[String])
+        case ("Action", "set_uid") => SetUid((json \ "value").as[String])
+        case ("Action", "set_var") => SetVar((json \ "expr").as[String])
+        case ("Action", "severity") => Severity(SeverityValue((json \ "value").as[String]))
+        case ("Action", "skip_after") => SkipAfter((json \ "marker").as[String])
+        case ("Action", "skip") => Skip((json \ "count").as[Int])
+        case ("Action", "status") => Status((json \ "code").as[Int])
+        case ("Action", "tag") => Tag((json \ "value").as[String])
+        case ("Action", "ver") => Ver((json \ "value").as[String])
+        case ("Action", "xmlns") => Xmlns((json \ "value").as[String])
+        case ("Action", "transform") => Transform((json \ "name").as[String])
+        case ("Action", "raw") => Raw((json \ "name").as[String], (json \ "value").asOpt[String])
+        case ("CtlAction", "audit_engine") => CtlAction.AuditEngine((json \ "value").as[String])
+        case ("CtlAction", "audit_log_parts") => CtlAction.AuditLogParts((json \ "parts").as[String])
+        case ("CtlAction", "request_body_processor") => CtlAction.RequestBodyProcessor((json \ "value").as[String])
+        case ("CtlAction", "force_request_body_variable") => CtlAction.ForceRequestBodyVariable((json \ "value").as[String])
+        case ("CtlAction", "request_body_access") => CtlAction.RequestBodyAccess((json \ "value").as[String])
+        case ("CtlAction", "rule_engine") => CtlAction.RuleEngine((json \ "value").as[String])
+        case ("CtlAction", "rule_remove_by_tag") => CtlAction.RuleRemoveByTag((json \ "tag").as[String])
+        case ("CtlAction", "rule_remove_by_id") => CtlAction.RuleRemoveById((json \ "id").as[Int])
+        case ("CtlAction", "rule_remove_target_by_id") => CtlAction.RuleRemoveTargetById((json \ "id").as[Int], (json \ "target").as[String])
+        case ("CtlAction", "rule_remove_target_by_tag") => CtlAction.RuleRemoveTargetByTag((json \ "tag").as[String], (json \ "target").as[String])
+        case other => throw new RuntimeException(s"Unknown Action type: $other")
+      }
+    } match {
+      case Failure(ex) => JsError(ex.getMessage)
+      case Success(action) => JsSuccess(action)
+    }
+    def writes(action: Action): JsValue = action.json
+  }
+  
   final case class Accuracy(value: Int) extends Action {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "accuracy", "value" -> value)
   }
