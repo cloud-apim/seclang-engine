@@ -6,8 +6,9 @@ import com.cloud.apim.seclang.model.Action.{CtlAction, Msg}
 import com.cloud.apim.seclang.model._
 import play.api.libs.json.Json
 
-import java.net.URLDecoder
+import java.net.{URLDecoder, URLEncoder}
 import java.nio.charset.StandardCharsets
+import java.util.Base64
 import scala.util.matching.Regex
 
 private final case class RuntimeState(disabledIds: Set[Int], events: List[MatchEvent])
@@ -205,12 +206,45 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
   }
 
   private def applyTransforms(value: String, transforms: List[String]): String = {
+    // https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29#transformation-functions
     transforms.foldLeft(value) {
       case (v, "lowercase") => v.toLowerCase
+      case (v, "uppercase") => v.toUpperCase
       case (v, "trim")      => v.trim
-      case (v, "urlDecodeUni") =>
-        try URLDecoder.decode(v, StandardCharsets.UTF_8.name())
-        catch { case _: Throwable => v }
+      case (v, "urlDecodeUni") => try URLDecoder.decode(v, StandardCharsets.UTF_8.name()) catch { case _: Throwable => v }
+      case (v, "base64Decode") => new String(Base64.getDecoder.decode(v))
+      case (v, "base64DecodeExt") => new String(Base64.getDecoder.decode(v))
+      case (v, "sqlHexDecode") => v // TODO: implement it
+      case (v, "base64Encode") => Base64.getEncoder.encodeToString(v.getBytes(StandardCharsets.UTF_8))
+      case (v, "cmdLine") => v // TODO: implement it
+      case (v, "compressWhitespace") => v.replaceAll("\\s+", " ")
+      case (v, "cssDecode") => v // TODO: implement it
+      case (v, "escapeSeqDecode") => v // TODO: implement it
+      case (v, "hexDecode") => try java.util.HexFormat.of().parseHex(v).mkString catch { case _: Throwable => v }
+      case (v, "hexEncode") => try java.util.HexFormat.of().formatHex(v.getBytes(StandardCharsets.UTF_8)).toLowerCase catch { case _: Throwable => v }
+      case (v, "htmlEntityDecode") => v // TODO: implement it
+      case (v, "jsDecode") => v // TODO: implement it
+      case (v, "length") => v.length.toString
+      case (v, "md5") => try java.security.MessageDigest.getInstance("MD5").digest(v.getBytes(StandardCharsets.UTF_8)).map("%02x".format(_)).mkString catch { case _: Throwable => v }
+      case (v, "none") => v
+      case (v, "normalisePath") => v.split("/").filterNot(_.isEmpty).mkString("/")
+      case (v, "normalizePath") => v.split("/").filterNot(_.isEmpty).mkString("/")
+      case (v, "normalisePathWin") => v.split("[/\\\\]+").filterNot(_.isEmpty).mkString("/")
+      case (v, "normalizePathWin") => v.split("[/\\\\]+").filterNot(_.isEmpty).mkString("/")
+      case (v, "parityEven7bit") => v // TODO: implement it
+      case (v, "parityOdd7bit") => v // TODO: implement it
+      case (v, "parityZero7bit") => v // TODO: implement it
+      case (v, "removeNulls") => v.replaceAll("\u0000", "")
+      case (v, "removeWhitespace") => v.replaceAll("\\s+", "")
+      case (v, "replaceComments") => v // TODO: implement it
+      case (v, "removeCommentsChar") => v.replaceAll("--[^\r\n]*", "").replaceAll("/\\*", "").replaceAll("\\*/", "").replaceAll("#", "")
+      case (v, "replaceNulls") => v // TODO: implement it
+      case (v, "urlDecode") => try URLDecoder.decode(v, StandardCharsets.UTF_8.name()) catch { case _: Throwable => v }
+      case (v, "urlEncode") => try URLEncoder.encode(v, StandardCharsets.UTF_8.name()) catch { case _: Throwable => v }
+      case (v, "utf8toUnicode") => v // TODO: implement it
+      case (v, "sha1") => try java.security.MessageDigest.getInstance("SHA-1").digest(v.getBytes(StandardCharsets.UTF_8)).map("%02x".format(_)).mkString catch { case _: Throwable => v }
+      case (v, "trimLeft") => v.dropWhile(_ == ' ')
+      case (v, "trimRight") => v.reverse.dropWhile(_ == ' ').reverse
       case (v, _) => v
     }
   }
