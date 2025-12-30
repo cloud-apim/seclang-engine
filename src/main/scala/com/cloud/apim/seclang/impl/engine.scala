@@ -172,7 +172,23 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
     transformed.exists(v => evalOperator(rule.operator, v))
   }
 
+  private def unimplementedVariable(name: String): List[String] = {
+    println("unimplemented variable: " + name)
+    Nil
+  }
+
+  private def unsupportedVariable(name: String): List[String] = {
+    println("unsupported variable: " + name)
+    Nil
+  }
+
+  private def unsupportedV3Variable(name: String): List[String] = {
+    println("unsupported variable in V3: " + name)
+    Nil
+  }
+
   private def resolveVariable(sel: Variable, ctx: RequestContext): List[String] = {
+    // https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29#user-content-Variables
     val (col, key) = sel match {
       case Variable.Simple(name) => (name, None)
       case Variable.Collection(collection, key) => (collection, key.map(_.toLowerCase()))
@@ -190,19 +206,134 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
               case (k, vs) if k.toLowerCase == h => vs
             }.flatten.toList
         }
-      case "ARGS" =>
+      case "ARGS" => // TODO: fix it, should also contains body values if form submitted
         key match {
           case None =>
             ctx.query.values.flatten.toList
           case Some(k) =>
             ctx.query.collect { case (kk, vs) if kk.toLowerCase == k => vs }.flatten.toList
         }
-      case "REQUEST_BODY" =>
-        ctx.body.toList
+      case "REQUEST_BODY" => ctx.body.toList
+      case "ARGS_COMBINED_SIZE" => unimplementedVariable("ARGS_COMBINED_SIZE") // TODO: implement it
+      case "ARGS_GET" => unimplementedVariable("ARGS_GET") // TODO: implement it
+      case "ARGS_GET_NAMES" => unimplementedVariable("ARGS_GET_NAMES") // TODO: implement it
+      case "ARGS_NAMES" => unimplementedVariable("ARGS_NAMES") // TODO: implement it
+      case "ARGS_POST" => unimplementedVariable("ARGS_POST") // TODO: implement it
+      case "ARGS_POST_NAMES" => unimplementedVariable("ARGS_POST_NAMES") // TODO: implement it
+      case "AUTH_TYPE" => unimplementedVariable("AUTH_TYPE") // TODO: implement it
+      case "DURATION" => unimplementedVariable("DURATION") // TODO: implement it
+      case "ENV" => unimplementedVariable("ENV") // TODO: implement it
+      case "FILES" => unimplementedVariable("FILES") // TODO: implement it
+      case "FILES_COMBINED_SIZE" => unimplementedVariable("FILES_COMBINED_SIZE") // TODO: implement it
+      case "FILES_NAMES" => unimplementedVariable("FILES_NAMES") // TODO: implement it
+      case "FULL_REQUEST" => unimplementedVariable("FULL_REQUEST") // TODO: implement it
+      case "FULL_REQUEST_LENGTH" => unimplementedVariable("FULL_REQUEST_LENGTH") // TODO: implement it
+      case "FILES_SIZES" => unimplementedVariable("FILES_SIZES") // TODO: implement it
+      case "FILES_TMPNAMES" => unimplementedVariable("FILES_TMPNAMES") // TODO: implement it
+      case "FILES_TMP_CONTENT" => unimplementedVariable("FILES_TMP_CONTENT") // TODO: implement it
+      case "GEO" => unimplementedVariable("GEO") // TODO: implement it
+      case "HIGHEST_SEVERITY" => unimplementedVariable("HIGHEST_SEVERITY") // TODO: implement it
+      case "INBOUND_DATA_ERROR" => unimplementedVariable("INBOUND_DATA_ERROR") // TODO: implement it
+      case "MATCHED_VAR" => unimplementedVariable("MATCHED_VAR") // TODO: implement it
+      case "MATCHED_VARS" => unimplementedVariable("MATCHED_VARS") // TODO: implement it
+      case "MATCHED_VAR_NAME" => unimplementedVariable("MATCHED_VAR_NAME") // TODO: implement it
+      case "MATCHED_VARS_NAMES" => unimplementedVariable("MATCHED_VARS_NAMES") // TODO: implement it
+      case "MODSEC_BUILD" => unimplementedVariable("MODSEC_BUILD") // TODO: implement it
+      case "MSC_PCRE_LIMITS_EXCEEDED" => unimplementedVariable("MSC_PCRE_LIMITS_EXCEEDED") // TODO: implement it
+      case "MULTIPART_CRLF_LF_LINES" => unimplementedVariable("MULTIPART_CRLF_LF_LINES") // TODO: implement it
+      case "MULTIPART_FILENAME" => unimplementedVariable("MULTIPART_FILENAME") // TODO: implement it
+      case "MULTIPART_NAME" => unimplementedVariable("MULTIPART_NAME") // TODO: implement it
+      case "MULTIPART_PART_HEADERS" => unimplementedVariable("MULTIPART_PART_HEADERS") // TODO: implement it
+      case "MULTIPART_STRICT_ERROR" => unimplementedVariable("MULTIPART_STRICT_ERROR") // TODO: implement it
+      case "MULTIPART_UNMATCHED_BOUNDARY" => unimplementedVariable("MULTIPART_UNMATCHED_BOUNDARY") // TODO: implement it
+      case "OUTBOUND_DATA_ERROR" => unimplementedVariable("OUTBOUND_DATA_ERROR") // TODO: implement it
+      case "PATH_INFO" => unimplementedVariable("PATH_INFO") // TODO: implement it
+      case "PERF_ALL" => unsupportedV3Variable("PERF_ALL")
+      case "PERF_COMBINED" => unsupportedV3Variable("PERF_COMBINED")
+      case "PERF_GC" => unsupportedV3Variable("PERF_GC")
+      case "PERF_LOGGING" => unsupportedV3Variable("PERF_LOGGING")
+      case "PERF_PHASE1" => unsupportedV3Variable("PERF_PHASE1")
+      case "PERF_PHASE2" => unsupportedV3Variable("PERF_PHASE2")
+      case "PERF_PHASE3" => unsupportedV3Variable("PERF_PHASE3")
+      case "PERF_PHASE4" => unsupportedV3Variable("PERF_PHASE4")
+      case "PERF_PHASE5" => unsupportedV3Variable("PERF_PHASE5")
+      case "PERF_RULES" => unsupportedV3Variable("PERF_RULES")
+      case "PERF_SREAD" => unsupportedV3Variable("PERF_SREAD")
+      case "PERF_SWRITE" => unsupportedV3Variable("PERF_SWRITE")
+      case "QUERY_STRING" => unimplementedVariable("QUERY_STRING") // TODO: implement it
+      case "REMOTE_ADDR" => unimplementedVariable("REMOTE_ADDR") // TODO: implement it
+      case "REMOTE_HOST" => unimplementedVariable("REMOTE_HOST") // TODO: implement it
+      case "REMOTE_PORT" => unimplementedVariable("REMOTE_PORT") // TODO: implement it
+      case "REMOTE_USER" => unimplementedVariable("REMOTE_USER") // TODO: implement it
+      case "REQBODY_ERROR" => unimplementedVariable("REQBODY_ERROR") // TODO: implement it
+      case "REQBODY_ERROR_MSG" => unimplementedVariable("REQBODY_ERROR_MSG") // TODO: implement it
+      case "REQBODY_PROCESSOR" => unimplementedVariable("REQBODY_PROCESSOR") // TODO: implement it
+      case "REQUEST_BASENAME" => unimplementedVariable("REQUEST_BASENAME") // TODO: implement it
+      case "REQUEST_BODY" => unimplementedVariable("REQUEST_BODY") // TODO: implement it
+      case "REQUEST_BODY_LENGTH" => unimplementedVariable("REQUEST_BODY_LENGTH") // TODO: implement it
+      case "REQUEST_COOKIES" => unimplementedVariable("REQUEST_COOKIES") // TODO: implement it
+      case "REQUEST_COOKIES_NAMES" => unimplementedVariable("REQUEST_COOKIES_NAMES") // TODO: implement it
+      case "REQUEST_FILENAME" => unimplementedVariable("REQUEST_FILENAME") // TODO: implement it
+      case "REQUEST_HEADERS_NAMES" => ctx.headers.keySet.toList
+      case "REQUEST_LINE" => unimplementedVariable("REQUEST_LINE") // TODO: implement it
+      case "REQUEST_PROTOCOL" => unimplementedVariable("REQUEST_PROTOCOL") // TODO: implement it
+      case "REQUEST_URI_RAW" => unimplementedVariable("REQUEST_URI_RAW") // TODO: implement it
+      case "RESPONSE_BODY" => unimplementedVariable("RESPONSE_BODY") // TODO: implement it
+      case "RESPONSE_CONTENT_LENGTH" => unimplementedVariable("RESPONSE_CONTENT_LENGTH") // TODO: implement it
+      case "RESPONSE_CONTENT_TYPE" => unimplementedVariable("RESPONSE_CONTENT_TYPE") // TODO: implement it
+      case "RESPONSE_HEADERS" => unimplementedVariable("RESPONSE_HEADERS") // TODO: implement it
+      case "RESPONSE_HEADERS_NAMES" => unimplementedVariable("RESPONSE_HEADERS_NAMES") // TODO: implement it
+      case "RESPONSE_PROTOCOL" => unimplementedVariable("RESPONSE_PROTOCOL") // TODO: implement it
+      case "RESPONSE_STATUS" => unimplementedVariable("RESPONSE_STATUS") // TODO: implement it
+      case "RULE" => unimplementedVariable("RULE") // TODO: implement it
+      case "SCRIPT_BASENAME" => unsupportedV3Variable("SCRIPT_BASENAME")
+      case "SCRIPT_FILENAME" => unsupportedV3Variable("SCRIPT_FILENAME")
+      case "SCRIPT_GID" => unsupportedV3Variable("SCRIPT_GID")
+      case "SCRIPT_GROUPNAME" => unsupportedV3Variable("SCRIPT_GROUPNAME")
+      case "SCRIPT_MODE" => unsupportedV3Variable("SCRIPT_MODE")
+      case "SCRIPT_UID" => unsupportedV3Variable("SCRIPT_UID")
+      case "SCRIPT_USERNAME" => unsupportedV3Variable("SCRIPT_USERNAME")
+      case "SDBM_DELETE_ERROR" => unimplementedVariable("SDBM_DELETE_ERROR") // TODO: implement it
+      case "SERVER_ADDR" => unimplementedVariable("SERVER_ADDR") // TODO: implement it
+      case "SERVER_NAME" => unimplementedVariable("SERVER_NAME") // TODO: implement it
+      case "SERVER_PORT" => unimplementedVariable("SERVER_PORT") // TODO: implement it
+      case "SESSION" => unimplementedVariable("SESSION") // TODO: implement it
+      case "SESSIONID" => unimplementedVariable("SESSIONID") // TODO: implement it
+      case "STATUS_LINE" => unimplementedVariable("STATUS_LINE") // TODO: implement it
+      case "STREAM_INPUT_BODY" => unsupportedV3Variable("STREAM_INPUT_BODY") // TODO: implement it
+      case "STREAM_OUTPUT_BODY" => unsupportedV3Variable("STREAM_OUTPUT_BODY") // TODO: implement it
+      case "TIME" => unimplementedVariable("TIME") // TODO: implement it
+      case "TIME_DAY" => unimplementedVariable("TIME_DAY") // TODO: implement it
+      case "TIME_EPOCH" => unimplementedVariable("TIME_EPOCH") // TODO: implement it
+      case "TIME_HOUR" => unimplementedVariable("TIME_HOUR") // TODO: implement it
+      case "TIME_MIN" => unimplementedVariable("TIME_MIN") // TODO: implement it
+      case "TIME_MON" => unimplementedVariable("TIME_MON") // TODO: implement it
+      case "TIME_SEC" => unimplementedVariable("TIME_SEC") // TODO: implement it
+      case "TIME_WDAY" => unimplementedVariable("TIME_WDAY") // TODO: implement it
+      case "TIME_YEAR" => unimplementedVariable("TIME_YEAR") // TODO: implement it
+      case "TX" => unimplementedVariable("TX") // TODO: implement it
+      case "UNIQUE_ID" => unimplementedVariable("UNIQUE_ID") // TODO: implement it
+      case "URLENCODED_ERROR" => unimplementedVariable("URLENCODED_ERROR") // TODO: implement it
+      case "USERID" => unimplementedVariable("USERID") // TODO: implement it
+      case "USERAGENT_IP" => unsupportedV3Variable("USERAGENT_IP")
+      case "WEBAPPID" => unimplementedVariable("WEBAPPID") // TODO: implement it
+      case "WEBSERVER_ERROR_LOG" => unsupportedV3Variable("WEBSERVER_ERROR_LOG") 
+      case "XML" => unimplementedVariable("XML") // TODO: implement it
       case other =>
         // fallback: unsupported collection
+        println("unknown variable: " + other)
         Nil
     }
+  }
+
+  private def unimplementedTransform(name: String, v: String): String = {
+    println("unimplemented transform " + name)
+    v
+  }
+
+  private def unsupportedTransform(name: String, v: String): String = {
+    println("unsupported transform " + name)
+    v
   }
 
   private def applyTransforms(value: String, transforms: List[String]): String = {
@@ -214,16 +345,16 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
       case (v, "urlDecodeUni") => try URLDecoder.decode(v, StandardCharsets.UTF_8.name()) catch { case _: Throwable => v }
       case (v, "base64Decode") => new String(Base64.getDecoder.decode(v))
       case (v, "base64DecodeExt") => new String(Base64.getDecoder.decode(v))
-      case (v, "sqlHexDecode") => v // TODO: implement it
+      case (v, "sqlHexDecode") => unimplementedTransform("sqlHexDecode", v) // TODO: implement it
       case (v, "base64Encode") => Base64.getEncoder.encodeToString(v.getBytes(StandardCharsets.UTF_8))
-      case (v, "cmdLine") => v // TODO: implement it
+      case (v, "cmdLine") => unimplementedTransform("cmdLine", v) // TODO: implement it
       case (v, "compressWhitespace") => v.replaceAll("\\s+", " ")
-      case (v, "cssDecode") => v // TODO: implement it
-      case (v, "escapeSeqDecode") => v // TODO: implement it
+      case (v, "cssDecode") => unimplementedTransform("cssDecode", v) // TODO: implement it
+      case (v, "escapeSeqDecode") => unimplementedTransform("escapeSeqDecode", v) // TODO: implement it
       case (v, "hexDecode") => try java.util.HexFormat.of().parseHex(v).mkString catch { case _: Throwable => v }
       case (v, "hexEncode") => try java.util.HexFormat.of().formatHex(v.getBytes(StandardCharsets.UTF_8)).toLowerCase catch { case _: Throwable => v }
-      case (v, "htmlEntityDecode") => v // TODO: implement it
-      case (v, "jsDecode") => v // TODO: implement it
+      case (v, "htmlEntityDecode") => unimplementedTransform("htmlEntityDecode", v) // TODO: implement it
+      case (v, "jsDecode") => unimplementedTransform("jsDecode", v) // TODO: implement it
       case (v, "length") => v.length.toString
       case (v, "md5") => try java.security.MessageDigest.getInstance("MD5").digest(v.getBytes(StandardCharsets.UTF_8)).map("%02x".format(_)).mkString catch { case _: Throwable => v }
       case (v, "none") => v
@@ -231,17 +362,17 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
       case (v, "normalizePath") => v.split("/").filterNot(_.isEmpty).mkString("/")
       case (v, "normalisePathWin") => v.split("[/\\\\]+").filterNot(_.isEmpty).mkString("/")
       case (v, "normalizePathWin") => v.split("[/\\\\]+").filterNot(_.isEmpty).mkString("/")
-      case (v, "parityEven7bit") => v // TODO: implement it
-      case (v, "parityOdd7bit") => v // TODO: implement it
-      case (v, "parityZero7bit") => v // TODO: implement it
+      case (v, "parityEven7bit") => unimplementedTransform("parityEven7bit", v) // TODO: implement it
+      case (v, "parityOdd7bit") => unimplementedTransform("parityOdd7bit", v) // TODO: implement it
+      case (v, "parityZero7bit") => unimplementedTransform("parityZero7bit", v) // TODO: implement it
       case (v, "removeNulls") => v.replaceAll("\u0000", "")
       case (v, "removeWhitespace") => v.replaceAll("\\s+", "")
-      case (v, "replaceComments") => v // TODO: implement it
+      case (v, "replaceComments") => unimplementedTransform("replaceComments", v) // TODO: implement it
       case (v, "removeCommentsChar") => v.replaceAll("--[^\r\n]*", "").replaceAll("/\\*", "").replaceAll("\\*/", "").replaceAll("#", "")
-      case (v, "replaceNulls") => v // TODO: implement it
+      case (v, "replaceNulls") => unimplementedTransform("replaceNulls", v) // TODO: implement it
       case (v, "urlDecode") => try URLDecoder.decode(v, StandardCharsets.UTF_8.name()) catch { case _: Throwable => v }
       case (v, "urlEncode") => try URLEncoder.encode(v, StandardCharsets.UTF_8.name()) catch { case _: Throwable => v }
-      case (v, "utf8toUnicode") => v // TODO: implement it
+      case (v, "utf8toUnicode") => unimplementedTransform("utf8toUnicode", v) // TODO: implement it
       case (v, "sha1") => try java.security.MessageDigest.getInstance("SHA-1").digest(v.getBytes(StandardCharsets.UTF_8)).map("%02x".format(_)).mkString catch { case _: Throwable => v }
       case (v, "trimLeft") => v.dropWhile(_ == ' ')
       case (v, "trimRight") => v.reverse.dropWhile(_ == ' ').reverse
@@ -249,7 +380,23 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
     }
   }
 
+  private def unimplementedOperator(op: String): Boolean = {
+    println("unimplemented operator: " + op)
+    false
+  }
+
+  private def unsupportedOperator(op: String): Boolean = {
+    println("unsupported operator: " + op)
+    false
+  }
+
+  private def unsupportedV3Operator(op: String): Boolean = {
+    println("unsupported operator in v3: " + op)
+    false
+  }
+
   private def evalOperator(op: Operator, value: String): Boolean = op match {
+    // https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29#user-content-Operators
     case Operator.UnconditionalMatch() => true
     case Operator.Contains(x)         => value.contains(x)
     case Operator.Streq(x)            => value == x
@@ -261,9 +408,41 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
       } catch {
         case _: Throwable => false
       }
+      case Operator.BeginsWith(x) => value.startsWith(x)
+      case Operator.ContainsWord(x) => value.contains(x.split(" ").filterNot(_.isEmpty).headOption.getOrElse(""))
+      case Operator.DetectSQLi(x) => unimplementedOperator("detectSQLi") // TODO: implement it
+      case Operator.DetectXSS(x) => unimplementedOperator("detectXSS") // TODO: implement it
+      case Operator.EndsWith(x) => value.endsWith(x)
+      case Operator.FuzzyHash(x) => unimplementedOperator("fuzzyHash") // TODO: implement it
+      case Operator.Eq(x) => scala.util.Try(value.toInt).getOrElse(0) == scala.util.Try(x.toInt).getOrElse(0)
+      case Operator.Ge(x) => scala.util.Try(value.toInt).getOrElse(0) >= scala.util.Try(x.toInt).getOrElse(0)
+      case Operator.GeoLookup(x) => unsupportedOperator("geoLookup")
+      case Operator.GsbLookup(x) => unsupportedV3Operator("gsbLookup")
+      case Operator.Gt(x) => scala.util.Try(value.toInt).getOrElse(0) > scala.util.Try(x.toInt).getOrElse(0)
+      case Operator.InspectFile(x) => unsupportedOperator("inspectFile")
+      case Operator.IpMatch(x) => unimplementedOperator("ipMatch") // TODO: implement it
+      case Operator.IpMatchFromFile(x) => unimplementedOperator("ipMatchFromFile") // TODO: implement it
+      case Operator.Le(x) => scala.util.Try(value.toInt).getOrElse(0) <= scala.util.Try(x.toInt).getOrElse(0)
+      case Operator.Lt(x) => scala.util.Try(value.toInt).getOrElse(0) < scala.util.Try(x.toInt).getOrElse(0)
+      // case Operator.NoMatch(x) => unimplementedOperator("noMatch")
+      case Operator.PmFromFile(x) => unimplementedOperator("pmFromFile") // TODO: implement it
+      case Operator.Rbl(x) => unimplementedOperator("rbl") // TODO: implement it
+      case Operator.Rsub(x) => unsupportedV3Operator("rsub")
+      case Operator.RxGlobal(x) => unimplementedOperator("rxGlobal") // TODO: implement it
+      case Operator.StrMatch(x) => value.toLowerCase.contains(x.toLowerCase)
+      case Operator.ValidateByteRange(x) => unimplementedOperator("validateByteRange") // TODO: implement it
+      case Operator.ValidateDTD(x) => unsupportedOperator("validateDTD")
+      case Operator.ValidateHash(x) => unsupportedV3Operator("validateHash")
+      case Operator.ValidateSchema(x) => unsupportedOperator("validateSchema")
+      case Operator.ValidateUrlEncoding(x) => unimplementedOperator("validateUrlEncoding") // TODO: implement it
+      case Operator.ValidateUtf8Encoding(x) => unimplementedOperator("validateUtf8Encoding") // TODO: implement it
+      case Operator.VerifyCC(x) => unimplementedOperator("verifyCC") // TODO: implement it
+      case Operator.VerifyCPF(x) => unimplementedOperator("verifyCPF") // TODO: implement it
+      case Operator.VerifySSN(x) => unimplementedOperator("verifySSN") // TODO: implement it
+      case Operator.Within(x) => x.contains(value)
     case _ =>
       // unsupported operator => "safe false"
-      println("unsupported operator: " + op)
+      println("unknown operator: " + op)
       false
   }
 }

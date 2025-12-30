@@ -19,6 +19,10 @@ final case class CompiledProgram(
 
 object Compiler {
 
+  private def unsupportedStatement(name: String): Unit = {
+    println("Unsupported statement " + name)
+  }
+
   def compile(configuration: Configuration): CompiledProgram = {
     val statements = configuration.statements
     val removed = statements.collect { case SecRuleRemoveById(_, ids) => ids }.flatten.toSet
@@ -61,11 +65,20 @@ object Compiler {
           } else {
             items += RuleChain(List(r))
           }
-
         case m: SecMarker =>
           items += MarkerItem(m.name)
-
-        case _ =>
+        case s: SecRuleScript => unsupportedStatement("SecRuleScript")
+        case s: SecAction => unsupportedStatement("SecAction")
+        case s: SecRuleRemoveById => unsupportedStatement("SecRuleRemoveById")
+        case s: SecRuleRemoveByMsg => unsupportedStatement("SecRuleRemoveByMsg")
+        case s: SecRuleRemoveByTag => unsupportedStatement("SecRuleRemoveByTag")
+        case s: SecRuleUpdateTargetById => unsupportedStatement("SecRuleUpdateTargetById")
+        case s: SecRuleUpdateTargetByMsg => unsupportedStatement("SecRuleUpdateTargetByMsg")
+        case s: SecRuleUpdateTargetByTag => unsupportedStatement("SecRuleUpdateTargetByTag")
+        case s: SecRuleUpdateActionById => unsupportedStatement("SecRuleUpdateActionById")
+        case s: EngineConfigDirective => unsupportedStatement("EngineConfigDirective")
+        case s =>
+          println(s"unknown statement ${s.getClass.getSimpleName}")
           // ignore for now (SecAction etc.)
       }
     }
@@ -82,6 +95,8 @@ object Compiler {
       case m: MarkerItem =>
         byPhase(2) = byPhase(2) :+ m
         byPhase(1) = byPhase(1) :+ m
+      case _ =>
+        // TODO: support all statements here
     }
 
     CompiledProgram(byPhase.toMap, removed)

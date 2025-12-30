@@ -770,6 +770,9 @@ object Operator {
   final case class Lt(value: String) extends Operator {
     def json: JsValue = Json.obj("type" -> "Operator", "operator_type" -> "lt", "value" -> value)
   }
+  final case class NoMatch() extends Operator {
+    def json: JsValue = Json.obj("type" -> "Operator", "operator_type" -> "no_match")
+  }
   final case class Pm(value: String) extends Operator {
     def json: JsValue = Json.obj("type" -> "Operator", "operator_type" -> "pm", "value" -> value)
   }
