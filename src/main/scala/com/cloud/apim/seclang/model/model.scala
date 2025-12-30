@@ -1189,4 +1189,12 @@ final case class MatchEvent(
 final case class EngineResult(
     disposition: Disposition,
     events: List[MatchEvent]
-)
+) {
+  def display(): String = {
+    s"${disposition}\n${events.map(e => s"  - match phase=${e.phase} id=${e.ruleId.getOrElse(0)} - ${e.msg.getOrElse("no msg")}").mkString("\n")}"
+  }
+  def displayPrintln(): EngineResult = {
+    println(display())
+    this
+  }
+}

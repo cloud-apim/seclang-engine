@@ -10,7 +10,7 @@ import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 
 class SecLangBasicTest extends munit.FunSuite {
 
-  test("antlr".ignore) {
+  test("antlr") {
     val rules =
       """
         |SecRule ARGS|ARGS_NAMES|REQUEST_COOKIES|REQUEST_COOKIES_NAMES|REQUEST_BODY|REQUEST_HEADERS|XML:/*|XML://@* \
@@ -34,10 +34,8 @@ class SecLangBasicTest extends munit.FunSuite {
         |    setvar:'tx.rce_score=+%{tx.critical_anomaly_score}',\
         |    setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}'"
         |""".stripMargin
-    SecLang.parse(rules) match {
-      case Left(err) => println("parse error: " + err)
-      case Right(config) => println("parse success: " + Json.prettyPrint(config.json))
-    }
+    val res = SecLang.parse(rules)
+    assert(res.isRight, "rules has been parsed")
   }
 
   test("antlr_crs".ignore) {
@@ -134,7 +132,7 @@ class SecLangBasicTest extends munit.FunSuite {
     }
   }
 
-  test("simple rules".ignore) {
+  test("simple rules") {
 
     val rules = """
                   |SecRule REQUEST_HEADERS:User-Agent "@pm firefox" \
@@ -153,8 +151,8 @@ class SecLangBasicTest extends munit.FunSuite {
                   |    phase:1,\
                   |    pass,\
                   |    t:none,t:lowercase,\
-                  |    msg:'someone called health',\
-                  |    logdata:'someone called health',\
+                  |    msg:'someone called /health',\
+                  |    logdata:'someone called /health',\
                   |    tag:'test',\
                   |    ver:'0.0.0-dev'"
                   |
@@ -171,7 +169,6 @@ class SecLangBasicTest extends munit.FunSuite {
       query = Map("q" -> List("test")),
       body = None
     )
-
     val passing_ctx_1 = RequestContext(
       method = "GET",
       uri = "/health",
@@ -179,7 +176,6 @@ class SecLangBasicTest extends munit.FunSuite {
       query = Map("q" -> List("test")),
       body = None
     )
-
     val passing_ctx_2 = RequestContext(
       method = "GET",
       uri = "/admin",
@@ -188,18 +184,9 @@ class SecLangBasicTest extends munit.FunSuite {
       body = None
     )
 
-    println("rung failing test")
-    val failing_res_2 = engine.evaluate(failing_ctx_2, phases = List(1, 2))
-    println(failing_res_2.disposition)
-    failing_res_2.events.foreach(e => println(s"match phase=${e.phase} id=${e.ruleId} msg=${e.msg.getOrElse("")}"))
-
-    println("run passing test")
-    val passing_res_1 = engine.evaluate(passing_ctx_1, phases = List(1, 2))
-    println(passing_res_1.disposition)
-    passing_res_1.events.foreach(e => println(s"match phase=${e.phase} id=${e.ruleId} msg=${e.msg.getOrElse("")}"))
-    val passing_res_2 = engine.evaluate(passing_ctx_2, phases = List(1, 2))
-    println(passing_res_2.disposition)
-    passing_res_2.events.foreach(e => println(s"match phase=${e.phase} id=${e.ruleId} msg=${e.msg.getOrElse("")}"))
+    val failing_res_2 = engine.evaluate(failing_ctx_2, phases = List(1, 2)).displayPrintln()
+    val passing_res_1 = engine.evaluate(passing_ctx_1, phases = List(1, 2)).displayPrintln()
+    val passing_res_2 = engine.evaluate(passing_ctx_2, phases = List(1, 2)).displayPrintln()
 
     assertEquals(failing_res_2.disposition, Block(403, None, None))
     assertEquals(passing_res_1.disposition, Continue)
@@ -225,8 +212,8 @@ class SecLangBasicTest extends munit.FunSuite {
                   |    phase:1,\
                   |    pass,\
                   |    t:none,t:lowercase,\
-                  |    msg:'someone called health',\
-                  |    logdata:'someone called health',\
+                  |    msg:'someone called /health',\
+                  |    logdata:'someone called /health',\
                   |    tag:'test',\
                   |    ver:'0.0.0-dev'"
                   |
@@ -235,6 +222,7 @@ class SecLangBasicTest extends munit.FunSuite {
                   |    phase:1,\
                   |    pass,\
                   |    t:none,t:lowercase,\
+                  |    msg:'request on /admin',\
                   |    nolog,\
                   |    tag:'test',\
                   |    ver:'0.0.0-dev',\
@@ -245,13 +233,10 @@ class SecLangBasicTest extends munit.FunSuite {
                   |      msg:'someone used curl to access',\
                   |      logdata:'someone used curl to access',\
                   |      severity:'CRITICAL'"
-                  |
                   |""".stripMargin
 
     val loaded = SecLang.parse(rules).fold(err => sys.error(err), identity)
-    println(s"loaded ${loaded.statements.size} statements")
     val program = SecLang.compile(loaded)
-    println(s"running ${program.itemsByPhase.toSeq.flatMap(_._2).size} rules")
     val engine = SecLang.engine(program)
 
     val failing_ctx_1 = RequestContext(
@@ -283,21 +268,10 @@ class SecLangBasicTest extends munit.FunSuite {
       body = None
     )
 
-    println("rung failing test")
-    val failing_res_1 = engine.evaluate(failing_ctx_1, phases = List(1, 2))
-    println(failing_res_1.disposition)
-    failing_res_1.events.foreach(e => println(s"match phase=${e.phase} id=${e.ruleId} msg=${e.msg.getOrElse("")}"))
-    val failing_res_2 = engine.evaluate(failing_ctx_2, phases = List(1, 2))
-    println(failing_res_2.disposition)
-    failing_res_2.events.foreach(e => println(s"match phase=${e.phase} id=${e.ruleId} msg=${e.msg.getOrElse("")}"))
-
-    println("run passing test")
-    val passing_res_1 = engine.evaluate(passing_ctx_1, phases = List(1, 2))
-    println(passing_res_1.disposition)
-    passing_res_1.events.foreach(e => println(s"match phase=${e.phase} id=${e.ruleId} msg=${e.msg.getOrElse("")}"))
-    val passing_res_2 = engine.evaluate(passing_ctx_2, phases = List(1, 2))
-    println(passing_res_2.disposition)
-    passing_res_2.events.foreach(e => println(s"match phase=${e.phase} id=${e.ruleId} msg=${e.msg.getOrElse("")}"))
+    val failing_res_1 = engine.evaluate(failing_ctx_1, phases = List(1, 2)).displayPrintln()
+    val failing_res_2 = engine.evaluate(failing_ctx_2, phases = List(1, 2)).displayPrintln()
+    val passing_res_1 = engine.evaluate(passing_ctx_1, phases = List(1, 2)).displayPrintln()
+    val passing_res_2 = engine.evaluate(passing_ctx_2, phases = List(1, 2)).displayPrintln()
 
     assertEquals(failing_res_1.disposition, Block(403, None, None))
     assertEquals(failing_res_2.disposition, Block(403, None, None))
