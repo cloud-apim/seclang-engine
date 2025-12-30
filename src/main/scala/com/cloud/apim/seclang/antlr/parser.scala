@@ -52,7 +52,6 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
     } else if (ctx.update_target_rules() != null && ctx.update_variables() != null) {
       val updateRules = ctx.update_target_rules()
       val variables = visitUpdateVariables(ctx.update_variables())
-      
       if (ctx.update_target_rules_values() != null) {
         val value = ctx.update_target_rules_values().getText.replaceAll("\"", "")
         updateRules match {
@@ -68,22 +67,16 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
       } else {
         SecRuleUpdateTargetByMsg(commentBlock, "", variables)
       }
-      
     } else if (ctx.update_action_rule() != null && ctx.id() != null && ctx.actions() != null) {
       val id = ctx.id().INT().getText.toInt
       val actions = visitActions(ctx.actions())
       SecRuleUpdateActionById(commentBlock, id, actions)
-      
-    } /*else if (ctx.sec_marker_directive() != null) {
-      val name = if (ctx.STRING() != null) {
-        ctx.STRING().getText.replaceAll("\"", "")
-      } else ""
+    } else if (ctx.engine_config_directive() != null && ctx.engine_config_directive().sec_marker_directive() != null) {
+      val name = ctx.getText.split("SecMarker").tail.mkString("SecMarker").replaceAll("\"", "").replaceAll("'", "")
       SecMarker(commentBlock, name)
-      
-    }*/ else if (ctx.engine_config_directive() != null) {
+    } else if (ctx.engine_config_directive() != null) {
       val directive = visitEngineConfigDirective(ctx.engine_config_directive())
       EngineConfigDirective(commentBlock, directive)
-      
     } else {
       SecMarker(commentBlock, "unknown")
     }
@@ -106,13 +99,7 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
     } else if (ctx.engine_config_action_directive() != null && ctx.actions() != null) {
       val actions = visitActions(ctx.actions())
       ConfigDirective.DefaultAction(actions)
-    } /*else if (ctx.sec_marker_directive() != null) { TODO: // fix it. find where to put it !!!
-      val name = if (ctx.STRING() != null) {
-        ctx.STRING().getText.replaceAll("\"", "")
-      } else ""
-      ConfigDirective.SecMarker(None, name)
-
-    }*/ else {
+    } else {
       ConfigDirective.Raw("unknown", "")
     }
   }
