@@ -20,9 +20,9 @@ object SecRulesEngineConfig {
 
 final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] = Map.empty, config: SecRulesEngineConfig = SecRulesEngineConfig.default) {
 
-  println("new engine config: " + program.itemsByPhase.toSeq.flatMap(_._2).size)
+  // println("new engine config: " + program.itemsByPhase.toSeq.flatMap(_._2).size)
 
-  program.itemsByPhase.toSeq.foreach(_._2.foreach(ci => ci.asInstanceOf[RuleChain].rules.foreach(r => println(Json.prettyPrint(r.json)))))
+  // program.itemsByPhase.toSeq.foreach(_._2.foreach(ci => ci.asInstanceOf[RuleChain].rules.foreach(r => println(Json.prettyPrint(r.json)))))
 
   // runtime disables (ctl:ruleRemoveById)
   def evaluate(ctx: RequestContext, phases: List[Int] = List(1, 2)): EngineResult = {
@@ -39,7 +39,7 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
   private def runPhase(phase: Int, ctx: RequestContext, st0: RuntimeState): (Disposition, RuntimeState) = {
     val items = program.itemsByPhase.getOrElse(phase, Vector.empty)
 
-    println(s"running phase ${phase} with ${items.size} items")
+    // println(s"running phase ${phase} with ${items.size} items")
     // build marker index for this phase stream
     val markerIndex: Map[String, Int] = items.zipWithIndex.collect {
       case (MarkerItem(name), idx) => name -> idx

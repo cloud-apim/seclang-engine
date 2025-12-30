@@ -18,6 +18,7 @@ final case class CompiledProgram(
 )
 
 object Compiler {
+
   def compile(configuration: Configuration): CompiledProgram = {
     val statements = configuration.statements
     val removed = statements.collect { case SecRuleRemoveById(_, ids) => ids }.flatten.toSet
@@ -48,13 +49,15 @@ object Compiler {
                   // chain interrupted by non rule -> close chain, then keep other
                   items += RuleChain(chain.toList)
                   other match {
-                    case mm: SecMarker => items += MarkerItem(mm.name)
-                    case _                => // ignore other directives for now
+                    case mm: SecMarker =>
+                      items += MarkerItem(mm.name)
+                    case _                =>
+                      // ignore other directives for now
                   }
                   done = true
               }
             }
-            if (!done) items += RuleChain(chain.toList)
+            items += RuleChain(chain.toList)
           } else {
             items += RuleChain(List(r))
           }
@@ -63,7 +66,7 @@ object Compiler {
           items += MarkerItem(m.name)
 
         case _ =>
-          // ignore for now (SecAction etc.) — tu peux les intégrer ensuite
+          // ignore for now (SecAction etc.)
       }
     }
 
