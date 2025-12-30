@@ -291,14 +291,12 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
       val parts = value.split(";")
       val id = parts.headOption.flatMap(_.toIntOption).getOrElse(0)
       val target  = parts.lastOption.getOrElse("--")
-      println(s"ruleRemoveTargetById: ${id} - ${target}")
       Some(Action.CtlAction.RuleRemoveTargetById(id, target))
     }
     else if (ctx.ACTION_CTL_RULE_REMOVE_TARGET_BY_TAG() != null) {
       val parts = value.split(";")
       val tag = parts.headOption.getOrElse("--")
       val target = parts.lastOption.getOrElse("--")
-      println(s"ruleRemoveTargetByTag: ${tag} - ${target}")
       Some(Action.CtlAction.RuleRemoveTargetByTag(tag, target))
     }
     else if (ctx.ACTION_CTL_AUDIT_ENGINE() != null) Some(Action.CtlAction.AuditEngine(value))
