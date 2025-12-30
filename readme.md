@@ -1,6 +1,7 @@
 # Cloud APIM Scala SecLang Engine
 
-a partial implementation of the OWASP/ModSecurity [SecLang](https://coraza.io/docs/seclang/syntax/) engine in Scala made to run CRS
+A Scala-based implementation of a subset of the [OWASP/ModSecurity SecLang language](https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29), 
+built to efficiently execute the [OWASP Core Rule Set (CRS)](https://coreruleset.org/) with user based customizations in highly concurrent and multi-tenant environments.
 
 ## TODO
 
@@ -14,6 +15,7 @@ a partial implementation of the OWASP/ModSecurity [SecLang](https://coraza.io/do
 - [ ] Implement fake file system access (for `xFromFile` operators like `ipMatchFromFile`, `pmFromFile`, etc.)
 - [ ] Implement macro expansion
 - [ ] Implement transaction storage
+- [ ] Integration mechanism (logger, http fetch, fs read/write, env, etc)
 - [ ] Implement configuration options 
   - [ ] Support json
   - [ ] Support local fs
@@ -21,7 +23,7 @@ a partial implementation of the OWASP/ModSecurity [SecLang](https://coraza.io/do
   - [ ] Support lists of locations
   - [ ] Support splitted definitions with cache (cached CRS + cached Global + cached user specific config)
 
-## Unimplemented
+## Unimplemented for CRS
 
 ```shell
 unimplemented statement EngineConfigDirective
