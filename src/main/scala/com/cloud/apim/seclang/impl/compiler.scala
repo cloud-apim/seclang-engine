@@ -19,8 +19,8 @@ final case class CompiledProgram(
 
 object Compiler {
 
-  private def unsupportedStatement(name: String): Unit = {
-    println("Unsupported statement " + name)
+  private def unimplementedStatement(name: String): Unit = {
+    println("unimplemented statement " + name)
   }
 
   def compile(configuration: Configuration): CompiledProgram = {
@@ -67,16 +67,16 @@ object Compiler {
           }
         case m: SecMarker =>
           items += MarkerItem(m.name)
-        case s: SecRuleScript => unsupportedStatement("SecRuleScript")
-        case s: SecAction => unsupportedStatement("SecAction")
-        case s: SecRuleRemoveById => unsupportedStatement("SecRuleRemoveById")
-        case s: SecRuleRemoveByMsg => unsupportedStatement("SecRuleRemoveByMsg")
-        case s: SecRuleRemoveByTag => unsupportedStatement("SecRuleRemoveByTag")
-        case s: SecRuleUpdateTargetById => unsupportedStatement("SecRuleUpdateTargetById")
-        case s: SecRuleUpdateTargetByMsg => unsupportedStatement("SecRuleUpdateTargetByMsg")
-        case s: SecRuleUpdateTargetByTag => unsupportedStatement("SecRuleUpdateTargetByTag")
-        case s: SecRuleUpdateActionById => unsupportedStatement("SecRuleUpdateActionById")
-        case s: EngineConfigDirective => unsupportedStatement("EngineConfigDirective")
+        case s: SecRuleScript => unimplementedStatement("SecRuleScript")
+        case s: SecAction => unimplementedStatement("SecAction")
+        case s: SecRuleRemoveById => unimplementedStatement("SecRuleRemoveById")
+        case s: SecRuleRemoveByMsg => unimplementedStatement("SecRuleRemoveByMsg")
+        case s: SecRuleRemoveByTag => unimplementedStatement("SecRuleRemoveByTag")
+        case s: SecRuleUpdateTargetById => unimplementedStatement("SecRuleUpdateTargetById")
+        case s: SecRuleUpdateTargetByMsg => unimplementedStatement("SecRuleUpdateTargetByMsg")
+        case s: SecRuleUpdateTargetByTag => unimplementedStatement("SecRuleUpdateTargetByTag")
+        case s: SecRuleUpdateActionById => unimplementedStatement("SecRuleUpdateActionById")
+        case s: EngineConfigDirective => unimplementedStatement("EngineConfigDirective")
         case s =>
           println(s"unknown statement ${s.getClass.getSimpleName}")
           // ignore for now (SecAction etc.)

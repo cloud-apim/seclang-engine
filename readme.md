@@ -7,7 +7,7 @@ a partial implementation of the OWASP/ModSecurity [SecLang](https://coraza.io/do
 - [ ] Implement missing variables
 - [ ] Implement missing operators
 - [ ] Implement missing statements
-- [ ] Implement missing actions
+- [ ] Implement all actions besides blocking/passing ones
 - [ ] Implement transformation functions
 - [ ] Implement phase processing logic
 - [ ] Implement rule chaining and skip logic
@@ -20,3 +20,20 @@ a partial implementation of the OWASP/ModSecurity [SecLang](https://coraza.io/do
   - [ ] Support remote fs (HTTP/HTTPS)
   - [ ] Support lists of locations
   - [ ] Support splitted definitions with cache (cached CRS + cached Global + cached user specific config)
+
+## Unimplemented
+
+```shell
+unimplemented statement EngineConfigDirective
+unimplemented variable: REQBODY_PROCESSOR
+unimplemented variable: UNIQUE_ID
+unimplemented variable: REQUEST_LINE
+unimplemented variable: REMOTE_ADDR
+unknown operator: Negated(Within(%{tx.allowed_methods}))
+unimplemented operator: pmFromFile
+unimplemented variable: REQUEST_PROTOCOL
+unimplemented variable: REQUEST_FILENAME
+unimplemented variable: REQUEST_HEADERS_NAMES
+unimplemented variable: REQUEST_URI_RAW
+unimplemented variable: REQUEST_BASENAME
+```

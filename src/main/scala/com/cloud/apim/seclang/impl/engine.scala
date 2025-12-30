@@ -103,6 +103,7 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
       lastRuleId = r.id.orElse(lastRuleId)
       if (allMatched) {
         val matched = evalRule(r, ctx)
+        // TODO: implement actions: https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29#actions
         if (matched) {
           val msg = r.actions.toList.flatMap(_.actions).collectFirst {
             case Action.Msg(m) => m
