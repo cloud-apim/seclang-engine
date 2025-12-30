@@ -206,9 +206,7 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
 
   private def applyTransforms(value: String, transforms: List[String]): String = {
     transforms.foldLeft(value) {
-      case (v, "lowercase") =>
-        println(s"lowercase: ${v}")
-        v.toLowerCase
+      case (v, "lowercase") => v.toLowerCase
       case (v, "trim")      => v.trim
       case (v, "urlDecodeUni") =>
         try URLDecoder.decode(v, StandardCharsets.UTF_8.name())

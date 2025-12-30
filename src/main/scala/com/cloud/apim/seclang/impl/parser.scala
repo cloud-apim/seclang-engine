@@ -202,6 +202,8 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
       visitActionOnly(ctx.action_only())
     } else if (ctx.action_with_params() != null) {
       visitActionWithParams(ctx.action_with_params())
+    } else if (ctx.transformation_action_value() != null) {
+      Some(Action.Transform(ctx.transformation_action_value().getText))
     } else {
       None
     }
@@ -237,9 +239,10 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
   def visitActionWithParams(ctx: SecLangParser.Action_with_paramsContext): Option[Action] = {
     val actionContext = ctx.getParent.asInstanceOf[ActionContext]
     val value = actionContext.action_value().getText.replaceAll("\"", "").replaceAll("'", "")
-    if (actionContext.ACTION_TRANSFORMATION() != null) {
+    /*if (actionContext.ACTION_TRANSFORMATION() != null) {
+      println("action here !!!!")
       Some(Action.Transform(actionContext.transformation_action_value().getText))
-    } else if (ctx.metadata_action_with_params() != null) {
+    } else */if (ctx.metadata_action_with_params() != null) {
       val meta = ctx.metadata_action_with_params()
       meta match {
         case m: SecLangParser.ACTION_IDContext if m.ACTION_ID() != null => Some(Action.Id(value.toIntOption.getOrElse(0)))
