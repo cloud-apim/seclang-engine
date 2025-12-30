@@ -12,7 +12,17 @@ import scala.util.matching.Regex
 
 private final case class RuntimeState(disabledIds: Set[Int], events: List[MatchEvent])
 
-final class SecRulesEngine(program: CompiledProgram) {
+case class SecRulesEngineConfig()
+
+object SecRulesEngineConfig {
+  val default = SecRulesEngineConfig()
+}
+
+final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] = Map.empty, config: SecRulesEngineConfig = SecRulesEngineConfig.default) {
+
+  println("new engine config: " + program.itemsByPhase.toSeq.flatMap(_._2).size)
+
+  program.itemsByPhase.toSeq.foreach(_._2.foreach(ci => ci.asInstanceOf[RuleChain].rules.foreach(r => println(Json.prettyPrint(r.json)))))
 
   // runtime disables (ctl:ruleRemoveById)
   def evaluate(ctx: RequestContext, phases: List[Int] = List(1, 2)): EngineResult = {
@@ -196,7 +206,9 @@ final class SecRulesEngine(program: CompiledProgram) {
 
   private def applyTransforms(value: String, transforms: List[String]): String = {
     transforms.foldLeft(value) {
-      case (v, "lowercase") => v.toLowerCase
+      case (v, "lowercase") =>
+        println(s"lowercase: ${v}")
+        v.toLowerCase
       case (v, "trim")      => v.trim
       case (v, "urlDecodeUni") =>
         try URLDecoder.decode(v, StandardCharsets.UTF_8.name())
@@ -217,8 +229,9 @@ final class SecRulesEngine(program: CompiledProgram) {
       } catch {
         case _: Throwable => false
       }
-    case Operator.Raw(_, _) =>
+    case _ =>
       // unsupported operator => "safe false"
+      println("unsupported operator: " + op)
       false
   }
 }

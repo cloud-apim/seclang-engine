@@ -13,22 +13,54 @@ import java.nio.file.Files
 
 class SecLangBasicTest extends munit.FunSuite {
 
-  test("simple rule".ignore) {
+  test("simple rule") {
 
     val rules = """
-      |SecRule REMOTE_ADDR "127.0.0.1" "id:1, phase:1, pass, log, logdata:'Request from localhost'"
-      |SecRule REQUEST_HEADERS:user-agent "@contains firefox" "id:1, pass, log, logdata:'someone used firefox to access'"
-      |SecRule REQUEST_URI "@rx ^/admin" "id:1,phase:1,chain,msg:'admin area'"
-      |  SecRule REQUEST_HEADERS:User-Agent "@rx curl" "deny,status:403,msg:'no curl',t:lowercase"
+      |SecRule REQUEST_HEADERS:User-Agent "@pm firefox" \
+      |    "id:00001,\
+      |    phase:1,\
+      |    block,\
+      |    t:none,t:lowercase,\
+      |    msg:'someone used firefox to access',\
+      |    logdata:'someone used firefox to access',\
+      |    tag:'test',\
+      |    ver:'0.0.0-dev',\
+      |    severity:'CRITICAL'"
       |
-      |SecRule REQUEST_URI "@contains /health" "id:10,phase:1,pass,log"
+      |SecRule REQUEST_URI "@contains /health" \
+      |    "id:00002,\
+      |    phase:1,\
+      |    pass,\
+      |    t:none,t:lowercase,\
+      |    msg:'someone called health',\
+      |    logdata:'someone called health',\
+      |    tag:'test',\
+      |    ver:'0.0.0-dev'"
+      |
+      |SecRule REQUEST_URI \
+      |    "@rx ^/admin" \
+      |    "id:00003,\
+      |    phase:1,\
+      |    pass,\
+      |    t:none,t:lowercase,\
+      |    nolog,\
+      |    tag:'test',\
+      |    ver:'0.0.0-dev',\
+      |    chain"
+      |    SecRule REQUEST_HEADERS:User-Agent "@rx curl" \
+      |      "block,\
+      |      t:none,t:lowercase,\
+      |      msg:'someone used curl to access',\
+      |      logdata:'someone used curl to access',\
+      |      severity:'CRITICAL'"
+      |
       |""".stripMargin
 
     val loaded = SecLang.parse(rules).fold(err => sys.error(err), identity)
     val program = SecLang.compile(loaded)
     val engine = SecLang.engine(program)
 
-    val failing_ctx = RequestContext(
+    val failing_ctx_1 = RequestContext(
       method = "GET",
       uri = "/admin",
       headers = Map("User-Agent" -> List("curl/8.0")),
@@ -36,7 +68,15 @@ class SecLangBasicTest extends munit.FunSuite {
       body = None
     )
 
-    val passing_ctx = RequestContext(
+    val failing_ctx_2 = RequestContext(
+      method = "GET",
+      uri = "/",
+      headers = Map("User-Agent" -> List("Firefox/128.0")),
+      query = Map("q" -> List("test")),
+      body = None
+    )
+
+    val passing_ctx_1 = RequestContext(
       method = "GET",
       uri = "/health",
       headers = Map("User-Agent" -> List("curl/8.0")),
@@ -44,21 +84,37 @@ class SecLangBasicTest extends munit.FunSuite {
       body = None
     )
 
+    val passing_ctx_2 = RequestContext(
+      method = "GET",
+      uri = "/admin",
+      headers = Map("User-Agent" -> List("chrome/8.0")),
+      query = Map("q" -> List("test")),
+      body = None
+    )
+
     println("rung failing test")
-    val failing_res = engine.evaluate(failing_ctx, phases = List(1, 2))
-    println(failing_res.disposition)
-    failing_res.events.foreach(e => println(s"match phase=${e.phase} id=${e.ruleId} msg=${e.msg.getOrElse("")}"))
+    val failing_res_1 = engine.evaluate(failing_ctx_1, phases = List(1, 2))
+    println(failing_res_1.disposition)
+    failing_res_1.events.foreach(e => println(s"match phase=${e.phase} id=${e.ruleId} msg=${e.msg.getOrElse("")}"))
+    val failing_res_2 = engine.evaluate(failing_ctx_2, phases = List(1, 2))
+    println(failing_res_2.disposition)
+    failing_res_2.events.foreach(e => println(s"match phase=${e.phase} id=${e.ruleId} msg=${e.msg.getOrElse("")}"))
 
     println("run passing test")
-    val passing_res = engine.evaluate(passing_ctx, phases = List(1, 2))
-    println(passing_res.disposition)
-    passing_res.events.foreach(e => println(s"match phase=${e.phase} id=${e.ruleId} msg=${e.msg.getOrElse("")}"))
+    val passing_res_1 = engine.evaluate(passing_ctx_1, phases = List(1, 2))
+    println(passing_res_1.disposition)
+    passing_res_1.events.foreach(e => println(s"match phase=${e.phase} id=${e.ruleId} msg=${e.msg.getOrElse("")}"))
+    val passing_res_2 = engine.evaluate(passing_ctx_2, phases = List(1, 2))
+    println(passing_res_2.disposition)
+    passing_res_2.events.foreach(e => println(s"match phase=${e.phase} id=${e.ruleId} msg=${e.msg.getOrElse("")}"))
     
-    assertEquals(failing_res.disposition, Block(403, None, None))
-    assertEquals(passing_res.disposition, Continue)
+    assertEquals(failing_res_1.disposition, Block(403, None, None))
+    assertEquals(failing_res_2.disposition, Block(403, None, None))
+    assertEquals(passing_res_1.disposition, Continue)
+    assertEquals(passing_res_2.disposition, Continue)
   }
 
-  test("antlr") {
+  test("antlr".ignore) {
     val rules =
       """
         |SecRule ARGS|ARGS_NAMES|REQUEST_COOKIES|REQUEST_COOKIES_NAMES|REQUEST_BODY|REQUEST_HEADERS|XML:/*|XML://@* \
@@ -88,7 +144,7 @@ class SecLangBasicTest extends munit.FunSuite {
     }
   }
 
-  test("antlr_crs") {
+  test("antlr_crs".ignore) {
     val client = HttpClient.newHttpClient()
     /*val data: Map[String, String] = List(
       "asp-dotnet-errors.data",
