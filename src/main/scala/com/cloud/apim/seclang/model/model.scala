@@ -869,7 +869,33 @@ final case class Actions(
 
 sealed trait Action extends AstNode {
   def json: JsValue
+  def isMetaData: Boolean = false
+  def isData: Boolean = false
+  def isDisruptive: Boolean = false
+  def isNonDisruptive: Boolean = false
+  def isFlow: Boolean = false
+  def needsRun: Boolean = false
+  def isCtl: Boolean = false
 }
+sealed trait DataAction extends Action {
+  override def isData: Boolean = true
+}
+sealed trait NonDisruptiveAction extends Action {
+  override def isNonDisruptive: Boolean = true
+}
+sealed trait MetaDataAction extends Action {
+  override def isMetaData: Boolean = true
+}
+sealed trait FlowAction extends Action {
+  override def isFlow: Boolean = true
+}
+sealed trait DisruptiveAction extends Action {
+  override def isDisruptive: Boolean = true
+}
+sealed trait NeedRunAction extends Action {
+  override def needsRun: Boolean = true
+}
+sealed trait UnsupportedAction extends Action
 
 object Action {
   val format: Format[Action] = new Format[Action] {
@@ -946,30 +972,31 @@ object Action {
     def writes(action: Action): JsValue = action.json
   }
   
-  final case class Accuracy(value: Int) extends Action {
+  final case class Accuracy(value: Int) extends MetaDataAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "accuracy", "value" -> value)
   }
-  final case class Allow(value: String) extends Action {
+  final case class Allow(value: String) extends DisruptiveAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "allow", "value" -> value)
   }
-  final case class Append(value: String) extends Action {
+  final case class Append(value: String) extends UnsupportedAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "append", "value" -> value)
   }
-  final case class AuditLog() extends Action {
+  final case class AuditLog() extends NonDisruptiveAction with NeedRunAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "audit_log")
   }
-  final case class Block() extends Action {
+  final case class Block() extends DisruptiveAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "block")
   }
-  final case class Capture() extends Action {
+  final case class Capture() extends NonDisruptiveAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "capture")
   }
-  case object Chain extends Action {
+  case object Chain extends FlowAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "chain")
   }
   
   sealed trait CtlAction extends Action {
     def json: JsValue
+    override def isCtl: Boolean = true
   }
   object CtlAction {
     final case class AuditEngine(value: String) extends CtlAction {
@@ -1004,125 +1031,124 @@ object Action {
     }
   }
   
-  case object Deny extends Action {
+  case object Deny extends FlowAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "deny")
   }
-  final case class DeprecateVar(expr: String) extends Action {
+  final case class DeprecateVar(expr: String) extends UnsupportedAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "deprecate_var", "expr" -> expr)
   }
-  case object Drop extends Action {
+  case object Drop extends FlowAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "drop")
   }
-  final case class Exec(value: String) extends Action {
+  final case class Exec(value: String) extends UnsupportedAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "exec", "value" -> value)
   }
-  final case class ExpireVar(expr: String) extends Action {
+  final case class ExpireVar(expr: String) extends NonDisruptiveAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "expire_var", "expr" -> expr)
   }
-  final case class Id(value: Int) extends Action {
+  final case class Id(value: Int) extends MetaDataAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "id", "value" -> value)
   }
-  final case class InitCol(value: String) extends Action {
+  final case class InitCol(value: String) extends NonDisruptiveAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "init_col", "value" -> value)
   }
-  final case class LogData(value: String) extends Action {
+  final case class LogData(value: String) extends NonDisruptiveAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "log_data", "value" -> value)
   }
-  case object Log extends Action {
+  case object Log extends NonDisruptiveAction with NeedRunAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "log")
   }
-  final case class Maturity(value: Int) extends Action {
+  final case class Maturity(value: Int) extends MetaDataAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "maturity", "value" -> value)
   }
-  final case class Msg(value: String) extends Action {
+  final case class Msg(value: String) extends MetaDataAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "msg", "value" -> value)
   }
-  case object MultiMatch extends Action {
+  case object MultiMatch extends NonDisruptiveAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "multi_match")
   }
-  case object NoAuditLog extends Action {
+  case object NoAuditLog extends NonDisruptiveAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "no_audit_log")
   }
-  case object NoLog extends Action {
+  case object NoLog extends NonDisruptiveAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "no_log")
   }
-  case object Pass extends Action {
+  case object Pass extends FlowAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "pass")
   }
-  final case class Pause(value: Int) extends Action {
+  final case class Pause(value: Int) extends UnsupportedAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "pause", "value" -> value)
   }
-  final case class Phase(value: Int) extends Action {
+  final case class Phase(value: Int) extends MetaDataAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "phase", "value" -> value)
   }
-  final case class Prepend(value: String) extends Action {
+  final case class Prepend(value: String) extends UnsupportedAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "prepend", "value" -> value)
   }
-  final case class Proxy(value: String) extends Action {
+  final case class Proxy(value: String) extends UnsupportedAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "proxy", "value" -> value)
   }
-  final case class Redirect(value: String) extends Action {
+  final case class Redirect(value: String) extends DisruptiveAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "redirect", "value" -> value)
   }
-  final case class Rev(value: String) extends Action {
+  final case class Rev(value: String) extends MetaDataAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "rev", "value" -> value)
   }
-  final case class SanitiseArg(value: String) extends Action {
+  final case class SanitiseArg(value: String) extends UnsupportedAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "sanitise_arg", "value" -> value)
   }
-  final case class SanitiseMatchedBytes(value: String) extends Action {
+  final case class SanitiseMatchedBytes(value: String) extends UnsupportedAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "sanitise_matched_bytes", "value" -> value)
   }
-  final case class SanitiseMatched() extends Action {
+  final case class SanitiseMatched() extends UnsupportedAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "sanitise_matched")
   }
-  final case class SanitiseRequestHeader(value: String) extends Action {
+  final case class SanitiseRequestHeader(value: String) extends UnsupportedAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "sanitise_request_header", "value" -> value)
   }
-  final case class SanitiseResponseHeader(value: String) extends Action {
+  final case class SanitiseResponseHeader(value: String) extends UnsupportedAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "sanitise_response_header", "value" -> value)
   }
-  final case class SetEnv(value: String) extends Action {
+  final case class SetEnv(value: String) extends NonDisruptiveAction with NeedRunAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "set_env", "value" -> value)
   }
-  final case class SetRsc(value: String) extends Action {
+  final case class SetRsc(value: String) extends NonDisruptiveAction with NeedRunAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "set_rsc", "value" -> value)
   }
-  final case class SetSid(value: String) extends Action {
+  final case class SetSid(value: String) extends NonDisruptiveAction with NeedRunAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "set_sid", "value" -> value)
   }
-  final case class SetUid(value: String) extends Action {
+  final case class SetUid(value: String) extends NonDisruptiveAction with NeedRunAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "set_uid", "value" -> value)
   }
-  final case class SetVar(expr: String) extends Action {
+  final case class SetVar(expr: String) extends NonDisruptiveAction with NeedRunAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "set_var", "expr" -> expr)
   }
-  final case class Severity(value: SeverityValue) extends Action {
+  final case class Severity(value: SeverityValue) extends MetaDataAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "severity", "value" -> value.toString)
   }
-  final case class SkipAfter(marker: String) extends Action {
+  final case class SkipAfter(marker: String) extends FlowAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "skip_after", "marker" -> marker)
   }
-  final case class Skip(count: Int) extends Action {
+  final case class Skip(count: Int) extends FlowAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "skip", "count" -> count)
   }
-  final case class Status(code: Int) extends Action {
+  final case class Status(code: Int) extends DataAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "status", "code" -> code)
   }
-  final case class Tag(value: String) extends Action {
+  final case class Tag(value: String) extends MetaDataAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "tag", "value" -> value)
   }
-  final case class Ver(value: String) extends Action {
+  final case class Ver(value: String) extends MetaDataAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "ver", "value" -> value)
   }
-  final case class Xmlns(value: String) extends Action {
+  final case class Xmlns(value: String) extends DataAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "xmlns", "value" -> value)
   }
-  final case class Transform(name: String) extends Action {
+  final case class Transform(name: String) extends NonDisruptiveAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "transform", "name" -> name)
   }
-  
-  final case class Raw(name: String, value: Option[String]) extends Action {
+  final case class Raw(name: String, value: Option[String]) extends UnsupportedAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "raw", "name" -> name, "value" -> value)
   }
 }
@@ -1220,7 +1246,7 @@ final case class EngineResult(
     events: List[MatchEvent]
 ) {
   def display(): String = {
-    s"${disposition}\n${events.map(e => s"  - match phase=${e.phase} id=${e.ruleId.getOrElse(0)} - ${e.msg.getOrElse("no msg")}").mkString("\n")}"
+    s"${disposition}\n${events.filter(_.msg.isDefined).map(e => s"  - match phase=${e.phase} rule_id=${e.ruleId.getOrElse(0)} - ${e.msg.getOrElse("no msg")}").mkString("\n")}"
   }
   def displayPrintln(): EngineResult = {
     println(display())

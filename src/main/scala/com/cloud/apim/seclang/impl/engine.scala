@@ -24,15 +24,21 @@ object SecRulesEngineConfig {
   val default = SecRulesEngineConfig()
 }
 
-final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] = Map.empty, config: SecRulesEngineConfig = SecRulesEngineConfig.default) {
+final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] = Map.empty, env: Map[String, String] = Map.empty, config: SecRulesEngineConfig = SecRulesEngineConfig.default) {
 
   // TODO: declare in evaluate, just to be sure !
   private val txMap = new TrieMap[String, String]()
+  private val envMap = {
+    val tm = new TrieMap[String, String]()
+    env.foreach(tm += _)
+    tm
+  }
   private val uidRef = new AtomicReference[String](null)
 
-  // println("new engine config: " + program.itemsByPhase.toSeq.flatMap(_._2).size)
-
-  // program.itemsByPhase.toSeq.foreach(_._2.foreach(ci => ci.asInstanceOf[RuleChain].rules.foreach(r => println(Json.prettyPrint(r.json)))))
+  private def logDebug(msg: String): Unit = println(s"[Debug]: $msg")
+  private def logInfo(msg: String): Unit = println(s"[Info]: $msg")
+  private def logAudit(msg: String): Unit = println(s"[Audit]: $msg")
+  private def logError(msg: String): Unit = println(s"[Error]: $msg")
 
   // runtime disables (ctl:ruleRemoveById)
   def evaluate(ctx: RequestContext, phases: List[Int] = List(1, 2)): EngineResult = {
@@ -49,7 +55,6 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
   private def runPhase(phase: Int, ctx: RequestContext, st0: RuntimeState): (Disposition, RuntimeState) = {
     val items = program.itemsByPhase.getOrElse(phase, Vector.empty)
 
-    // println(s"running phase ${phase} with ${items.size} items")
     // build marker index for this phase stream
     val markerIndex: Map[String, Int] = items.zipWithIndex.collect {
       case (MarkerItem(name), idx) => name -> idx
@@ -116,9 +121,25 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
     }
   }
 
-  private def performActions(actions: List[Action], i: Int, context: RequestContext, state: RuntimeState): RuntimeState = {
+  private def performActions(ruleId: Int, actions: List[Action], phase: Int, context: RequestContext, state: RuntimeState): RuntimeState = {
     // TODO: implement it
-    actions.foreach {
+    val events = state.events.filter(_.msg.isDefined).map { e =>
+      s"phase=${e.phase} rule_id=${e.ruleId.getOrElse(0)} - ${e.msg.getOrElse("no msg")}"
+    }.mkString(". ")
+    val executableActions: List[NeedRunAction] = actions.collect {
+      case a: NeedRunAction => a
+    }
+    executableActions.foreach {
+      case Action.AuditLog() => logAudit(s"${context.requestId} - ${context.method} ${context.uri} matched on: $events")
+      case Action.Log => logInfo(s"${context.requestId} - ${context.method} ${context.uri} matched on: $events")
+      case Action.SetEnv(expr) => {
+        val parts = expr.split("=")
+        val name = parts(0)
+        val value = evalTxExpressions(parts(1))
+        envMap.put(name, value)
+      }
+      case Action.SetRsc(_) => ()
+      case Action.SetSid(_) => ()
       case Action.SetUid(expr) => {
         uidRef.set(expr)
       }
@@ -155,10 +176,10 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
             val name = expr.replace("tx.", "").replace("TX.", "").toLowerCase()
             txMap.put(name, "0")
           }
-          case expr => println("invalid setvar expression: " + expr)
+          case expr => logError("invalid setvar expression: " + expr)
         }
       }
-      case _ =>
+      case act => logError("unimplemented action: " + act.getClass.getSimpleName)
     }
     state
   }
@@ -208,7 +229,7 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
     }
 
     st = st.copy(events = MatchEvent(action.id, msg, phase, Json.stringify(action.json)) :: st.events)
-    st = performActions(actionsList, phase, ctx, st)
+    st = performActions(action.id.getOrElse(0), actionsList, phase, ctx, st)
     val disp =
       disruptive match {
         case Some(Action.Deny) | Some(Action.Drop) | Some(Action.Block()) =>
@@ -279,7 +300,7 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
           }
 
           st = st.copy(events = MatchEvent(r.id, msg, phase, Json.stringify(r.json)) :: st.events)
-          st = performActions(actionsList, phase, ctx, st)
+          st = performActions(r.id.getOrElse(0), actionsList, phase, ctx, st)
         } else {
           allMatched = false
         }
@@ -325,17 +346,17 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
   }
 
   private def unimplementedVariable(name: String): List[String] = {
-    println("unimplemented variable: " + name)
+    logDebug("unimplemented variable: " + name)
     Nil
   }
 
   private def unsupportedVariable(name: String): List[String] = {
-    println("unsupported variable: " + name)
+    logDebug("unsupported variable: " + name)
     Nil
   }
 
   private def unsupportedV3Variable(name: String): List[String] = {
-    println("unsupported variable in V3: " + name)
+    logDebug("unsupported variable in V3: " + name)
     Nil
   }
 
@@ -376,7 +397,7 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
       }
       case "ENV" => key match {
         case None => List.empty
-        case Some(key) => sys.env.get(key).toList
+        case Some(key) => envMap.get(key).toList
       }
       case "REQUEST_BODY" | "RESPONSE_BODY" => ctx.body.toList
       case "REQUEST_HEADERS_NAMES" | "RESPONSE_HEADERS_NAMES" => ctx.headers.keySet.toList
@@ -495,19 +516,19 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
           case Some(v) => List(v)
           case None =>
             // fallback: unsupported collection
-            println("unknown variable: " + other)
+            logDebug("unknown variable: " + other)
             Nil
         }
     }
   }
 
   private def unimplementedTransform(name: String, v: String): String = {
-    println("unimplemented transform " + name)
+    logDebug("unimplemented transform " + name)
     v
   }
 
   private def unsupportedTransform(name: String, v: String): String = {
-    println("unsupported transform " + name)
+    logDebug("unsupported transform " + name)
     v
   }
 
@@ -558,17 +579,17 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
   }
 
   private def unimplementedOperator(op: String): Boolean = {
-    println("unimplemented operator: " + op)
+    logDebug("unimplemented operator: " + op)
     false
   }
 
   private def unsupportedOperator(op: String): Boolean = {
-    println("unsupported operator: " + op)
+    logDebug("unsupported operator: " + op)
     false
   }
 
   private def unsupportedV3Operator(op: String): Boolean = {
-    println("unsupported operator in v3: " + op)
+    logDebug("unsupported operator in v3: " + op)
     false
   }
 
@@ -625,7 +646,7 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     case _ =>
       // unsupported operator => "safe false"
-      println("unknown operator: " + op)
+      logError("unknown operator: " + op)
       false
   }
 }
