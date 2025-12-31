@@ -1,24 +1,15 @@
-package com.cloud.apim.seclang.impl
+package com.cloud.apim.seclang.impl.parser
 
 import com.cloud.apim.seclang.antlr.SecLangParser._
 import com.cloud.apim.seclang.antlr._
 import com.cloud.apim.seclang.model._
 
 import scala.collection.JavaConverters._
-import scala.util.Try
-
-object Implicits {
-  implicit class BetterString(val obj: String) extends AnyVal {
-    def toIntOption: Option[Int] = {
-      Try(obj.toInt).toOption
-    }
-  }
-}
 
 // https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29
 class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
 
-  import Implicits._
+  import com.cloud.apim.seclang.impl.utils.Implicits._
   
   override def visitConfiguration(ctx: SecLangParser.ConfigurationContext): Configuration = {
     val statements = ctx.stmt().asScala.toList.flatMap { stmtCtx =>

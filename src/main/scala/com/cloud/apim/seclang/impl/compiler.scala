@@ -2,7 +2,6 @@ package com.cloud.apim.seclang.impl.compiler
 
 import com.cloud.apim.seclang.model.ConfigDirective.{ComponentSignature, DefaultAction}
 import com.cloud.apim.seclang.model._
-import play.api.libs.json.Json
 
 sealed trait CompiledItem
 

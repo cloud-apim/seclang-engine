@@ -2,7 +2,8 @@
 package com.cloud.apim.seclang.impl.engine
 
 import com.cloud.apim.seclang.impl.compiler._
-import com.cloud.apim.seclang.model.Action.{CtlAction, Msg}
+import com.cloud.apim.seclang.impl.utils._
+import com.cloud.apim.seclang.model.Action.CtlAction
 import com.cloud.apim.seclang.model._
 import play.api.libs.json.Json
 
@@ -15,14 +16,6 @@ import java.util.concurrent.atomic.AtomicReference
 import scala.collection.concurrent.TrieMap
 import scala.util._
 import scala.util.matching.Regex
-
-private final case class RuntimeState(disabledIds: Set[Int], events: List[MatchEvent])
-
-case class SecRulesEngineConfig()
-
-object SecRulesEngineConfig {
-  val default = SecRulesEngineConfig()
-}
 
 final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] = Map.empty, env: Map[String, String] = Map.empty, config: SecRulesEngineConfig = SecRulesEngineConfig.default) {
 
@@ -360,166 +353,302 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
     Nil
   }
 
+  private def deepMerge(
+                 m1: Map[String, List[String]],
+                 m2: Map[String, List[String]]
+               ): Map[String, List[String]] = {
+    (m1.keySet ++ m2.keySet).iterator.map { k =>
+      k -> (m1.getOrElse(k, Nil) ++ m2.getOrElse(k, Nil))
+    }.toMap
+  }
+
   private def resolveVariable(sel: Variable, count: Boolean, negated: Boolean, ctx: RequestContext): List[String] = {
     // https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29#user-content-Variables
     val (col, key) = sel match {
       case Variable.Simple(name) => (name, None)
       case Variable.Collection(collection, key) => (collection, key.map(_.toLowerCase()))
     }
-    val uri = new java.net.URI(ctx.uri)
-    val datetime = LocalDateTime.now()
-    col match {
-      case "REQUEST_URI" => List(ctx.uri)
-      case "REQUEST_METHOD" => List(ctx.method)
-      case "REQUEST_HEADERS" | "RESPONSE_HEADERS" => {
-        key match {
-          case None =>
-            ctx.headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
-          case Some(h) =>
-            ctx.headers.collect {
-              case (k, vs) if k.toLowerCase == h => vs
-            }.flatten.toList
+    //ctx.cache.get(col) match {
+    //  case Some(v) => v
+    //  case None => {
+        val uri = new java.net.URI(ctx.uri)
+        val datetime = LocalDateTime.now()
+        val res = col match {
+          case "REQUEST_URI" => List(ctx.uri)
+          case "REQUEST_METHOD" => List(ctx.method)
+          case "REQUEST_HEADERS" | "RESPONSE_HEADERS" => {
+            key match {
+              case None =>
+                ctx.headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
+              case Some(h) =>
+                ctx.headers.collect {
+                  case (k, vs) if k.toLowerCase == h => vs
+                }.flatten.toList
+            }
+          }
+          case "ARGS" => {
+            val headers = ctx.body match {
+              case Some(body) if ctx.contentType.contains("application/www-form-urlencoded") => {
+                val bodyArgs = FormUrlEncoded.parse(body)
+                deepMerge(ctx.query, bodyArgs)
+              }
+              case _ => ctx.query
+            }
+            key match {
+              case None =>
+                headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
+              case Some(h) =>
+                headers.collect {
+                  case (k, vs) if k.toLowerCase == h => vs
+                }.flatten.toList
+            }
+          }
+          case "ARGS_NAMES" => {
+            val headers = ctx.body match {
+              case Some(body) if ctx.contentType.contains("application/www-form-urlencoded") => {
+                val bodyArgs = FormUrlEncoded.parse(body)
+                deepMerge(ctx.query, bodyArgs)
+              }
+              case _ => ctx.query
+            }
+            headers.keySet.toList
+          }
+          case "ARGS_COMBINED_SIZE" => {
+            val headers = ctx.body match {
+              case Some(body) if ctx.contentType.contains("application/www-form-urlencoded") => {
+                val bodyArgs = FormUrlEncoded.parse(body)
+                deepMerge(ctx.query, bodyArgs)
+              }
+              case _ => ctx.query
+            }
+            List(headers.size.toString)
+          }
+          case "TX" => {
+            key match {
+              case None => List.empty
+              case Some(key) => txMap.get(key.toLowerCase()).toList
+            }
+          }
+          case "ENV" => key match {
+            case None => List.empty
+            case Some(key) => envMap.get(key).toList
+          }
+          case "REQUEST_BODY" | "RESPONSE_BODY" => ctx.body.toList
+          case "REQUEST_HEADERS_NAMES" | "RESPONSE_HEADERS_NAMES" => ctx.headers.keySet.toList
+          case "DURATION" => List((System.currentTimeMillis() - ctx.startTime).toString)
+          case "PATH_INFO" => List(uri.getPath)
+          case "QUERY_STRING" => List(uri.getRawQuery)
+          case "REMOTE_ADDR" => List(ctx.remoteAddr)
+          case "REMOTE_HOST" => List(ctx.remoteAddr)
+          case "REMOTE_PORT" => List(ctx.remotePort.toString)
+          case "REMOTE_USER" => ctx.headers.get("Authorization").orElse(ctx.headers.get("authorization")).flatMap(_.lastOption).collect {
+            case auth if auth.startsWith("Basic ") => Try(new String(Base64.getDecoder.decode(auth.substring("Basic ".length).split(":")(0)), StandardCharsets.UTF_8)).getOrElse("")
+          }.toList.filter(_.nonEmpty)
+          case "REQUEST_BASENAME" => uri.getPath.split('/').lastOption.toList
+          case "REQUEST_COOKIES" => key match {
+            case None =>
+              ctx.cookies.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
+            case Some(h) =>
+              ctx.cookies.collect {
+                case (k, vs) if k.toLowerCase == h => vs
+              }.flatten.toList
+          }
+          case "REQUEST_COOKIES_NAMES" => ctx.cookies.keySet.toList
+          case "REQUEST_FILENAME" => List(uri.getPath)
+          case "REQUEST_LINE" => List(s"${ctx.method.toUpperCase()} ${uri.getRawPath} ${ctx.protocol}")
+          case "REQUEST_PROTOCOL" | "RESPONSE_PROTOCOL" => List(ctx.protocol)
+          case "REQUEST_URI_RAW" => List(ctx.uriRaw)
+          case "REQUEST_CONTENT_TYPE" | "RESPONSE_CONTENT_TYPE" => ctx.contentType.toList
+          case "RESPONSE_STATUS" => ctx.status.map(_.toString).toList
+          case "REQUEST_BODY_LENGTH" | "RESPONSE_CONTENT_LENGTH" => ctx.contentLength.toList
+          // case "SERVER_ADDR" => unimplementedVariable("SERVER_ADDR") // from ctx.variables
+          // case "SERVER_NAME" => unimplementedVariable("SERVER_NAME") // from ctx.variables
+          // case "SERVER_PORT" => unimplementedVariable("SERVER_PORT") // from ctx.variables
+          case "STATUS_LINE" => List(ctx.statusLine)
+          case "TIME" => List(datetime.format(DateTimeFormatter.ofPattern("HH:mm:ss")))
+          case "TIME_DAY" => List(datetime.getDayOfMonth.toString)
+          case "TIME_EPOCH" => List((System.currentTimeMillis / 1000).toString)
+          case "TIME_HOUR" => List(datetime.getHour.toString)
+          case "TIME_MIN" => List(datetime.getMinute.toString)
+          case "TIME_MON" => List(datetime.getMonthValue.toString)
+          case "TIME_SEC" => List(datetime.getSecond.toString)
+          case "TIME_WDAY" => List(datetime.getDayOfWeek.getValue.toString)
+          case "TIME_YEAR" => List(datetime.getYear.toString)
+          case "UNIQUE_ID" => List(ctx.requestId)
+          case "USERID" => Option(uidRef.get).toList
+          case "FILES" => ctx.contentType match {
+            case Some("multipart/form-data") => {
+              ctx.body.get.linesIterator
+                .collect {
+                  case line if line.toLowerCase.startsWith("content-disposition:") =>
+                    """filename="([^"]+)"""".r
+                      .findFirstMatchIn(line)
+                      .map(_.group(1))
+                }.flatten.toList
+            }
+            case _ => List.empty
+          }
+          case "FILES_COMBINED_SIZE" => ctx.contentType match {
+            case Some("multipart/form-data") => ctx.contentLength.toList
+            case _ => List.empty
+          }
+          case "FILES_NAMES" => ctx.contentType match {
+            case Some("multipart/form-data") if ctx.body.isDefined => {
+              ctx.body.get.linesIterator
+                .collect {
+                  case line if line.toLowerCase.startsWith("content-disposition:") =>
+                    """filename="([^"]+)"""".r
+                      .findFirstMatchIn(line)
+                      .map(_.group(1))
+                }.flatten.toList
+            }
+            case _ => List.empty
+          }
+          case "FILES_SIZES" => ctx.contentType match {
+            case Some("multipart/form-data") => ctx.contentLength.toList
+            case _ => List.empty
+          }
+          case "FILES_TMPNAMES" => List.empty
+          case "FILES_TMP_CONTENT" => List.empty
+          case "REQBODY_PROCESSOR" => {
+            ctx.contentType
+              .map(_.toLowerCase)
+              .collect {
+                case ct if ct.startsWith("application/x-www-form-urlencoded") => "URLENCODED"
+                case ct if ct.startsWith("multipart/form-data")               => "MULTIPART"
+                case ct if ct.startsWith("application/xml") ||
+                  ct.startsWith("text/xml")                           => "XML"
+                case ct if ct.startsWith("application/json")                   => "JSON"
+              }.toList
+          }
+          case "MULTIPART_PART_HEADERS" => {
+            ctx.body match {
+              case Some(body) => {
+                val headers = MultipartVars.multipartPartHeadersFromCtx(body, ctx.contentType).getOrElse(Map.empty)
+                key match {
+                  case None =>
+                    headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
+                  case Some(h) =>
+                    headers.collect {
+                      case (k, vs) if k.toLowerCase == h => vs
+                    }.flatten.toList
+                }
+              }
+              case None => List.empty
+            }
+          }
+          case "ARGS_GET" => {
+            val headers = ctx.query
+            key match {
+              case None =>
+                headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
+              case Some(h) =>
+                headers.collect {
+                  case (k, vs) if k.toLowerCase == h => vs
+                }.flatten.toList
+            }
+          }
+          case "ARGS_GET_NAMES" =>  ctx.query.keySet.toList
+          case "ARGS_POST" => {
+            ctx.body match {
+              case Some(body) if ctx.contentType.contains("application/www-form-urlencoded") => {
+                val headers = FormUrlEncoded.parse(body)
+                key match {
+                  case None =>
+                    headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
+                  case Some(h) =>
+                    headers.collect {
+                      case (k, vs) if k.toLowerCase == h => vs
+                    }.flatten.toList
+                }
+              }
+              case _ => List.empty
+            }
+          }
+          case "ARGS_POST_NAMES" => {
+            ctx.body match {
+              case Some(body) if ctx.contentType.contains("application/www-form-urlencoded") => {
+                val headers = FormUrlEncoded.parse(body)
+                headers.keySet.toList
+              }
+              case _ => List.empty
+            }
+          }
+          case "XML" => {
+            ctx.body match {
+              case Some(body) if key.isDefined && (ctx.contentType.exists(_.contains("application/xm")) || ctx.contentType.exists(_.contains("text/xm"))) => {
+                XmlXPathParser.xpathValues(body, key.get)
+              }
+              case _ => List.empty
+            }
+          }
+          //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+          case "AUTH_TYPE" => unimplementedVariable("AUTH_TYPE") // TODO: implement it
+          case "FULL_REQUEST" => unimplementedVariable("FULL_REQUEST") // TODO: implement it
+          case "FULL_REQUEST_LENGTH" => unimplementedVariable("FULL_REQUEST_LENGTH") // TODO: implement it
+          case "HIGHEST_SEVERITY" => unimplementedVariable("HIGHEST_SEVERITY") // TODO: implement it
+          case "INBOUND_DATA_ERROR" => unimplementedVariable("INBOUND_DATA_ERROR") // TODO: implement it
+          case "MATCHED_VAR" => unimplementedVariable("MATCHED_VAR") // TODO: implement it
+          case "MATCHED_VARS" => unimplementedVariable("MATCHED_VARS") // TODO: implement it
+          case "MATCHED_VAR_NAME" => unimplementedVariable("MATCHED_VAR_NAME") // TODO: implement it
+          case "MATCHED_VARS_NAMES" => unimplementedVariable("MATCHED_VARS_NAMES") // TODO: implement it
+          case "MODSEC_BUILD" => unimplementedVariable("MODSEC_BUILD") // TODO: implement it
+          case "MSC_PCRE_LIMITS_EXCEEDED" => unimplementedVariable("MSC_PCRE_LIMITS_EXCEEDED") // TODO: implement it
+          case "MULTIPART_CRLF_LF_LINES" => unimplementedVariable("MULTIPART_CRLF_LF_LINES") // TODO: implement it
+          case "MULTIPART_FILENAME" => unimplementedVariable("MULTIPART_FILENAME") // TODO: implement it
+          case "MULTIPART_NAME" => unimplementedVariable("MULTIPART_NAME") // TODO: implement it
+          case "MULTIPART_STRICT_ERROR" => unimplementedVariable("MULTIPART_STRICT_ERROR") // TODO: implement it
+          case "MULTIPART_UNMATCHED_BOUNDARY" => unimplementedVariable("MULTIPART_UNMATCHED_BOUNDARY") // TODO: implement it
+          case "OUTBOUND_DATA_ERROR" => unimplementedVariable("OUTBOUND_DATA_ERROR") // TODO: implement it
+          case "REQBODY_ERROR" => unimplementedVariable("REQBODY_ERROR") // TODO: implement it
+          case "REQBODY_ERROR_MSG" => unimplementedVariable("REQBODY_ERROR_MSG") // TODO: implement it
+          case "RULE" => unimplementedVariable("RULE") // TODO: implement it
+          case "SDBM_DELETE_ERROR" => unimplementedVariable("SDBM_DELETE_ERROR") // TODO: implement it
+          case "SESSION" => unimplementedVariable("SESSION") // TODO: implement it
+          case "SESSIONID" => unimplementedVariable("SESSIONID") // TODO: implement it
+          case "URLENCODED_ERROR" => unimplementedVariable("URLENCODED_ERROR") // TODO: implement it
+          case "WEBAPPID" => unimplementedVariable("WEBAPPID") // TODO: implement it
+          //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+          case "GEO" => unsupportedVariable("GEO")
+          case "PERF_ALL" => unsupportedV3Variable("PERF_ALL")
+          case "PERF_COMBINED" => unsupportedV3Variable("PERF_COMBINED")
+          case "PERF_GC" => unsupportedV3Variable("PERF_GC")
+          case "PERF_LOGGING" => unsupportedV3Variable("PERF_LOGGING")
+          case "PERF_PHASE1" => unsupportedV3Variable("PERF_PHASE1")
+          case "PERF_PHASE2" => unsupportedV3Variable("PERF_PHASE2")
+          case "PERF_PHASE3" => unsupportedV3Variable("PERF_PHASE3")
+          case "PERF_PHASE4" => unsupportedV3Variable("PERF_PHASE4")
+          case "PERF_PHASE5" => unsupportedV3Variable("PERF_PHASE5")
+          case "PERF_RULES" => unsupportedV3Variable("PERF_RULES")
+          case "PERF_SREAD" => unsupportedV3Variable("PERF_SREAD")
+          case "PERF_SWRITE" => unsupportedV3Variable("PERF_SWRITE")
+          case "SCRIPT_BASENAME" => unsupportedV3Variable("SCRIPT_BASENAME")
+          case "SCRIPT_FILENAME" => unsupportedV3Variable("SCRIPT_FILENAME")
+          case "SCRIPT_GID" => unsupportedV3Variable("SCRIPT_GID")
+          case "SCRIPT_GROUPNAME" => unsupportedV3Variable("SCRIPT_GROUPNAME")
+          case "SCRIPT_MODE" => unsupportedV3Variable("SCRIPT_MODE")
+          case "SCRIPT_UID" => unsupportedV3Variable("SCRIPT_UID")
+          case "SCRIPT_USERNAME" => unsupportedV3Variable("SCRIPT_USERNAME")
+          case "STREAM_INPUT_BODY" => unsupportedV3Variable("STREAM_INPUT_BODY")
+          case "STREAM_OUTPUT_BODY" => unsupportedV3Variable("STREAM_OUTPUT_BODY")
+          case "WEBSERVER_ERROR_LOG" => unsupportedV3Variable("WEBSERVER_ERROR_LOG")
+          case "USERAGENT_IP" => unsupportedV3Variable("USERAGENT_IP")
+          //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+          case other =>
+            ctx.variables.get(other)
+              .orElse(ctx.variables.get(other.toLowerCase))
+              .orElse(ctx.variables.get(other.toUpperCase)) match {
+              case Some(v) => List(v)
+              case None =>
+                // fallback: unsupported collection
+                logDebug("unknown variable: " + other)
+                Nil
+            }
         }
-      }
-      case "ARGS" => { // TODO: fix it, should also contains body values if form submitted
-        key match {
-          case None =>
-            ctx.query.values.flatten.toList
-          case Some(k) =>
-            ctx.query.collect { case (kk, vs) if kk.toLowerCase == k => vs }.flatten.toList
-        }
-      }
-      case "TX" => {
-        key match {
-          case None => List.empty
-          case Some(key) => txMap.get(key.toLowerCase()).toList
-        }
-      }
-      case "ENV" => key match {
-        case None => List.empty
-        case Some(key) => envMap.get(key).toList
-      }
-      case "REQUEST_BODY" | "RESPONSE_BODY" => ctx.body.toList
-      case "REQUEST_HEADERS_NAMES" | "RESPONSE_HEADERS_NAMES" => ctx.headers.keySet.toList
-      case "DURATION" => List((System.currentTimeMillis() - ctx.startTime).toString)
-      case "PATH_INFO" => List(uri.getPath)
-      case "QUERY_STRING" => List(uri.getRawQuery)
-      case "REMOTE_ADDR" => List(ctx.remoteAddr)
-      case "REMOTE_HOST" => List(ctx.remoteAddr)
-      case "REMOTE_PORT" => List(ctx.remotePort.toString)
-      case "REMOTE_USER" => ctx.headers.get("Authorization").orElse(ctx.headers.get("authorization")).flatMap(_.lastOption).collect {
-        case auth if auth.startsWith("Basic ") => Try(new String(Base64.getDecoder.decode(auth.substring("Basic ".length).split(":")(0)), StandardCharsets.UTF_8)).getOrElse("")
-      }.toList.filter(_.nonEmpty)
-      case "REQUEST_BASENAME" => uri.getPath.split('/').lastOption.toList
-      case "REQUEST_COOKIES" => key match {
-        case None =>
-          ctx.cookies.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
-        case Some(h) =>
-          ctx.cookies.collect {
-            case (k, vs) if k.toLowerCase == h => vs
-          }.flatten.toList
-      }
-      case "REQUEST_COOKIES_NAMES" => ctx.cookies.keySet.toList
-      case "REQUEST_FILENAME" => List(uri.getPath)
-      case "REQUEST_LINE" => List(s"${ctx.method.toUpperCase()} ${uri.getRawPath} ${ctx.protocol}")
-      case "REQUEST_PROTOCOL" | "RESPONSE_PROTOCOL" => List(ctx.protocol)
-      case "REQUEST_URI_RAW" => List(ctx.uriRaw)
-      case "REQUEST_CONTENT_TYPE" | "RESPONSE_CONTENT_TYPE" => ctx.headers.get("Content-Type").orElse(ctx.headers.get("content-type")).flatMap(_.lastOption).toList
-      case "RESPONSE_STATUS" => ctx.status.map(_.toString).toList
-      case "REQUEST_BODY_LENGTH" | "RESPONSE_CONTENT_LENGTH" => ctx.headers.get("Content-Length").orElse(ctx.headers.get("content-length")).flatMap(_.lastOption).toList
-      // case "SERVER_ADDR" => unimplementedVariable("SERVER_ADDR") // from ctx.variables
-      // case "SERVER_NAME" => unimplementedVariable("SERVER_NAME") // from ctx.variables
-      // case "SERVER_PORT" => unimplementedVariable("SERVER_PORT") // from ctx.variables
-      case "STATUS_LINE" => List(ctx.statusLine)
-      case "TIME" => List(datetime.format(DateTimeFormatter.ofPattern("HH:mm:ss")))
-      case "TIME_DAY" => List(datetime.getDayOfMonth.toString)
-      case "TIME_EPOCH" => List((System.currentTimeMillis / 1000).toString)
-      case "TIME_HOUR" => List(datetime.getHour.toString)
-      case "TIME_MIN" => List(datetime.getMinute.toString)
-      case "TIME_MON" => List(datetime.getMonthValue.toString)
-      case "TIME_SEC" => List(datetime.getSecond.toString)
-      case "TIME_WDAY" => List(datetime.getDayOfWeek.getValue.toString)
-      case "TIME_YEAR" => List(datetime.getYear.toString)
-      case "UNIQUE_ID" => List(ctx.requestId)
-      case "USERID" => Option(uidRef.get).toList
-      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      case "ARGS_COMBINED_SIZE" => unimplementedVariable("ARGS_COMBINED_SIZE") // TODO: implement it
-      case "ARGS_GET" => unimplementedVariable("ARGS_GET") // TODO: implement it
-      case "ARGS_GET_NAMES" => unimplementedVariable("ARGS_GET_NAMES") // TODO: implement it
-      case "ARGS_NAMES" => unimplementedVariable("ARGS_NAMES") // TODO: implement it
-      case "ARGS_POST" => unimplementedVariable("ARGS_POST") // TODO: implement it
-      case "ARGS_POST_NAMES" => unimplementedVariable("ARGS_POST_NAMES") // TODO: implement it
-      case "AUTH_TYPE" => unimplementedVariable("AUTH_TYPE") // TODO: implement it
-      case "FILES" => unimplementedVariable("FILES") // TODO: implement it
-      case "FILES_COMBINED_SIZE" => unimplementedVariable("FILES_COMBINED_SIZE") // TODO: implement it
-      case "FILES_NAMES" => unimplementedVariable("FILES_NAMES") // TODO: implement it
-      case "FULL_REQUEST" => unimplementedVariable("FULL_REQUEST") // TODO: implement it
-      case "FULL_REQUEST_LENGTH" => unimplementedVariable("FULL_REQUEST_LENGTH") // TODO: implement it
-      case "FILES_SIZES" => unimplementedVariable("FILES_SIZES") // TODO: implement it
-      case "FILES_TMPNAMES" => unimplementedVariable("FILES_TMPNAMES") // TODO: implement it
-      case "FILES_TMP_CONTENT" => unimplementedVariable("FILES_TMP_CONTENT") // TODO: implement it
-      case "HIGHEST_SEVERITY" => unimplementedVariable("HIGHEST_SEVERITY") // TODO: implement it
-      case "INBOUND_DATA_ERROR" => unimplementedVariable("INBOUND_DATA_ERROR") // TODO: implement it
-      case "MATCHED_VAR" => unimplementedVariable("MATCHED_VAR") // TODO: implement it
-      case "MATCHED_VARS" => unimplementedVariable("MATCHED_VARS") // TODO: implement it
-      case "MATCHED_VAR_NAME" => unimplementedVariable("MATCHED_VAR_NAME") // TODO: implement it
-      case "MATCHED_VARS_NAMES" => unimplementedVariable("MATCHED_VARS_NAMES") // TODO: implement it
-      case "MODSEC_BUILD" => unimplementedVariable("MODSEC_BUILD") // TODO: implement it
-      case "MSC_PCRE_LIMITS_EXCEEDED" => unimplementedVariable("MSC_PCRE_LIMITS_EXCEEDED") // TODO: implement it
-      case "MULTIPART_CRLF_LF_LINES" => unimplementedVariable("MULTIPART_CRLF_LF_LINES") // TODO: implement it
-      case "MULTIPART_FILENAME" => unimplementedVariable("MULTIPART_FILENAME") // TODO: implement it
-      case "MULTIPART_NAME" => unimplementedVariable("MULTIPART_NAME") // TODO: implement it
-      case "MULTIPART_PART_HEADERS" => unimplementedVariable("MULTIPART_PART_HEADERS") // TODO: implement it
-      case "MULTIPART_STRICT_ERROR" => unimplementedVariable("MULTIPART_STRICT_ERROR") // TODO: implement it
-      case "MULTIPART_UNMATCHED_BOUNDARY" => unimplementedVariable("MULTIPART_UNMATCHED_BOUNDARY") // TODO: implement it
-      case "OUTBOUND_DATA_ERROR" => unimplementedVariable("OUTBOUND_DATA_ERROR") // TODO: implement it
-      case "REQBODY_ERROR" => unimplementedVariable("REQBODY_ERROR") // TODO: implement it
-      case "REQBODY_ERROR_MSG" => unimplementedVariable("REQBODY_ERROR_MSG") // TODO: implement it
-      case "REQBODY_PROCESSOR" => unimplementedVariable("REQBODY_PROCESSOR") // TODO: implement it
-      case "RULE" => unimplementedVariable("RULE") // TODO: implement it
-      case "SDBM_DELETE_ERROR" => unimplementedVariable("SDBM_DELETE_ERROR") // TODO: implement it
-      case "SESSION" => unimplementedVariable("SESSION") // TODO: implement it
-      case "SESSIONID" => unimplementedVariable("SESSIONID") // TODO: implement it
-      case "URLENCODED_ERROR" => unimplementedVariable("URLENCODED_ERROR") // TODO: implement it
-      case "WEBAPPID" => unimplementedVariable("WEBAPPID") // TODO: implement it
-      case "XML" => unimplementedVariable("XML") // TODO: implement it
-      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      case "GEO" => unsupportedVariable("GEO")
-      case "PERF_ALL" => unsupportedV3Variable("PERF_ALL")
-      case "PERF_COMBINED" => unsupportedV3Variable("PERF_COMBINED")
-      case "PERF_GC" => unsupportedV3Variable("PERF_GC")
-      case "PERF_LOGGING" => unsupportedV3Variable("PERF_LOGGING")
-      case "PERF_PHASE1" => unsupportedV3Variable("PERF_PHASE1")
-      case "PERF_PHASE2" => unsupportedV3Variable("PERF_PHASE2")
-      case "PERF_PHASE3" => unsupportedV3Variable("PERF_PHASE3")
-      case "PERF_PHASE4" => unsupportedV3Variable("PERF_PHASE4")
-      case "PERF_PHASE5" => unsupportedV3Variable("PERF_PHASE5")
-      case "PERF_RULES" => unsupportedV3Variable("PERF_RULES")
-      case "PERF_SREAD" => unsupportedV3Variable("PERF_SREAD")
-      case "PERF_SWRITE" => unsupportedV3Variable("PERF_SWRITE")
-      case "SCRIPT_BASENAME" => unsupportedV3Variable("SCRIPT_BASENAME")
-      case "SCRIPT_FILENAME" => unsupportedV3Variable("SCRIPT_FILENAME")
-      case "SCRIPT_GID" => unsupportedV3Variable("SCRIPT_GID")
-      case "SCRIPT_GROUPNAME" => unsupportedV3Variable("SCRIPT_GROUPNAME")
-      case "SCRIPT_MODE" => unsupportedV3Variable("SCRIPT_MODE")
-      case "SCRIPT_UID" => unsupportedV3Variable("SCRIPT_UID")
-      case "SCRIPT_USERNAME" => unsupportedV3Variable("SCRIPT_USERNAME")
-      case "STREAM_INPUT_BODY" => unsupportedV3Variable("STREAM_INPUT_BODY")
-      case "STREAM_OUTPUT_BODY" => unsupportedV3Variable("STREAM_OUTPUT_BODY")
-      case "WEBSERVER_ERROR_LOG" => unsupportedV3Variable("WEBSERVER_ERROR_LOG")
-      case "USERAGENT_IP" => unsupportedV3Variable("USERAGENT_IP")
-      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      case other =>
-        ctx.variables.get(other)
-          .orElse(ctx.variables.get(other.toLowerCase))
-          .orElse(ctx.variables.get(other.toUpperCase)) match {
-          case Some(v) => List(v)
-          case None =>
-            // fallback: unsupported collection
-            logDebug("unknown variable: " + other)
-            Nil
-        }
-    }
+        //ctx.cache.put(col, res)
+        res
+      //}
+    //}
   }
 
   private def unimplementedTransform(name: String, v: String): String = {

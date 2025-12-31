@@ -1,6 +1,6 @@
 package com.cloud.apim.seclang.scaladsl
 
-import com.cloud.apim.seclang.impl.AntlrParser
+import com.cloud.apim.seclang.impl.parser.AntlrParser
 import com.cloud.apim.seclang.impl.compiler._
 import com.cloud.apim.seclang.impl.engine._
 import com.cloud.apim.seclang.model.Configuration
