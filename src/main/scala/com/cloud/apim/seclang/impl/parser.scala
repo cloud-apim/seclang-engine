@@ -47,7 +47,6 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
         case _ => 0
       }
       SecRuleRemoveById(commentBlock, ids)
-      
     } else if (ctx.string_remove_rules() != null && ctx.string_remove_rules_values() != null) {
       val directive = ctx.string_remove_rules()
       val value = ctx.string_remove_rules_values().getText.replaceAll("\"", "")
@@ -85,8 +84,15 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
       val name = ctx.getText.split("SecMarker").tail.mkString("SecMarker").replaceAll("\"", "").replaceAll("'", "")
       SecMarker(commentBlock, name)
     } else if (ctx.engine_config_directive() != null) {
-      val directive = visitEngineConfigDirective(ctx.engine_config_directive())
-      EngineConfigDirective(commentBlock, directive)
+      val ctxDir = ctx.engine_config_directive()
+      val stmt = ctxDir.getText.split("\"").headOption.getOrElse("--")
+      if (stmt == "SecAction") {
+        val actions = visitActions(ctxDir.actions())
+        SecAction(commentBlock, actions)
+      } else {
+        val directive = visitEngineConfigDirective(ctx.engine_config_directive())
+        EngineConfigDirective(commentBlock, directive)
+      }
     } else {
       SecMarker(commentBlock, "unknown")
     }
@@ -103,13 +109,19 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
   }
   
   def visitEngineConfigDirective(ctx: SecLangParser.Engine_config_directiveContext): ConfigDirective = {
+    val ctxTxt = ctx.getText
+    val stmt = ctxTxt.split("\"").headOption.getOrElse("--")
     if (ctx.stmt_audit_log() != null) {
       val value = ctx.values().getText.replaceAll("\"", "")
       ConfigDirective.AuditLog(value)
     } else if (ctx.engine_config_action_directive() != null && ctx.actions() != null) {
       val actions = visitActions(ctx.actions())
       ConfigDirective.DefaultAction(actions)
+    } else if (stmt == "SecComponentSignature") {
+      val param = ctx.values().getText.replaceAll("\"", "")
+      ConfigDirective.ComponentSignature(param)
     } else {
+      println(s"unknown engine config directive: ${stmt}")
       ConfigDirective.Raw("unknown", "")
     }
   }
