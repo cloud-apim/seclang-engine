@@ -8,8 +8,12 @@ import play.api.libs.json.Json
 
 import java.net.{URLDecoder, URLEncoder}
 import java.nio.charset.StandardCharsets
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Base64
+import java.util.concurrent.atomic.AtomicReference
 import scala.collection.concurrent.TrieMap
+import scala.util._
 import scala.util.matching.Regex
 
 private final case class RuntimeState(disabledIds: Set[Int], events: List[MatchEvent])
@@ -22,7 +26,9 @@ object SecRulesEngineConfig {
 
 final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] = Map.empty, config: SecRulesEngineConfig = SecRulesEngineConfig.default) {
 
+  // TODO: declare in evaluate, just to be sure !
   private val txMap = new TrieMap[String, String]()
+  private val uidRef = new AtomicReference[String](null)
 
   // println("new engine config: " + program.itemsByPhase.toSeq.flatMap(_._2).size)
 
@@ -113,6 +119,9 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
   private def performActions(actions: List[Action], i: Int, context: RequestContext, state: RuntimeState): RuntimeState = {
     // TODO: implement it
     actions.foreach {
+      case Action.SetUid(expr) => {
+        uidRef.set(expr)
+      }
       case Action.SetVar(expr) => {
         evalTxExpressions(expr) match {
           case expr if expr.startsWith("!") => {
@@ -336,11 +345,12 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
       case Variable.Simple(name) => (name, None)
       case Variable.Collection(collection, key) => (collection, key.map(_.toLowerCase()))
     }
-
+    val uri = new java.net.URI(ctx.uri)
+    val datetime = LocalDateTime.now()
     col match {
       case "REQUEST_URI" => List(ctx.uri)
       case "REQUEST_METHOD" => List(ctx.method)
-      case "REQUEST_HEADERS" => {
+      case "REQUEST_HEADERS" | "RESPONSE_HEADERS" => {
         key match {
           case None =>
             ctx.headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
@@ -364,8 +374,53 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
           case Some(key) => txMap.get(key.toLowerCase()).toList
         }
       }
-      case "REQUEST_BODY" => ctx.body.toList
-      case "REQUEST_HEADERS_NAMES" => ctx.headers.keySet.toList
+      case "ENV" => key match {
+        case None => List.empty
+        case Some(key) => sys.env.get(key).toList
+      }
+      case "REQUEST_BODY" | "RESPONSE_BODY" => ctx.body.toList
+      case "REQUEST_HEADERS_NAMES" | "RESPONSE_HEADERS_NAMES" => ctx.headers.keySet.toList
+      case "DURATION" => List((System.currentTimeMillis() - ctx.startTime).toString)
+      case "PATH_INFO" => List(uri.getPath)
+      case "QUERY_STRING" => List(uri.getRawQuery)
+      case "REMOTE_ADDR" => List(ctx.remoteAddr)
+      case "REMOTE_HOST" => List(ctx.remoteAddr)
+      case "REMOTE_PORT" => List(ctx.remotePort.toString)
+      case "REMOTE_USER" => ctx.headers.get("Authorization").orElse(ctx.headers.get("authorization")).flatMap(_.lastOption).collect {
+        case auth if auth.startsWith("Basic ") => Try(new String(Base64.getDecoder.decode(auth.substring("Basic ".length).split(":")(0)), StandardCharsets.UTF_8)).getOrElse("")
+      }.toList.filter(_.nonEmpty)
+      case "REQUEST_BASENAME" => uri.getPath.split('/').lastOption.toList
+      case "REQUEST_COOKIES" => key match {
+        case None =>
+          ctx.cookies.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
+        case Some(h) =>
+          ctx.cookies.collect {
+            case (k, vs) if k.toLowerCase == h => vs
+          }.flatten.toList
+      }
+      case "REQUEST_COOKIES_NAMES" => ctx.cookies.keySet.toList
+      case "REQUEST_FILENAME" => List(uri.getPath)
+      case "REQUEST_LINE" => List(s"${ctx.method.toUpperCase()} ${uri.getRawPath} ${ctx.protocol}")
+      case "REQUEST_PROTOCOL" | "RESPONSE_PROTOCOL" => List(ctx.protocol)
+      case "REQUEST_URI_RAW" => List(ctx.uriRaw)
+      case "REQUEST_CONTENT_TYPE" | "RESPONSE_CONTENT_TYPE" => ctx.headers.get("Content-Type").orElse(ctx.headers.get("content-type")).flatMap(_.lastOption).toList
+      case "RESPONSE_STATUS" => ctx.status.map(_.toString).toList
+      case "REQUEST_BODY_LENGTH" | "RESPONSE_CONTENT_LENGTH" => ctx.headers.get("Content-Length").orElse(ctx.headers.get("content-length")).flatMap(_.lastOption).toList
+      // case "SERVER_ADDR" => unimplementedVariable("SERVER_ADDR") // from ctx.variables
+      // case "SERVER_NAME" => unimplementedVariable("SERVER_NAME") // from ctx.variables
+      // case "SERVER_PORT" => unimplementedVariable("SERVER_PORT") // from ctx.variables
+      case "STATUS_LINE" => List(ctx.statusLine)
+      case "TIME" => List(datetime.format(DateTimeFormatter.ofPattern("HH:mm:ss")))
+      case "TIME_DAY" => List(datetime.getDayOfMonth.toString)
+      case "TIME_EPOCH" => List((System.currentTimeMillis / 1000).toString)
+      case "TIME_HOUR" => List(datetime.getHour.toString)
+      case "TIME_MIN" => List(datetime.getMinute.toString)
+      case "TIME_MON" => List(datetime.getMonthValue.toString)
+      case "TIME_SEC" => List(datetime.getSecond.toString)
+      case "TIME_WDAY" => List(datetime.getDayOfWeek.getValue.toString)
+      case "TIME_YEAR" => List(datetime.getYear.toString)
+      case "UNIQUE_ID" => List(ctx.requestId)
+      case "USERID" => Option(uidRef.get).toList
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       case "ARGS_COMBINED_SIZE" => unimplementedVariable("ARGS_COMBINED_SIZE") // TODO: implement it
       case "ARGS_GET" => unimplementedVariable("ARGS_GET") // TODO: implement it
@@ -374,8 +429,6 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
       case "ARGS_POST" => unimplementedVariable("ARGS_POST") // TODO: implement it
       case "ARGS_POST_NAMES" => unimplementedVariable("ARGS_POST_NAMES") // TODO: implement it
       case "AUTH_TYPE" => unimplementedVariable("AUTH_TYPE") // TODO: implement it
-      case "DURATION" => unimplementedVariable("DURATION") // TODO: implement it
-      case "ENV" => unimplementedVariable("ENV") // TODO: implement it
       case "FILES" => unimplementedVariable("FILES") // TODO: implement it
       case "FILES_COMBINED_SIZE" => unimplementedVariable("FILES_COMBINED_SIZE") // TODO: implement it
       case "FILES_NAMES" => unimplementedVariable("FILES_NAMES") // TODO: implement it
@@ -384,7 +437,6 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
       case "FILES_SIZES" => unimplementedVariable("FILES_SIZES") // TODO: implement it
       case "FILES_TMPNAMES" => unimplementedVariable("FILES_TMPNAMES") // TODO: implement it
       case "FILES_TMP_CONTENT" => unimplementedVariable("FILES_TMP_CONTENT") // TODO: implement it
-      case "GEO" => unimplementedVariable("GEO") // TODO: implement it
       case "HIGHEST_SEVERITY" => unimplementedVariable("HIGHEST_SEVERITY") // TODO: implement it
       case "INBOUND_DATA_ERROR" => unimplementedVariable("INBOUND_DATA_ERROR") // TODO: implement it
       case "MATCHED_VAR" => unimplementedVariable("MATCHED_VAR") // TODO: implement it
@@ -400,52 +452,18 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
       case "MULTIPART_STRICT_ERROR" => unimplementedVariable("MULTIPART_STRICT_ERROR") // TODO: implement it
       case "MULTIPART_UNMATCHED_BOUNDARY" => unimplementedVariable("MULTIPART_UNMATCHED_BOUNDARY") // TODO: implement it
       case "OUTBOUND_DATA_ERROR" => unimplementedVariable("OUTBOUND_DATA_ERROR") // TODO: implement it
-      case "PATH_INFO" => unimplementedVariable("PATH_INFO") // TODO: implement it
-      case "QUERY_STRING" => unimplementedVariable("QUERY_STRING") // TODO: implement it
-      case "REMOTE_ADDR" => unimplementedVariable("REMOTE_ADDR") // TODO: implement it
-      case "REMOTE_HOST" => unimplementedVariable("REMOTE_HOST") // TODO: implement it
-      case "REMOTE_PORT" => unimplementedVariable("REMOTE_PORT") // TODO: implement it
-      case "REMOTE_USER" => unimplementedVariable("REMOTE_USER") // TODO: implement it
       case "REQBODY_ERROR" => unimplementedVariable("REQBODY_ERROR") // TODO: implement it
       case "REQBODY_ERROR_MSG" => unimplementedVariable("REQBODY_ERROR_MSG") // TODO: implement it
       case "REQBODY_PROCESSOR" => unimplementedVariable("REQBODY_PROCESSOR") // TODO: implement it
-      case "REQUEST_BASENAME" => unimplementedVariable("REQUEST_BASENAME") // TODO: implement it
-      case "REQUEST_BODY_LENGTH" => unimplementedVariable("REQUEST_BODY_LENGTH") // TODO: implement it
-      case "REQUEST_COOKIES" => unimplementedVariable("REQUEST_COOKIES") // TODO: implement it
-      case "REQUEST_COOKIES_NAMES" => unimplementedVariable("REQUEST_COOKIES_NAMES") // TODO: implement it
-      case "REQUEST_FILENAME" => unimplementedVariable("REQUEST_FILENAME") // TODO: implement it
-      case "REQUEST_LINE" => unimplementedVariable("REQUEST_LINE") // TODO: implement it
-      case "REQUEST_PROTOCOL" => unimplementedVariable("REQUEST_PROTOCOL") // TODO: implement it
-      case "REQUEST_URI_RAW" => unimplementedVariable("REQUEST_URI_RAW") // TODO: implement it
-      case "RESPONSE_CONTENT_LENGTH" => unimplementedVariable("RESPONSE_CONTENT_LENGTH") // TODO: implement it
-      case "RESPONSE_CONTENT_TYPE" => unimplementedVariable("RESPONSE_CONTENT_TYPE") // TODO: implement it
-      case "RESPONSE_HEADERS" => unimplementedVariable("RESPONSE_HEADERS") // TODO: implement it
-      case "RESPONSE_HEADERS_NAMES" => unimplementedVariable("RESPONSE_HEADERS_NAMES") // TODO: implement it
-      case "RESPONSE_PROTOCOL" => unimplementedVariable("RESPONSE_PROTOCOL") // TODO: implement it
-      case "RESPONSE_STATUS" => unimplementedVariable("RESPONSE_STATUS") // TODO: implement it
       case "RULE" => unimplementedVariable("RULE") // TODO: implement it
       case "SDBM_DELETE_ERROR" => unimplementedVariable("SDBM_DELETE_ERROR") // TODO: implement it
-      case "SERVER_ADDR" => unimplementedVariable("SERVER_ADDR") // TODO: implement it
-      case "SERVER_NAME" => unimplementedVariable("SERVER_NAME") // TODO: implement it
-      case "SERVER_PORT" => unimplementedVariable("SERVER_PORT") // TODO: implement it
       case "SESSION" => unimplementedVariable("SESSION") // TODO: implement it
       case "SESSIONID" => unimplementedVariable("SESSIONID") // TODO: implement it
-      case "STATUS_LINE" => unimplementedVariable("STATUS_LINE") // TODO: implement it
-      case "TIME" => unimplementedVariable("TIME") // TODO: implement it
-      case "TIME_DAY" => unimplementedVariable("TIME_DAY") // TODO: implement it
-      case "TIME_EPOCH" => unimplementedVariable("TIME_EPOCH") // TODO: implement it
-      case "TIME_HOUR" => unimplementedVariable("TIME_HOUR") // TODO: implement it
-      case "TIME_MIN" => unimplementedVariable("TIME_MIN") // TODO: implement it
-      case "TIME_MON" => unimplementedVariable("TIME_MON") // TODO: implement it
-      case "TIME_SEC" => unimplementedVariable("TIME_SEC") // TODO: implement it
-      case "TIME_WDAY" => unimplementedVariable("TIME_WDAY") // TODO: implement it
-      case "TIME_YEAR" => unimplementedVariable("TIME_YEAR") // TODO: implement it
-      case "UNIQUE_ID" => unimplementedVariable("UNIQUE_ID") // TODO: implement it
       case "URLENCODED_ERROR" => unimplementedVariable("URLENCODED_ERROR") // TODO: implement it
-      case "USERID" => unimplementedVariable("USERID") // TODO: implement it
       case "WEBAPPID" => unimplementedVariable("WEBAPPID") // TODO: implement it
       case "XML" => unimplementedVariable("XML") // TODO: implement it
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      case "GEO" => unsupportedVariable("GEO")
       case "PERF_ALL" => unsupportedV3Variable("PERF_ALL")
       case "PERF_COMBINED" => unsupportedV3Variable("PERF_COMBINED")
       case "PERF_GC" => unsupportedV3Variable("PERF_GC")
@@ -471,9 +489,15 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
       case "USERAGENT_IP" => unsupportedV3Variable("USERAGENT_IP")
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       case other =>
-        // fallback: unsupported collection
-        println("unknown variable: " + other)
-        Nil
+        ctx.variables.get(other)
+          .orElse(ctx.variables.get(other.toLowerCase))
+          .orElse(ctx.variables.get(other.toUpperCase)) match {
+          case Some(v) => List(v)
+          case None =>
+            // fallback: unsupported collection
+            println("unknown variable: " + other)
+            Nil
+        }
     }
   }
 
@@ -494,8 +518,8 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
       case (v, "uppercase") => v.toUpperCase
       case (v, "trim")      => v.trim
       case (v, "urlDecodeUni") => try URLDecoder.decode(v, StandardCharsets.UTF_8.name()) catch { case _: Throwable => v }
-      case (v, "base64Decode") => new String(Base64.getDecoder.decode(v))
-      case (v, "base64DecodeExt") => new String(Base64.getDecoder.decode(v))
+      case (v, "base64Decode") => Try(new String(Base64.getDecoder.decode(v))).getOrElse(v)
+      case (v, "base64DecodeExt") => Try(new String(Base64.getDecoder.decode(v))).getOrElse(v)
       case (v, "base64Encode") => Base64.getEncoder.encodeToString(v.getBytes(StandardCharsets.UTF_8))
       case (v, "compressWhitespace") => v.replaceAll("\\s+", " ")
       case (v, "hexDecode") => try java.util.HexFormat.of().parseHex(v).mkString catch { case _: Throwable => v }
