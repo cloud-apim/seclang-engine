@@ -689,18 +689,19 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
       case (v, "sha1") => try java.security.MessageDigest.getInstance("SHA-1").digest(v.getBytes(StandardCharsets.UTF_8)).map("%02x".format(_)).mkString catch { case _: Throwable => v }
       case (v, "trimLeft") => v.dropWhile(_ == ' ')
       case (v, "trimRight") => v.reverse.dropWhile(_ == ' ').reverse
+      case (v, "utf8toUnicode") => Transformations.utf8toUnicode(v)
+      case (v, "jsDecode") => Transformations.jsDecode(v)
+      case (v, "htmlEntityDecode") => Transformations.htmlEntityDecode(v)
+      case (v, "cssDecode") => Transformations.cssDecode(v)
+      case (v, "replaceComments") => Transformations.replaceComments(v)
+      case (v, "cmdLine") => Transformations.cmdLine(v)
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      case (v, "utf8toUnicode") => unimplementedTransform("utf8toUnicode", v) // TODO: implement it
+
       case (v, "replaceNulls") => unimplementedTransform("replaceNulls", v) // TODO: implement it
-      case (v, "replaceComments") => unimplementedTransform("replaceComments", v) // TODO: implement it
       case (v, "parityEven7bit") => unimplementedTransform("parityEven7bit", v) // TODO: implement it
       case (v, "parityOdd7bit") => unimplementedTransform("parityOdd7bit", v) // TODO: implement it
       case (v, "parityZero7bit") => unimplementedTransform("parityZero7bit", v) // TODO: implement it
-      case (v, "jsDecode") => unimplementedTransform("jsDecode", v) // TODO: implement it
-      case (v, "htmlEntityDecode") => unimplementedTransform("htmlEntityDecode", v) // TODO: implement it
       case (v, "escapeSeqDecode") => unimplementedTransform("escapeSeqDecode", v) // TODO: implement it
-      case (v, "cssDecode") => unimplementedTransform("cssDecode", v) // TODO: implement it
-      case (v, "cmdLine") => unimplementedTransform("cmdLine", v) // TODO: implement it
       case (v, "sqlHexDecode") => unimplementedTransform("sqlHexDecode", v) // TODO: implement it
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       case (v, _) => v

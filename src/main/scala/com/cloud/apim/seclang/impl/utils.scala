@@ -203,3 +203,329 @@ object StatusCodes {
   )
   def get(status: Int): Option[String] = httpStatusTexts.get(status)
 }
+
+object Transformations {
+
+  /** ModSecurity-like jsDecode transformation */
+  def jsDecode(in: String): String = {
+    val out = new StringBuilder(in.length)
+
+    def hexVal(c: Char): Int =
+      if (c >= '0' && c <= '9') c - '0'
+      else if (c >= 'a' && c <= 'f') 10 + (c - 'a')
+      else if (c >= 'A' && c <= 'F') 10 + (c - 'A')
+      else -1
+
+    def parseHex2(s: String, i: Int): Int = {
+      if (i + 1 >= s.length) -1
+      else {
+        val h1 = hexVal(s.charAt(i))
+        val h2 = hexVal(s.charAt(i + 1))
+        if (h1 < 0 || h2 < 0) -1 else (h1 << 4) | h2
+      }
+    }
+
+    def parseHex4(s: String, i: Int): Int = {
+      if (i + 3 >= s.length) -1
+      else {
+        val h1 = hexVal(s.charAt(i))
+        val h2 = hexVal(s.charAt(i + 1))
+        val h3 = hexVal(s.charAt(i + 2))
+        val h4 = hexVal(s.charAt(i + 3))
+        if (h1 < 0 || h2 < 0 || h3 < 0 || h4 < 0) -1
+        else (h1 << 12) | (h2 << 8) | (h3 << 4) | h4
+      }
+    }
+
+    var i = 0
+    while (i < in.length) {
+      val c = in.charAt(i)
+
+      if (c != '\\' || i + 1 >= in.length) {
+        out.append(c)
+        i += 1
+      } else {
+        val n = in.charAt(i + 1)
+
+        n match {
+          case 'u' =>
+            val v = parseHex4(in, i + 2)
+            if (v >= 0) {
+              val decoded =
+                if (v >= 0xFF01 && v <= 0xFF5E) v - 0xFEE0
+                else (v & 0xFF) // keep low byte only, zero high byte
+              out.append(decoded.toChar)
+              i += 6
+            } else {
+              out.append('\\'); out.append('u')
+              i += 2
+            }
+
+          // \xHH
+          case 'x' =>
+            val v = parseHex2(in, i + 2)
+            if (v >= 0) {
+              out.append((v & 0xFF).toChar)
+              i += 4
+            } else {
+              out.append('\\'); out.append('x')
+              i += 2
+            }
+
+          // octal: \0 .. \777 (up to 3 digits)
+          case d if d >= '0' && d <= '7' =>
+            var j = i + 1
+            var count = 0
+            var acc = 0
+            while (j < in.length && count < 3) {
+              val ch = in.charAt(j)
+              if (ch >= '0' && ch <= '7') {
+                acc = (acc << 3) | (ch - '0')
+                j += 1
+                count += 1
+              } else {
+                j = in.length // break
+              }
+            }
+            out.append((acc & 0xFF).toChar)
+            i += (1 + count)
+
+          // classic JS escapes
+          case 'n'  => out.append('\n'); i += 2
+          case 'r'  => out.append('\r'); i += 2
+          case 't'  => out.append('\t'); i += 2
+          case 'b'  => out.append('\b'); i += 2
+          case 'f'  => out.append('\f'); i += 2
+          case 'v'  => out.append(0x0B.toChar); i += 2
+          case '\\' => out.append('\\'); i += 2
+          case '\'' => out.append('\''); i += 2
+          case '"'  => out.append('"'); i += 2
+          case '/'  => out.append('/'); i += 2
+
+          // unknown escape: keep as-is (backslash + char)
+          case _ =>
+            out.append('\\')
+            out.append(n)
+            i += 2
+        }
+      }
+    }
+
+    out.result()
+  }
+
+  private val hexEntity: Regex =
+    """&#x([0-9a-fA-F]{1,4});?""".r
+
+  private val decEntity: Regex =
+    """&#([0-9]{1,5});?""".r
+
+  private val namedEntities: Map[String, Char] = Map(
+    "quot" -> '"',
+    "nbsp" -> ' ',
+    "lt"   -> '<',
+    "gt"   -> '>'
+  )
+
+  def htmlEntityDecode(input: String): String = {
+    var out = input
+
+    // Hexadecimal entities
+    out = hexEntity.replaceAllIn(out, m => {
+      val value = Integer.parseInt(m.group(1), 16) & 0xff
+      value.toChar.toString
+    })
+
+    // Decimal entities
+    out = decEntity.replaceAllIn(out, m => {
+      val value = Integer.parseInt(m.group(1), 10) & 0xff
+      value.toChar.toString
+    })
+
+    // Named entities (with or without ;)
+    namedEntities.foreach { case (name, char) =>
+      out = out
+        .replace(s"&$name;", char.toString)
+        .replace(s"&$name", char.toString)
+    }
+
+    out
+  }
+
+  /** ModSecurity / CRS "cmdLine" transformation
+   *
+   * - delete \  "  '  ^
+   * - delete spaces before / and before (
+   * - replace , and ; with a space
+   * - collapse all whitespace (tab/newline/etc.) to single space
+   * - lowercase
+   */
+  def cmdLine(v: String): String = {
+    if (v == null) return ""
+
+    val noEscapes =
+      v
+        .replace("\\", "")
+        .replace("\"", "")
+        .replace("'", "")
+        .replace("^", "")
+
+    val noSpacesBeforeSlashOrParen =
+      noEscapes
+        .replaceAll("""\s+(/)""", "$1")   // spaces before /
+        .replaceAll("""\s+(\()""", "$1")  // spaces before (
+
+    val commasSemicolonsToSpace =
+      noSpacesBeforeSlashOrParen.replaceAll("""[;,]""", " ")
+
+    val normalizedSpaces =
+      commasSemicolonsToSpace
+        .replaceAll("""\s+""", " ")
+        .trim
+
+    normalizedSpaces.toLowerCase(java.util.Locale.ROOT)
+  }
+
+  import java.lang.{Character => JChar}
+
+  def utf8toUnicode(v: String): String = {
+    if (v == null || v.isEmpty) return v
+
+    val sb = new StringBuilder(v.length * 6)
+
+    var i = 0
+    while (i < v.length) {
+      val cp = v.codePointAt(i)
+
+      if (cp <= 0xFFFF) {
+        // "%u" est du texte, on formate uniquement l'hexadécimal
+        sb.append("%u")
+        sb.append(f"${cp}%04X")
+      } else {
+        // convertir en surrogate pair UTF-16
+        val uPrime = cp - 0x10000
+        val high = 0xD800 + (uPrime >> 10)
+        val low  = 0xDC00 + (uPrime & 0x3FF)
+
+        sb.append("%u"); sb.append(f"${high}%04X")
+        sb.append("%u"); sb.append(f"${low}%04X")
+      }
+
+      i += Character.charCount(cp)
+    }
+
+    sb.result()
+  }
+
+  private def isHex(c: Char): Boolean =
+    (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')
+
+  private def isCssWhitespace(c: Char): Boolean =
+    c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f'
+
+  /** cssDecode (ModSecurity-like)
+   * - CSS 2.x escapes: \HHHHHH (1..6 hex) optionally followed by a single whitespace
+   * - "evasion": backslash + non-hex => drop '\' (ja\vascript => javascript)
+   * - uses only up to two bytes: value masked to 0xFFFF
+   */
+  def cssDecode(in: String): String = {
+    if (in == null || in.isEmpty) return in
+
+    val out = new java.lang.StringBuilder(in.length)
+    var i = 0
+    val n = in.length
+
+    while (i < n) {
+      val c = in.charAt(i)
+      if (c != '\\') {
+        out.append(c)
+        i += 1
+      } else {
+        // backslash
+        if (i + 1 >= n) {
+          // trailing '\' => drop it
+          i += 1
+        } else {
+          val next = in.charAt(i + 1)
+
+          // CSS line continuation: "\" + newline/carriage-return/formfeed => removed
+          if (next == '\n' || next == '\f') {
+            i += 2
+          } else if (next == '\r') {
+            // consume optional '\n' after '\r'
+            i += 2
+            if (i < n && in.charAt(i) == '\n') i += 1
+          } else if (isHex(next)) {
+            // read 1..6 hex digits
+            var j = i + 1
+            var count = 0
+            var value = 0
+
+            while (j < n && count < 6 && isHex(in.charAt(j))) {
+              val h = in.charAt(j)
+              val digit =
+                if (h >= '0' && h <= '9') h - '0'
+                else if (h >= 'a' && h <= 'f') 10 + (h - 'a')
+                else 10 + (h - 'A')
+              value = (value << 4) | digit
+              j += 1
+              count += 1
+            }
+
+            // mask to 2 bytes (16 bits)
+            val decoded = (value & 0xFFFF).toChar
+            out.append(decoded)
+
+            // optional single whitespace after hex escape
+            if (j < n && isCssWhitespace(in.charAt(j))) j += 1
+
+            i = j
+          } else {
+            // evasion: drop '\' and keep the next char as-is
+            out.append(next)
+            i += 2
+          }
+        }
+      }
+    }
+
+    out.toString
+  }
+
+  // replaceComments: replace each C-style comment (/* ... */) with a single space.
+  // Unterminated /* ... at end is also replaced with a single space.
+  // Standalone */ is not modified.
+  def replaceComments(input: String): String = {
+    if (input == null || input.isEmpty) return input
+
+    val out = new java.lang.StringBuilder(input.length)
+    var i = 0
+    val n = input.length
+
+    while (i < n) {
+      // Detect start of comment "/*"
+      if (input.charAt(i) == '/' && i + 1 < n && input.charAt(i + 1) == '*') {
+        // We found a comment start. Skip until closing "*/" or end-of-input.
+        i += 2
+        var closed = false
+        while (i < n && !closed) {
+          if (input.charAt(i) == '*' && i + 1 < n && input.charAt(i + 1) == '/') {
+            i += 2
+            closed = true
+          } else {
+            i += 1
+          }
+        }
+        // Replace the whole comment (closed or not) with a single space.
+        out.append(' ')
+      } else {
+        // Any other char, including standalone "*/", is copied as-is.
+        out.append(input.charAt(i))
+        i += 1
+      }
+    }
+
+    out.toString
+  }
+}
+
