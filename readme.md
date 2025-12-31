@@ -22,6 +22,12 @@ built to efficiently execute the [OWASP Core Rule Set (CRS)](https://coreruleset
   - [ ] Support remote fs (HTTP/HTTPS)
   - [ ] Support lists of locations
   - [ ] Support splitted definitions with cache (cached CRS + cached Global + cached user specific config)
+- [ ] parsing of ! in variables
+- [ ] variable count
+- [ ] variable key as regex
+- [ ] implicit rx operator ? (not in crs actually)
+- [ ] negating operators
+- [ ] run actions
 
 ## Unimplemented for CRS
 

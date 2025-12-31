@@ -1,5 +1,6 @@
 package com.cloud.apim.seclang.impl.compiler
 
+import com.cloud.apim.seclang.model.ConfigDirective.{ComponentSignature, DefaultAction}
 import com.cloud.apim.seclang.model._
 import play.api.libs.json.Json
 
@@ -82,7 +83,11 @@ object Compiler {
         case s: SecRuleUpdateTargetByMsg => unimplementedStatement("SecRuleUpdateTargetByMsg")
         case s: SecRuleUpdateTargetByTag => unimplementedStatement("SecRuleUpdateTargetByTag")
         case s: SecRuleUpdateActionById => unimplementedStatement("SecRuleUpdateActionById")
-        case s: EngineConfigDirective => unimplementedStatement("EngineConfigDirective")
+        case EngineConfigDirective(_, DefaultAction(actions)) => unimplementedStatement("DefaultAction")
+        case EngineConfigDirective(_, ComponentSignature(expr)) => ()
+        case s: EngineConfigDirective =>
+          println(s.directive.getClass.getSimpleName)
+          unimplementedStatement("EngineConfigDirective")
         case s =>
           println(s"unknown statement ${s.getClass.getSimpleName}")
           // ignore for now (SecAction etc.)
