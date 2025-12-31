@@ -51,9 +51,20 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
 
     while (i < items.length) {
       items(i) match {
+        // TODO: handle all needed statements
+        case ActionItem(action) =>
+          val (matched, stAfterMatch, skipToIdxOpt, dispOpt) = evalAction(action, phase, ctx, st, markerIndex)
+          st = stAfterMatch
+          dispOpt match {
+            case Some(d) => return (d, st)
+            case None =>
+              skipToIdxOpt match {
+                case Some(j) => i = j
+                case None    => i += 1
+              }
+          }
         case MarkerItem(_) =>
           i += 1
-
         case RuleChain(rules) =>
           // if rule id disabled runtime, skip
           val chainId = rules.last.id.orElse(rules.head.id)
@@ -82,6 +93,73 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
     (Disposition.Continue, st)
   }
 
+  private def performActions(actions: List[Action], i: Int, context: RequestContext, state: RuntimeState): RuntimeState = {
+    // TODO: implement it
+    state
+  }
+
+  private def evalAction(
+    action: SecAction,
+    phase: Int,
+    ctx: RequestContext,
+    st0: RuntimeState,
+    markerIndex: Map[String, Int]
+  ): (Boolean, RuntimeState, Option[Int], Option[Disposition]) = {
+    var st = st0
+    var collectedMsg: Option[String] = None
+    var collectedStatus: Option[Int] = None
+    var disruptive: Option[Action] = None
+    var skipAfter: Option[String] = None
+    var lastRuleId: Option[Int] = None
+    val actionsList = action.actions.actions.toList
+
+    val msg = actionsList.collectFirst {
+      case Action.Msg(m) => m
+    }
+    if (msg.nonEmpty) collectedMsg = msg
+
+    val status = actionsList.collectFirst {
+      case Action.Status(s) => s
+    }
+    if (status.nonEmpty) collectedStatus = status
+
+    // disruptive action can appear anywhere, but we keep last
+    val dis = actionsList.collectFirst {
+      case Action.Block() => Action.Block()
+      case Action.Deny => Action.Deny
+      case Action.Drop => Action.Drop
+      case Action.Pass => Action.Pass
+      case Action.Allow(m) => Action.Allow(m)
+    }
+    if (dis.nonEmpty) disruptive = dis
+
+    // skipAfter
+    val sk = actionsList.collectFirst { case Action.SkipAfter(m) => m }
+    if (sk.nonEmpty) skipAfter = sk
+
+    // runtime ctl disable
+    actionsList.collect { case CtlAction.RuleRemoveById(id) => id }.foreach { id =>
+      st = st.copy(disabledIds = st.disabledIds + id)
+    }
+
+    st = st.copy(events = MatchEvent(action.id, msg, phase, Json.stringify(action.json)) :: st.events)
+    st = performActions(actionsList, phase, ctx, st)
+    val disp =
+      disruptive match {
+        case Some(Action.Deny) | Some(Action.Drop) | Some(Action.Block()) =>
+          Some(Disposition.Block(
+            status = collectedStatus.getOrElse(403),
+            msg = collectedMsg,
+            ruleId = lastRuleId
+          ))
+        case _ => None
+      }
+
+    val skipIdx = skipAfter.flatMap(markerIndex.get).map(_ + 1)
+
+    (true, st, skipIdx, disp)
+  }
+
   private def evalChain(
       rules: List[SecRule],
       phase: Int,
@@ -102,21 +180,22 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
     rules.foreach { r =>
       lastRuleId = r.id.orElse(lastRuleId)
       if (allMatched) {
-        val matched = evalRule(r, ctx)
+        val matched = evalRule(r, ctx, r.id.contains(920320)) // TODO: remove
         // TODO: implement actions: https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29#actions
         if (matched) {
-          val msg = r.actions.toList.flatMap(_.actions).collectFirst {
+          val actionsList = r.actions.toList.flatMap(_.actions)
+          val msg = actionsList.collectFirst {
             case Action.Msg(m) => m
           }
           if (msg.nonEmpty) collectedMsg = msg
 
-          val status = r.actions.toList.flatMap(_.actions).collectFirst {
+          val status = actionsList.collectFirst {
             case Action.Status(s) => s
           }
           if (status.nonEmpty) collectedStatus = status
 
           // disruptive action can appear anywhere, but we keep last
-          val dis = r.actions.toList.flatMap(_.actions).collectFirst {
+          val dis = actionsList.collectFirst {
             case Action.Block() => Action.Block()
             case Action.Deny => Action.Deny
             case Action.Drop => Action.Drop
@@ -126,15 +205,16 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
           if (dis.nonEmpty) disruptive = dis
 
           // skipAfter
-          val sk = r.actions.toList.flatMap(_.actions).collectFirst { case Action.SkipAfter(m) => m }
+          val sk = actionsList.collectFirst { case Action.SkipAfter(m) => m }
           if (sk.nonEmpty) skipAfter = sk
 
           // runtime ctl disable
-          r.actions.toList.flatMap(_.actions).collect { case CtlAction.RuleRemoveById(id) => id }.foreach { id =>
+          actionsList.collect { case CtlAction.RuleRemoveById(id) => id }.foreach { id =>
             st = st.copy(disabledIds = st.disabledIds + id)
           }
 
           st = st.copy(events = MatchEvent(r.id, msg, phase, Json.stringify(r.json)) :: st.events)
+          st = performActions(actionsList, phase, ctx, st)
         } else {
           allMatched = false
         }
@@ -161,16 +241,23 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
     }
   }
 
-  private def evalRule(rule: SecRule, ctx: RequestContext): Boolean = {
+  private def evalRule(rule: SecRule, ctx: RequestContext, debug: Boolean): Boolean = {
+    // if (debug) println(s"rule: ${Json.prettyPrint(rule.json)}")
     // 1) extract values from variables
     val extracted: List[String] = rule.variables.variables.flatMap(v => resolveVariable(v, ctx))
+    if (debug) println(s"variables (${extracted.size}): ${extracted.mkString(", ")}")
 
     // 2) apply transformations
     val transforms = rule.actions.toList.flatMap(_.actions).toList.collect { case Action.Transform(name) => name }.filterNot(_ == "none")
     val transformed = extracted.map(v => applyTransforms(v, transforms))
 
+    if (debug) println(s"transformed_variables (${transformed.size}): ${transformed.mkString(", ")}")
+
+    if (debug) println(s"operator: ${rule.operator.json}")
     // 3) operator match on ANY extracted value
-    transformed.exists(v => evalOperator(rule.operator, v))
+    val matched = transformed.exists(v => evalOperator(rule.operator, v))
+    if (debug) println(s"matched: ${matched}")
+    matched
   }
 
   private def unimplementedVariable(name: String): List[String] = {

@@ -162,8 +162,16 @@ final case class SecAction(
     commentBlock: Option[CommentBlock],
     actions: Actions
 ) extends Statement {
+  lazy val id: Option[Int] = actions.actions.collectFirst {
+    case Action.Id(v) => v
+  }
+  lazy val phase: Int = actions.actions.collectFirst {
+    case Action.Phase(p) => p
+  }.getOrElse(2)
   def json: JsValue = Json.obj(
     "type" -> "SecAction",
+    "id" -> id,
+    "phase" -> phase,
     "actions" -> actions.json,
     "comment_block" -> commentBlock.map(_.json).getOrElse(JsNull).as[JsValue],
   )

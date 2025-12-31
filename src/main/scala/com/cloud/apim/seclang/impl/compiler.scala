@@ -12,6 +12,10 @@ final case class RuleChain(rules: List[SecRule]) extends CompiledItem {
 }
 
 final case class MarkerItem(name: String) extends CompiledItem
+final case class ActionItem(action: SecAction) extends CompiledItem {
+  lazy val phase: Int = action.phase
+  lazy val id: Option[Int] = action.id
+}
 
 final case class CompiledProgram(
   itemsByPhase: Map[Int, Vector[CompiledItem]],
@@ -68,8 +72,9 @@ object Compiler {
           }
         case m: SecMarker =>
           items += MarkerItem(m.name)
+        case s: SecAction =>
+          items += ActionItem(s)
         case s: SecRuleScript => unimplementedStatement("SecRuleScript")
-        case s: SecAction => unimplementedStatement("SecAction")
         case s: SecRuleRemoveById => unimplementedStatement("SecRuleRemoveById")
         case s: SecRuleRemoveByMsg => unimplementedStatement("SecRuleRemoveByMsg")
         case s: SecRuleRemoveByTag => unimplementedStatement("SecRuleRemoveByTag")
@@ -93,7 +98,13 @@ object Compiler {
       case rc: RuleChain =>
         val ph = rc.phase
         byPhase(ph) = byPhase(ph) :+ rc
+      case ai: ActionItem =>
+        val ph = ai.phase
+        byPhase(ph) = byPhase(ph) :+ ai
       case m: MarkerItem =>
+        byPhase(5) = byPhase(5) :+ m
+        byPhase(4) = byPhase(4) :+ m
+        byPhase(3) = byPhase(3) :+ m
         byPhase(2) = byPhase(2) :+ m
         byPhase(1) = byPhase(1) :+ m
       case _ =>

