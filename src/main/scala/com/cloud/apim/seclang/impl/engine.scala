@@ -748,19 +748,39 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
     case Operator.Lt(x) => scala.util.Try(value.toInt).getOrElse(0) < scala.util.Try(evalTxExpressions(x).toInt).getOrElse(0)
     case Operator.StrMatch(x) => value.toLowerCase.contains(evalTxExpressions(x).toLowerCase)
     case Operator.Within(x) => evalTxExpressions(x).toLowerCase().contains(value.toLowerCase())
+    case Operator.PmFromFile(xs) => {
+      val fileName = evalTxExpressions(xs)
+      files.get(fileName) match {
+        case None => false
+        case Some(file) => {
+          file
+            .linesIterator
+            .exists(ex => ex.split(" ").exists(it => value.toLowerCase().contains(it.toLowerCase)))
+        }
+      }
+    }
+    case Operator.ValidateByteRange(x) => ByteRangeValidator.validateByteRange(value, x)
+    case Operator.IpMatch(x) => IpMatch.ipMatch(x, value)
+    case Operator.IpMatchFromFile(xs) => {
+      val fileName = evalTxExpressions(xs)
+      files.get(fileName) match {
+        case None => false
+        case Some(file) => {
+          file
+            .linesIterator
+            .exists(ex => ex.split(" ").exists(it => IpMatch.ipMatch(it, value)))
+        }
+      }
+    }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    case Operator.ValidateByteRange(x) => unimplementedOperator("validateByteRange") // TODO: implement it
     case Operator.ValidateUrlEncoding(x) => unimplementedOperator("validateUrlEncoding") // TODO: implement it
     case Operator.ValidateUtf8Encoding(x) => unimplementedOperator("validateUtf8Encoding") // TODO: implement it
     case Operator.VerifyCC(x) => unimplementedOperator("verifyCC") // TODO: implement it
     case Operator.VerifyCPF(x) => unimplementedOperator("verifyCPF") // TODO: implement it
     case Operator.VerifySSN(x) => unimplementedOperator("verifySSN") // TODO: implement it
     // case Operator.NoMatch(x) => unimplementedOperator("noMatch")
-    case Operator.PmFromFile(x) => unimplementedOperator("pmFromFile") // TODO: implement it
     case Operator.Rbl(x) => unimplementedOperator("rbl") // TODO: implement it
     case Operator.RxGlobal(x) => unimplementedOperator("rxGlobal") // TODO: implement it
-    case Operator.IpMatch(x) => unimplementedOperator("ipMatch") // TODO: implement it
-    case Operator.IpMatchFromFile(x) => unimplementedOperator("ipMatchFromFile") // TODO: implement it
     case Operator.FuzzyHash(x) => unimplementedOperator("fuzzyHash") // TODO: implement it
     case Operator.DetectXSS(x) => unimplementedOperator("detectXSS") // TODO: implement it
     case Operator.DetectSQLi(x) => unimplementedOperator("detectSQLi") // TODO: implement it

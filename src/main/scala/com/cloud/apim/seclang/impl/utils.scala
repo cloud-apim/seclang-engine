@@ -1,5 +1,6 @@
 package com.cloud.apim.seclang.impl.utils
 
+import com.comcast.ip4s._
 import org.w3c.dom.{Document, NodeList}
 import org.xml.sax.InputSource
 
@@ -526,6 +527,104 @@ object Transformations {
     }
 
     out.toString
+  }
+}
+
+object ByteRangeValidator {
+
+  type ByteRange = (Int, Int)
+
+  def validateByteRange(
+                         input: String,
+                         rangesStr: String
+                       ): Boolean = {
+
+    val ranges = parseByteRanges(rangesStr)
+    val allowed: Int => Boolean = b =>
+      ranges.exists { case (min, max) => b >= min && b <= max }
+
+    input
+      .getBytes(StandardCharsets.UTF_8)
+      .exists { byte =>
+        val unsigned = byte & 0xff
+        !allowed(unsigned)
+      }
+  }
+
+  def parseByteRanges(input: String): Seq[ByteRange] = {
+    input
+      .split(",")
+      .iterator
+      .map(_.trim)
+      .filter(_.nonEmpty)
+      .map {
+        case range if range.contains("-") =>
+          val Array(start, end) = range.split("-", 2).map(_.trim.toInt)
+          require(start >= 0 && end <= 255 && start <= end,
+            s"Invalid byte range: $range")
+          start -> end
+
+        case single =>
+          val value = single.toInt
+          require(value >= 0 && value <= 255,
+            s"Invalid byte value: $value")
+          value -> value
+      }
+      .toSeq
+  }
+}
+
+object IpMatch {
+
+  /** Compile le paramètre "@ipMatch ..." une seule fois (perf) */
+  final case class Compiled(entries: Vector[Either[IpAddress, Cidr[IpAddress]]]) {
+    def matches(remoteAddr: String): Boolean = {
+      IpAddress.fromString(remoteAddr.trim) match {
+        case None => false
+        case Some(remote) =>
+          var i = 0
+          while (i < entries.length) {
+            entries(i) match {
+              case Left(ip) =>
+                if (ip == remote) return true
+              case Right(cidr) =>
+                // IpCidr est typé v4/v6 : contains(remote) ne matche que si même famille
+                if (cidr.contains(remote)) return true
+            }
+            i += 1
+          }
+          false
+      }
+    }
+  }
+
+  /** Parse "192.168.1.100, 10.10.50.0/24, 2001:db8::/32" */
+  def compile(param: String): Compiled = {
+    val entries =
+      param
+        .split(',')
+        .iterator
+        .map(_.trim)
+        .filter(_.nonEmpty)
+        .flatMap { token =>
+          // CIDR d'abord, sinon IP pleine
+          Cidr.fromString(token).map(Right(_))
+            .orElse(IpAddress.fromString(token).map(Left(_)))
+            .iterator
+        }
+        .toVector
+
+    Compiled(entries)
+  }
+
+  /** Helper directe : parse à chaque appel (moins perf) */
+  def ipMatch(remoteAddr: String, param: String): Boolean =
+    compile(param).matches(remoteAddr)
+
+  /** Variante “1 argument” si tu veux capturer le paramètre et obtenir une fonction (String) => Boolean */
+  def ipMatch(param: String): String => Boolean = {
+    val compiled = compile(param)
+    (remoteAddr: String) => compiled.matches(remoteAddr)
   }
 }
 
