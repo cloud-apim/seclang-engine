@@ -270,7 +270,6 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
       case "REQBODY_ERROR_MSG" => unimplementedVariable("REQBODY_ERROR_MSG") // TODO: implement it
       case "REQBODY_PROCESSOR" => unimplementedVariable("REQBODY_PROCESSOR") // TODO: implement it
       case "REQUEST_BASENAME" => unimplementedVariable("REQUEST_BASENAME") // TODO: implement it
-      case "REQUEST_BODY" => unimplementedVariable("REQUEST_BODY") // TODO: implement it
       case "REQUEST_BODY_LENGTH" => unimplementedVariable("REQUEST_BODY_LENGTH") // TODO: implement it
       case "REQUEST_COOKIES" => unimplementedVariable("REQUEST_COOKIES") // TODO: implement it
       case "REQUEST_COOKIES_NAMES" => unimplementedVariable("REQUEST_COOKIES_NAMES") // TODO: implement it
@@ -279,7 +278,6 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
       case "REQUEST_LINE" => unimplementedVariable("REQUEST_LINE") // TODO: implement it
       case "REQUEST_PROTOCOL" => unimplementedVariable("REQUEST_PROTOCOL") // TODO: implement it
       case "REQUEST_URI_RAW" => unimplementedVariable("REQUEST_URI_RAW") // TODO: implement it
-      case "RESPONSE_BODY" => unimplementedVariable("RESPONSE_BODY") // TODO: implement it
       case "RESPONSE_CONTENT_LENGTH" => unimplementedVariable("RESPONSE_CONTENT_LENGTH") // TODO: implement it
       case "RESPONSE_CONTENT_TYPE" => unimplementedVariable("RESPONSE_CONTENT_TYPE") // TODO: implement it
       case "RESPONSE_HEADERS" => unimplementedVariable("RESPONSE_HEADERS") // TODO: implement it

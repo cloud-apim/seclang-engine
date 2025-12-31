@@ -1,4 +1,4 @@
-# Cloud APIM Scala SecLang Engine
+# Cloud APIM SecLang Engine
 
 A Scala-based implementation of a subset of the [OWASP/ModSecurity SecLang language](https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29), 
 built to efficiently execute the [OWASP Core Rule Set (CRS)](https://coreruleset.org/) with user based customizations in highly concurrent and multi-tenant environments.

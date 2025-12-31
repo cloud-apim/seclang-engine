@@ -1,4 +1,4 @@
-# Scala SecLang Engine
+# SecLang Engine
 
 ## 📌 Project Overview
 
