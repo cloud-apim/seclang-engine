@@ -106,6 +106,7 @@ class SecLangBasicTest extends munit.FunSuite {
 
     println("fetching CRS ...")
     val rules = (Seq(
+      // "https://raw.githubusercontent.com/corazawaf/coraza-proxy-wasm/refs/heads/main/wasmplugin/rules/coraza.conf-recommended.conf",
       "https://raw.githubusercontent.com/coreruleset/coreruleset/refs/heads/main/crs-setup.conf.example"
     ) ++ (List(
       "REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf.example",

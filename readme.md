@@ -32,16 +32,8 @@ Built to efficiently execute the [OWASP Core Rule Set (CRS)](https://coreruleset
 ## Unimplemented for CRS
 
 ```shell
-unimplemented statement EngineConfigDirective
-unimplemented variable: REQBODY_PROCESSOR
-unimplemented variable: UNIQUE_ID
-unimplemented variable: REQUEST_LINE
-unimplemented variable: REMOTE_ADDR
-unknown operator: Negated(Within(%{tx.allowed_methods}))
-unimplemented operator: pmFromFile
-unimplemented variable: REQUEST_PROTOCOL
-unimplemented variable: REQUEST_FILENAME
-unimplemented variable: REQUEST_HEADERS_NAMES
-unimplemented variable: REQUEST_URI_RAW
-unimplemented variable: REQUEST_BASENAME
+unimplemented statement DefaultAction
+unimplemented statement DefaultAction
+unimplemented operator: detectXSS
+unimplemented operator: detectSQLi
 ```

@@ -47,7 +47,7 @@ object Compiler {
             while (!done && it.hasNext) {
               it.next() match {
                 case rr: SecRule =>
-                  chain += rr
+                  chain += rr.copy(commentBlock = None)
                   done = !rr.isChain
                 case m: SecMarker =>
                   // chain interrupted by marker -> still close chain
@@ -73,7 +73,7 @@ object Compiler {
         case m: SecMarker =>
           items += MarkerItem(m.name)
         case s: SecAction =>
-          items += ActionItem(s)
+          items += ActionItem(s.copy(commentBlock = None))
         case s: SecRuleScript => unimplementedStatement("SecRuleScript")
         case s: SecRuleRemoveById => unimplementedStatement("SecRuleRemoveById")
         case s: SecRuleRemoveByMsg => unimplementedStatement("SecRuleRemoveByMsg")
@@ -85,7 +85,7 @@ object Compiler {
         case EngineConfigDirective(_, DefaultAction(actions)) => unimplementedStatement("DefaultAction")
         case EngineConfigDirective(_, ComponentSignature(expr)) => ()
         case s: EngineConfigDirective =>
-          println(s.directive.getClass.getSimpleName)
+          // println(s.directive.getClass.getSimpleName)
           unimplementedStatement("EngineConfigDirective")
         case s =>
           println(s"unknown statement ${s.getClass.getSimpleName}")
