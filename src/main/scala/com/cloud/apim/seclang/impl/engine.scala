@@ -105,7 +105,12 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
 
   private def evalTxExpressions(input: String): String = {
     if (input.contains("%{")) {
-      TxExpr.replaceAllIn(input, m => {
+      val finalInput: String = if (input.contains("%{MATCHED_VAR}") && txMap.contains("MATCHED_VAR")) {
+        input.replaceAll("%\\{MATCHED_VAR\\}", txMap("MATCHED_VAR"))
+      } else {
+        input
+      }
+      TxExpr.replaceAllIn(finalInput, m => {
         val key = m.group(1).toLowerCase
         txMap.getOrElse(key, m.matched)
       })
@@ -264,7 +269,7 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
         if (matched) {
           val actionsList = r.actions.toList.flatMap(_.actions)
           val msg = actionsList.collectFirst {
-            case Action.Msg(m) => m
+            case Action.Msg(m) => evalTxExpressions(m)
           }
           if (msg.nonEmpty) collectedMsg = msg
 
@@ -353,10 +358,7 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
     Nil
   }
 
-  private def deepMerge(
-                 m1: Map[String, List[String]],
-                 m2: Map[String, List[String]]
-               ): Map[String, List[String]] = {
+  private def deepMerge(m1: Map[String, List[String]], m2: Map[String, List[String]]): Map[String, List[String]] = {
     (m1.keySet ++ m2.keySet).iterator.map { k =>
       k -> (m1.getOrElse(k, Nil) ++ m2.getOrElse(k, Nil))
     }.toMap
@@ -733,7 +735,12 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
     case Operator.Rx(pattern) => {
       try {
         val r: Regex = evalTxExpressions(pattern).r
-        r.findFirstIn(value).nonEmpty
+        val rs = r.findFirstIn(value)
+        rs.foreach { str =>
+          txMap.put("MATCHED_VAR".toLowerCase, str)
+          txMap.put("MATCHED_VAR".toUpperCase, str)
+        }
+        rs.nonEmpty
       } catch {
         case _: Throwable => false
       }

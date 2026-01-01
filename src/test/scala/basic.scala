@@ -7,6 +7,34 @@ import play.api.libs.json.Json
 
 import java.net.URI
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
+import scala.concurrent.duration.Duration
+
+object Stats {
+
+  def runStats[T](rounds: Int)(f: => T): Unit = {
+    require(rounds > 0, "rounds must be > 0")
+
+    val times = (1 to rounds).map { _ =>
+      val start = System.nanoTime()
+      f
+      System.nanoTime() - start
+    }
+
+    val total = times.sum
+    val min = times.min
+    val max = times.max
+    val avg = total / rounds
+
+    def fmt(ns: Long): String =
+      Duration.fromNanos(ns).toMillis + " ms"
+
+    println(s"Runs        : $rounds")
+    println(s"Total time  : ${fmt(total)}")
+    println(s"Min         : ${fmt(min)}")
+    println(s"Max         : ${fmt(max)}")
+    println(s"Average     : ${fmt(avg)}")
+  }
+}
 
 class SecLangBasicTest extends munit.FunSuite {
 
@@ -40,7 +68,8 @@ class SecLangBasicTest extends munit.FunSuite {
 
   test("antlr_crs") {
     val client = HttpClient.newHttpClient()
-    /*val data: Map[String, String] = List(
+    println("fetching files")
+    val files: Map[String, String] = List(
       "asp-dotnet-errors.data",
       "iis-errors.data",
       "java-classes.data",
@@ -63,6 +92,7 @@ class SecLangBasicTest extends munit.FunSuite {
       .map(v => (v, s"https://raw.githubusercontent.com/coreruleset/coreruleset/refs/heads/main/rules/${v}"))
       .map {
         case (key, url) =>
+          println(s"fetching file: ${url}")
           val request = HttpRequest.newBuilder()
             .uri(URI.create(url))
             .GET()
@@ -72,7 +102,7 @@ class SecLangBasicTest extends munit.FunSuite {
             HttpResponse.BodyHandlers.ofString()
           )
           (key, response.body())
-      }.toMap*/
+      }.toMap
 
     println("fetching CRS ...")
     val rules = (Seq(
@@ -109,7 +139,7 @@ class SecLangBasicTest extends munit.FunSuite {
     )
       .map(v => s"https://raw.githubusercontent.com/coreruleset/coreruleset/refs/heads/main/rules/${v}")))
       .map { url =>
-        println(s"fetching: ${url} ...")
+        println(s"fetching rules: ${url} ...")
         val request = HttpRequest.newBuilder()
           .uri(URI.create(url))
           .GET()
@@ -122,17 +152,31 @@ class SecLangBasicTest extends munit.FunSuite {
       }
       .mkString("\n")
     println("fetching CRS done !\n\n")
+    val start = System.currentTimeMillis()
     SecLang.parse(rules) match {
       case Left(err) => println("parse error: " + err)
       case Right(config) => {
+        val program = SecLang.compile(config)
+        val engine = SecLang.engine(program, files = files)
+        val stop = System.currentTimeMillis()
+
         val out1 = Json.prettyPrint(config.json)
         // java.nio.file.Files.writeString(new java.io.File("./crs.json").toPath, out1)
         val config2 = Configuration.format.reads(Json.parse(out1)).get
         val out2 = Json.prettyPrint(config2.json)
         assertEquals(out1, out2)
 
-        val program = SecLang.compile(config)
-        val engine = SecLang.engine(program)
+        val passing_ctx = RequestContext(
+          method = "GET",
+          uri = "/",
+          headers = Map(
+            "Host" -> List("www.owasp.org"),
+            "User-Agent" -> List("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"),
+          )
+        )
+        println("passing")
+        engine.evaluate(passing_ctx, phases = List(1, 2)).displayPrintln()
+        println("failing")
         val failing_ctx = RequestContext(
           method = "GET",
           uri = "/",
@@ -144,8 +188,16 @@ class SecLangBasicTest extends munit.FunSuite {
           query = Map("q" -> List("test")),
           body = None
         )
-        val failing_res = engine.evaluate(failing_ctx, phases = List(1, 2)).displayPrintln()
+        val start2 = System.currentTimeMillis()
+        val failing_res = engine.evaluate(failing_ctx, phases = List(1, 2))
+        val stop2 = System.currentTimeMillis()
+        failing_res.displayPrintln()
         assertEquals(failing_res.disposition, Block(403, Some("Potential Remote Command Execution: Log4j / Log4shell"), Some(944150)))
+        println(s"engine ready in: ${stop - start} ms")
+        println(s"request handled in: ${stop2 - start2} ms")
+        // Stats.runStats(100) {
+        //   engine.evaluate(failing_ctx, phases = List(1, 2))
+        // }
       }
     }
   }
