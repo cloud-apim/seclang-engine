@@ -5,16 +5,16 @@ Built to efficiently execute the [OWASP Core Rule Set (CRS)](https://coreruleset
 
 ## TODO
 
-- [ ] Implement missing variables
-- [ ] Implement missing operators
-- [ ] Implement missing statements
-- [ ] Implement all actions besides blocking/passing ones
-- [ ] Implement transformation functions
-- [ ] Implement phase processing logic
-- [ ] Implement rule chaining and skip logic
-- [ ] Implement fake file system access (for `xFromFile` operators like `ipMatchFromFile`, `pmFromFile`, etc.)
-- [ ] Implement macro expansion
-- [ ] Implement transaction storage
+- [-] Implement missing variables
+- [-] Implement missing operators
+- [-] Implement missing statements
+- [-] Implement all actions besides blocking/passing ones
+- [-] Implement transformation functions
+- [x] Implement phase processing logic
+- [x] Implement rule chaining and skip logic
+- [x] Implement fake file system access (for `xFromFile` operators like `ipMatchFromFile`, `pmFromFile`, etc.)
+- [-] Implement macro expansion
+- [-] Implement transaction storage
 - [ ] Integration mechanism (logger, http fetch, fs read/write, env, etc)
 - [ ] Implement configuration options 
   - [ ] Support json
@@ -23,11 +23,11 @@ Built to efficiently execute the [OWASP Core Rule Set (CRS)](https://coreruleset
   - [ ] Support lists of locations
   - [ ] Support splitted definitions with cache (cached CRS + cached Global + cached user specific config)
 - [ ] parsing of ! in variables
-- [ ] variable count
+- [x] variable count
 - [ ] variable key as regex
-- [ ] implicit rx operator ? (not in crs actually)
-- [ ] negating operators
-- [ ] run actions
+- [ ] implicit rx operator ? (not in crs, starting with ^)
+- [x] negating operators
+- [x] run actions
 
 ## Unimplemented for CRS
 
