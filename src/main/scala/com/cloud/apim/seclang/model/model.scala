@@ -1,5 +1,6 @@
 package com.cloud.apim.seclang.model
 
+import akka.util.ByteString
 import com.cloud.apim.seclang.impl.utils.StatusCodes
 import play.api.libs.json._
 
@@ -1211,12 +1212,23 @@ object RequestContext {
     val address = (json \ "dest_addr").asOpt[String].getOrElse("127.0.0.1")
     val scheme = if (port == 80) "http" else "https"
     val uri = s"$scheme://$address:$port$path"
+    val body = (json \ "data").asOpt[String].map(s => ByteString(s))
+    val isResponse = path.startsWith("/reflect")
+    val respStruct = if (isResponse) Try(Json.parse(body.map(_.utf8String).getOrElse("{}"))).getOrElse(Json.obj("body" -> body.getOrElse(ByteString.empty).utf8String)) else Json.obj()
+    val respStatus = if (isResponse) Some((respStruct \ "status").asOpt[Int].getOrElse(200)) else None
+    val respStatusTxt = if (isResponse) StatusCodes.get((respStruct \ "status").asOpt[Int].getOrElse(200)) else None
+    val headers: Map[String, List[String]] = (json \ "headers").asOpt[Map[String, String]].map(_.mapValues(v => List(v))).getOrElse(Map.empty)
+    val respHeaders: Map[String, List[String]] = (respStruct \ "headers").asOpt[Map[String, String]].map(_.mapValues(v => List(v))).getOrElse(Map.empty)
+    val encBody = (respStruct \ "encodedBody").asOpt[String].map(s => ByteString(s).decodeBase64)
+    val respBody = encBody.orElse((respStruct \ "body").asOpt[String].map(s => ByteString(s)))
     RequestContext(
       method = (json \ "method").asOpt[String].getOrElse("GET"),
       uri = uri,
-      cookies = (json \ "cookies").asOpt[Map[String, String]].map(_.mapValues(v => List(v))).getOrElse(Map.empty),
-      headers = (json \ "headers").asOpt[Map[String, String]].map(_.mapValues(v => List(v))).getOrElse(Map.empty),
-      body = (json \ "data").asOpt[String],
+      status = respStatus,
+      statusTxt = respStatusTxt,
+      // cookies = (json \ "cookies").asOpt[Map[String, String]].map(_.mapValues(v => List(v))).getOrElse(Map.empty),
+      headers = if (isResponse) respHeaders else headers,
+      body = if (isResponse) respBody else body,
       protocol = (json \ "protocol").asOpt[String].getOrElse("HTTP/1.1"),
     )
   }
@@ -1229,7 +1241,7 @@ final case class RequestContext(
   headers: Map[String, List[String]] = Map.empty,
   cookies: Map[String, List[String]] = Map.empty,
   query: Map[String, List[String]] = Map.empty,
-  body: Option[String] = None,
+  body: Option[ByteString] = None,
   status: Option[Int] = None, // when used as response
   statusTxt: Option[String] = None, // when used as response
   startTime: Long = System.currentTimeMillis(),
@@ -1240,6 +1252,7 @@ final case class RequestContext(
   variables: Map[String, String] = Map.empty,
   cache: TrieMap[String, List[String]] = new TrieMap[String, List[String]],
 ) {
+  def isResponse: Boolean = status.isDefined
   def uriRaw: String = {
     val host = headers.get("Host").orElse(headers.get("host")).getOrElse("")
     s"${if (secure) "https" else "http"}://$host$uri"

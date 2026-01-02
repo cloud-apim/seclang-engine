@@ -1,5 +1,6 @@
 package com.cloud.apim.seclang.impl.utils
 
+import akka.util.ByteString
 import com.comcast.ip4s._
 import org.w3c.dom.{Document, NodeList}
 import org.xml.sax.InputSource
@@ -625,6 +626,115 @@ object IpMatch {
   def ipMatch(param: String): String => Boolean = {
     val compiled = compile(param)
     (remoteAddr: String) => compiled.matches(remoteAddr)
+  }
+}
+
+object EncodingHelper {
+
+  def validateUrlEncoding(input: String): Boolean = {
+    val len = input.length
+    var i = 0
+
+    while (i < len) {
+      if (input.charAt(i) == '%') {
+        // must have two characters after %
+        if (i + 2 >= len) return false
+
+        val c1 = input.charAt(i + 1)
+        val c2 = input.charAt(i + 2)
+
+        def isHex(c: Char): Boolean =
+          (c >= '0' && c <= '9') ||
+            (c >= 'a' && c <= 'f') ||
+            (c >= 'A' && c <= 'F')
+
+        if (!isHex(c1) || !isHex(c2)) return false
+
+        i += 3 // skip the %HH sequence
+      } else {
+        i += 1
+      }
+    }
+
+    true
+  }
+
+  def validateUtf8Encoding(input: ByteString): Boolean = {
+    val bytes = input
+    val len = bytes.length
+
+    @inline def u(i: Int): Int = bytes(i) & 0xff
+    @inline def isCont(b: Int): Boolean = (b & 0xC0) == 0x80 // 10xxxxxx
+
+    var i = 0
+    while (i < len) {
+      val b0 = u(i)
+
+      if (b0 <= 0x7F) {
+        // ASCII
+        i += 1
+
+      } else if (b0 >= 0xC2 && b0 <= 0xDF) {
+        // 2 bytes
+        if (i + 1 >= len) return false
+        if (!isCont(u(i + 1))) return false
+        i += 2
+
+      } else if (b0 == 0xE0) {
+        // 3 bytes (anti-overlong)
+        if (i + 2 >= len) return false
+        val b1 = u(i + 1)
+        val b2 = u(i + 2)
+        if (b1 < 0xA0 || b1 > 0xBF) return false
+        if (!isCont(b2)) return false
+        i += 3
+
+      } else if ((b0 >= 0xE1 && b0 <= 0xEC) || b0 == 0xEE || b0 == 0xEF) {
+        // 3 bytes standard
+        if (i + 2 >= len) return false
+        if (!isCont(u(i + 1)) || !isCont(u(i + 2))) return false
+        i += 3
+
+      } else if (b0 == 0xED) {
+        // 3 bytes (exclusion surrogates UTF-16)
+        if (i + 2 >= len) return false
+        val b1 = u(i + 1)
+        val b2 = u(i + 2)
+        if (b1 < 0x80 || b1 > 0x9F) return false
+        if (!isCont(b2)) return false
+        i += 3
+
+      } else if (b0 == 0xF0) {
+        // 4 bytes (anti-overlong)
+        if (i + 3 >= len) return false
+        val b1 = u(i + 1)
+        if (b1 < 0x90 || b1 > 0xBF) return false
+        if (!isCont(u(i + 2)) || !isCont(u(i + 3))) return false
+        i += 4
+
+      } else if (b0 >= 0xF1 && b0 <= 0xF3) {
+        // 4 bytes standard
+        if (i + 3 >= len) return false
+        if (!isCont(u(i + 1)) || !isCont(u(i + 2)) || !isCont(u(i + 3))) return false
+        i += 4
+
+      } else if (b0 == 0xF4) {
+        // 4 bytes (<= U+10FFFF)
+        if (i + 3 >= len) return false
+        val b1 = u(i + 1)
+        if (b1 < 0x80 || b1 > 0x8F) return false
+        if (!isCont(u(i + 2)) || !isCont(u(i + 3))) return false
+        i += 4
+
+      } else {
+        // 0x80..0xBF continuation seule
+        // 0xC0..0xC1 overlong
+        // 0xF5..0xFF hors Unicode
+        return false
+      }
+    }
+
+    true
   }
 }
 

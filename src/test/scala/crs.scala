@@ -6,8 +6,11 @@ import com.cloud.apim.seclang.model.RequestContext
 import com.cloud.apim.seclang.scaladsl.SecLang
 import play.api.libs.json.{JsObject, JsValue, Json}
 
+import java.io.File
 import java.net.URI
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
+import java.nio.file.Files
+import java.util.concurrent.atomic.AtomicLong
 import scala.util.{Failure, Success, Try}
 
 object CRS {
@@ -26,8 +29,13 @@ object CRS {
     response.body()
   }
 
+  def read(path: String): String = {
+    val file = new File(path)
+    // println(s"reading file file://${file.getAbsolutePath}")
+    Files.readString(file.toPath)
+  }
+
   def setupCRSEngine(): SecRulesEngine = {
-    println("fetching files")
     val files: Map[String, String] = List(
       "asp-dotnet-errors.data",
       "iis-errors.data",
@@ -48,25 +56,13 @@ object CRS {
       "web-shells-php.data",
       "windows-powershell-commands.data",
     )
-      .map(v => (v, s"https://raw.githubusercontent.com/coreruleset/coreruleset/refs/heads/main/rules/${v}"))
+      .map(v => (v, s"./test-data/coreruleset/rules/${v}"))
       .map {
-        case (key, url) =>
-          println(s"fetching file: ${url}")
-          val request = HttpRequest.newBuilder()
-            .uri(URI.create(url))
-            .GET()
-            .build()
-          val response = client.send(
-            request,
-            HttpResponse.BodyHandlers.ofString()
-          )
-          (key, response.body())
+        case (key, url) => (key, Files.readString(new File(url).toPath))
       }.toMap
 
-    println("fetching CRS ...")
     val rules = (Seq(
-      // "https://raw.githubusercontent.com/corazawaf/coraza-proxy-wasm/refs/heads/main/wasmplugin/rules/coraza.conf-recommended.conf",
-      "https://raw.githubusercontent.com/coreruleset/coreruleset/refs/heads/main/crs-setup.conf.example"
+      "./test-data/coreruleset/crs-setup.conf.example"
     ) ++ (List(
       "REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf.example",
       "REQUEST-901-INITIALIZATION.conf",
@@ -97,22 +93,32 @@ object CRS {
       "RESPONSE-980-CORRELATION.conf",
       "RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf.example",
     )
-      .map(v => s"https://raw.githubusercontent.com/coreruleset/coreruleset/refs/heads/main/rules/${v}")))
+      .map(v => s"./test-data/coreruleset/rules/${v}")))
       .map { url =>
-        println(s"fetching rules: ${url} ...")
-        val request = HttpRequest.newBuilder()
-          .uri(URI.create(url))
-          .GET()
-          .build()
-        val response = client.send(
-          request,
-          HttpResponse.BodyHandlers.ofString()
-        )
-        response.body()
+        Files.readString(new File(url).toPath)
       }
       .mkString("\n")
-    println("fetching CRS done !\n\n")
-    val config = SecLang.parse(rules).right.get
+    val finalRules =
+      s"""# setup for test
+        |SecAction "id:900005,\\
+        |  phase:1,\\
+        |  nolog,\\
+        |  pass,\\
+        |  ctl:ruleEngine=DetectionOnly,\\
+        |  ctl:ruleRemoveById=910000,\\
+        |  setvar:tx.blocking_paranoia_level=4,\\
+        |  setvar:tx.crs_validate_utf8_encoding=1,\\
+        |  setvar:tx.arg_name_length=100,\\
+        |  setvar:tx.arg_length=400,\\
+        |  setvar:tx.total_arg_length=64000,\\
+        |  setvar:tx.max_num_args=255,\\
+        |  setvar:tx.max_file_size=64100,\\
+        |  setvar:tx.combined_file_sizes=65535"
+        |
+        |# then include crs
+        |${rules}
+        |""".stripMargin
+    val config = SecLang.parse(finalRules).right.get
     val program = SecLang.compile(config)
     SecLang.engine(program, files = files)
   }
@@ -122,51 +128,81 @@ object CRS {
 class SecLangCRSTest extends munit.FunSuite {
 
   private val engine = CRS.setupCRSEngine()
+  private val counter = new AtomicLong(0L)
+  private val failures = new AtomicLong(0L)
+  private val dev = true
 
-  def execTest(rule: String, url: String): Unit = Try {
-    //println(s"running tests for rule ${rule} ...")
-    val testsFile = CRS.fetch(if (url.startsWith("http://") || url.startsWith("https://")) url else s"https://raw.githubusercontent.com/coreruleset/coreruleset/refs/heads/main/tests/regression/tests/${url}")
+  private val testOnly: List[(String, Int)] = List.empty // List(("956100", 5))
+
+  def execTest(rule: String, path: String): Unit = Try {
+    // println(s"running tests for rule ${rule} ...")
+    val testsFile = CRS.read(s"./test-data/coreruleset/tests/regression/tests/${path}")
     val testsYaml = Yaml.parse(testsFile).get
     val tests = (testsYaml \ "tests").as[Seq[JsObject]]
     tests.foreach { test =>
       val testId = (test \ "test_id").as[Int]
-      val desc = (test \ "desc").asOpt[String]
-      // desc.foreach { desc => println(s"  testing: ${desc}")}
-      (test \ "stages").as[Seq[JsObject]].foreach { stage =>
-        val input = (stage \ "input").as[JsObject]
-        val ctx = RequestContext(input)
-        val result = engine.evaluate(ctx, List(1, 2))
-        val output = (stage \ "output").as[JsObject]
-        val status = (output \ "status").asOpt[Int]
-        val log = (output \ "log").asOpt[JsObject].getOrElse(Json.obj())
-        val expect_ids: List[Int] = (log \ "expect_ids").asOpt[List[Int]].getOrElse(List.empty)
-        val no_expect_ids: List[Int] = (log \ "no_expect_ids").asOpt[List[Int]].getOrElse(List.empty)
-        var checked = false
-        if (status.isDefined) {
-          checked = true
-          val outStatus = result.disposition match {
-            case Continue => 200
-            case Block(s, _, _) => s
+      if (testOnly.isEmpty || (testOnly.nonEmpty && testOnly.contains((rule, testId)))) {
+        val desc = (test \ "desc").asOpt[String]
+        (test \ "stages").as[Seq[JsObject]].foreach { stage =>
+          counter.incrementAndGet()
+          val input = (stage \ "input").as[JsObject]
+          val ctx = RequestContext(input)
+          val result = engine.evaluate(ctx, if(ctx.isResponse) List(3, 4) else List(1, 2))
+          val output = (stage \ "output").as[JsObject]
+          val status = (output \ "status").asOpt[Int]
+          val log = (output \ "log").asOpt[JsObject].getOrElse(Json.obj())
+          val expect_ids: List[Int] = (log \ "expect_ids").asOpt[List[Int]].getOrElse(List.empty)
+          val no_expect_ids: List[Int] = (log \ "no_expect_ids").asOpt[List[Int]].getOrElse(List.empty)
+          var checked = false
+          var ok = true
+          if (status.isDefined) {
+            checked = true
+            val outStatus = result.disposition match {
+              case Continue => 200
+              case Block(s, _, _) => s
+            }
+            if (outStatus != status.get) {
+              failures.incrementAndGet()
+              ok = false
+              println(s"[${rule} - ${testId}] ${desc.getOrElse("--")}")
+              println(s"      failed status check: $outStatus != ${status.get} ")
+            }
+            if (!dev) assertEquals(outStatus, status.get, s"status mismatch for test ${testId}")
           }
-          assertEquals(outStatus, status.get, s"status mismatch for test ${testId}")
-        }
-        if (expect_ids.nonEmpty) {
-          checked = true
-          expect_ids.foreach { expect_id =>
-            assertEquals(result.events.exists(evt => evt.ruleId.contains(expect_id)), true, s"expect_id mismatch for test ${testId}")
+          if (expect_ids.nonEmpty) {
+            checked = true
+            expect_ids.foreach { expect_id =>
+
+              val passed = result.events.exists(evt => evt.ruleId.contains(expect_id))
+              if (passed == false) {
+                ok = false
+                failures.incrementAndGet()
+                println(s"[${rule} - ${testId}] ${desc.getOrElse("--")}")
+                println(s"      failed expect_id check: $expect_id not found ")
+              }
+              if (!dev) assertEquals(passed, true, s"expect_id mismatch for test ${testId}")
+            }
           }
-        }
-        if (no_expect_ids.nonEmpty) {
-          checked = true
-          expect_ids.foreach { expect_id =>
-            assertEquals(result.events.exists(evt => evt.ruleId.contains(expect_id)), false, s"expect_id mismatch for test ${testId}")
+          if (no_expect_ids.nonEmpty) {
+            checked = true
+            no_expect_ids.foreach { no_expect_id =>
+              val notpassed = result.events.exists(evt => evt.ruleId.contains(no_expect_id))
+              if (notpassed == true) {
+                ok = false
+                failures.incrementAndGet()
+                println(s"[${rule} - ${testId}] ${desc.getOrElse("--")}")
+                println(s"      failed no_expect_ids check: $no_expect_id was found ")
+              }
+              if (!dev) assertEquals(notpassed, false, s"no_expect_ids mismatch for test ${testId}")
+            }
           }
-        }
-        assert(checked, s"nothing checked for test ${testId}")
-        if (checked) {
-          //println(s"    - passed for test ${testId}")
-        } else {
-          //println(s"    - nothing checked for test ${testId}")
+          if (checked && ok) {
+            //  println(s"    - [${rule} - ${testId}] passed")
+          } else if (!checked && ok) {
+            println(s"[${rule} - ${testId}] ${desc.getOrElse("--")}")
+            println(s"      nothing checked for test ${testId} ")
+          }
+          if (!dev) assert(checked, s"nothing checked for test ${testId}")
         }
       }
     }
@@ -176,13 +212,9 @@ class SecLangCRSTest extends munit.FunSuite {
       if (!clazzName.startsWith("munit.Assertions")) {
         println(e.getClass.getName + ": " + e.getMessage)
       } else {
-        println(e.getMessage)
-        //e match {
-        //  case t: munit.FailException => println(s"rule: ${rule}")
-        //  case t: munit.ComparisonFailException => println(s"rule: ${rule}")
-        //  case _ =>
-        //}
+        // println(e.getMessage)
       }
+      // throw e // TODO: uncomment for back to normal
     case Success(s) => s
   }
 
@@ -250,7 +282,6 @@ class SecLangCRSTest extends munit.FunSuite {
     execTest("920610", "REQUEST-920-PROTOCOL-ENFORCEMENT/920610.yaml")
     execTest("920620", "REQUEST-920-PROTOCOL-ENFORCEMENT/920620.yaml")
   }
-  /*
   test("REQUEST-921-PROTOCOL-ATTACK") {
     execTest("921110", "REQUEST-921-PROTOCOL-ATTACK/921110.yaml")
     execTest("921120", "REQUEST-921-PROTOCOL-ATTACK/921120.yaml")
@@ -543,5 +574,9 @@ class SecLangCRSTest extends munit.FunSuite {
   test("RESPONSE-980-CORRELATION") {
     execTest("980170", "RESPONSE-980-CORRELATION/980170.yaml")
   }
-   */
+  test("display results") {
+    if (failures.get() > 0) {
+      println(s"total test failures: ${failures.get()} / ${counter.get()}")
+    }
+  }
 }

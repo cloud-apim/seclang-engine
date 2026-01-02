@@ -1,6 +1,7 @@
 
 package com.cloud.apim.seclang.impl.engine
 
+import akka.util.ByteString
 import com.cloud.apim.libinjection.LibInjection
 import com.cloud.apim.seclang.impl.compiler._
 import com.cloud.apim.seclang.impl.utils._
@@ -38,7 +39,7 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
   def evaluate(ctx: RequestContext, phases: List[Int] = List(1, 2)): EngineResult = {
     val init = RuntimeState(Set.empty, Nil)
     val (disp, st) = phases.foldLeft((Disposition.Continue: Disposition, init)) {
-      case ((Disposition.Block(_,_,_), st), _) => (Disposition.Block(403, None, None), st) // already blocked, keep
+      case ((Disposition.Block(a, b, c), st), _) => (Disposition.Block(a, b, c), st) // already blocked, keep
       case ((Disposition.Continue, st), ph) =>
         val (d2, st2) = runPhase(ph, ctx, st)
         (d2, st2)
@@ -233,7 +234,7 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
       disruptive match {
         case Some(Action.Deny) | Some(Action.Drop) | Some(Action.Block()) =>
           Some(Disposition.Block(
-            status = collectedStatus.getOrElse(403),
+            status = collectedStatus.getOrElse(400),
             msg = collectedMsg,
             ruleId = lastRuleId
           ))
@@ -313,7 +314,7 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
         disruptive match {
           case Some(Action.Deny) | Some(Action.Drop) | Some(Action.Block()) =>
             Some(Disposition.Block(
-              status = collectedStatus.getOrElse(403),
+              status = collectedStatus.getOrElse(400),
               msg = collectedMsg,
               ruleId = lastRuleId
             ))
@@ -392,7 +393,7 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
           }
         }
         val datetime = LocalDateTime.now()
-        val res = col match {
+        val res: List[String] = col match {
           case "REQUEST_URI" => List(ctx.uri)
           case "REQUEST_METHOD" => List(ctx.method)
           case "REQUEST_HEADERS" | "RESPONSE_HEADERS" => {
@@ -408,7 +409,7 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
           case "ARGS" => {
             val headers = ctx.body match {
               case Some(body) if ctx.contentType.contains("application/www-form-urlencoded") => {
-                val bodyArgs = FormUrlEncoded.parse(body)
+                val bodyArgs = FormUrlEncoded.parse(body.utf8String)
                 deepMerge(ctx.query, bodyArgs)
               }
               case _ => ctx.query
@@ -425,7 +426,7 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
           case "ARGS_NAMES" => {
             val headers = ctx.body match {
               case Some(body) if ctx.contentType.contains("application/www-form-urlencoded") => {
-                val bodyArgs = FormUrlEncoded.parse(body)
+                val bodyArgs = FormUrlEncoded.parse(body.utf8String)
                 deepMerge(ctx.query, bodyArgs)
               }
               case _ => ctx.query
@@ -435,7 +436,7 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
           case "ARGS_COMBINED_SIZE" => {
             val headers = ctx.body match {
               case Some(body) if ctx.contentType.contains("application/www-form-urlencoded") => {
-                val bodyArgs = FormUrlEncoded.parse(body)
+                val bodyArgs = FormUrlEncoded.parse(body.utf8String)
                 deepMerge(ctx.query, bodyArgs)
               }
               case _ => ctx.query
@@ -452,7 +453,7 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
             case None => List.empty
             case Some(key) => envMap.get(key).toList
           }
-          case "REQUEST_BODY" | "RESPONSE_BODY" => ctx.body.toList
+          case "REQUEST_BODY" | "RESPONSE_BODY" => ctx.body.toList.map(_.utf8String)
           case "REQUEST_HEADERS_NAMES" | "RESPONSE_HEADERS_NAMES" => ctx.headers.keySet.toList
           case "DURATION" => List((System.currentTimeMillis() - ctx.startTime).toString)
           case "PATH_INFO" => List(path)
@@ -496,8 +497,8 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
           case "UNIQUE_ID" => List(ctx.requestId)
           case "USERID" => Option(uidRef.get).toList
           case "FILES" => ctx.contentType match {
-            case Some("multipart/form-data") => {
-              ctx.body.get.linesIterator
+            case Some("multipart/form-data") if ctx.body.isDefined => {
+              ctx.body.get.utf8String.linesIterator
                 .collect {
                   case line if line.toLowerCase.startsWith("content-disposition:") =>
                     """filename="([^"]+)"""".r
@@ -513,7 +514,7 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
           }
           case "FILES_NAMES" => ctx.contentType match {
             case Some("multipart/form-data") if ctx.body.isDefined => {
-              ctx.body.get.linesIterator
+              ctx.body.get.utf8String.linesIterator
                 .collect {
                   case line if line.toLowerCase.startsWith("content-disposition:") =>
                     """filename="([^"]+)"""".r
@@ -542,8 +543,8 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
           }
           case "MULTIPART_PART_HEADERS" => {
             ctx.body match {
-              case Some(body) => {
-                val headers = MultipartVars.multipartPartHeadersFromCtx(body, ctx.contentType).getOrElse(Map.empty)
+              case Some(body) if ctx.contentType.contains("multipart/form-data")=> {
+                val headers = MultipartVars.multipartPartHeadersFromCtx(body.utf8String, ctx.contentType).getOrElse(Map.empty)
                 key match {
                   case None =>
                     headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
@@ -553,7 +554,7 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
                     }.flatten.toList
                 }
               }
-              case None => List.empty
+              case _ => List.empty
             }
           }
           case "ARGS_GET" => {
@@ -571,7 +572,7 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
           case "ARGS_POST" => {
             ctx.body match {
               case Some(body) if ctx.contentType.contains("application/www-form-urlencoded") => {
-                val headers = FormUrlEncoded.parse(body)
+                val headers = FormUrlEncoded.parse(body.utf8String)
                 key match {
                   case None =>
                     headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
@@ -587,7 +588,7 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
           case "ARGS_POST_NAMES" => {
             ctx.body match {
               case Some(body) if ctx.contentType.contains("application/www-form-urlencoded") => {
-                val headers = FormUrlEncoded.parse(body)
+                val headers = FormUrlEncoded.parse(body.utf8String)
                 headers.keySet.toList
               }
               case _ => List.empty
@@ -596,7 +597,7 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
           case "XML" => {
             ctx.body match {
               case Some(body) if key.isDefined && (ctx.contentType.exists(_.contains("application/xm")) || ctx.contentType.exists(_.contains("text/xm"))) => {
-                XmlXPathParser.xpathValues(body, key.get)
+                XmlXPathParser.xpathValues(body.utf8String, key.get)
               }
               case _ => List.empty
             }
@@ -782,7 +783,8 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
             .filter(_.trim.nonEmpty)
             .filterNot(_.startsWith("#"))
             .exists { ex =>
-              ex.split(" ").exists(it => value.toLowerCase().contains(it.toLowerCase))
+              //ex.split(" ").exists(it => value.toLowerCase().contains(it.toLowerCase))
+              value.toLowerCase().contains(ex.toLowerCase)
             }
         }
       }
@@ -796,15 +798,18 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
         case Some(file) => {
           file
             .linesIterator
-            .exists(ex => ex.split(" ").exists(it => IpMatch.ipMatch(it, value)))
+            .filter(_.trim.nonEmpty)
+            .filterNot(_.startsWith("#"))
+            //.exists(ex => ex.split(" ").exists(it => IpMatch.ipMatch(it, value)))
+            .exists(ex => IpMatch.ipMatch(ex, value))
         }
       }
     }
     case Operator.DetectXSS(x) => LibInjection.isXSS(evalTxExpressions(x))
     case Operator.DetectSQLi(x) => LibInjection.isSQLi(evalTxExpressions(x))
+    case Operator.ValidateUrlEncoding(x) => EncodingHelper.validateUrlEncoding(x)
+    case Operator.ValidateUtf8Encoding(x) => EncodingHelper.validateUtf8Encoding(ByteString(x))
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    case Operator.ValidateUrlEncoding(x) => unimplementedOperator("validateUrlEncoding") // TODO: implement it
-    case Operator.ValidateUtf8Encoding(x) => unimplementedOperator("validateUtf8Encoding") // TODO: implement it
     case Operator.VerifyCC(x) => unimplementedOperator("verifyCC") // TODO: implement it
     case Operator.VerifyCPF(x) => unimplementedOperator("verifyCPF") // TODO: implement it
     case Operator.VerifySSN(x) => unimplementedOperator("verifySSN") // TODO: implement it

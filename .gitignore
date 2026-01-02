@@ -11,3 +11,4 @@ target/
 target
 node_modules
 antlr-4.13.2-complete.jar
+test-data
