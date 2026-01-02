@@ -337,9 +337,6 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
   }
 
   private def evalRule(rule: SecRule, ctx: RequestContext, debug: Boolean): Boolean = {
-    //if (rule.id.contains(944130)) {
-    println("eval rule " + rule.id)
-    //}
     // 1) extract values from variables
     val extracted: List[String] = {
       val vrbls = rule.variables.variables.flatMap(v => resolveVariable(v, rule.variables.count, rule.variables.negated, ctx))
@@ -614,14 +611,16 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
               case _ => List.empty
             }
           }
+          case "MATCHED_VAR" => txMap.get("MATCHED_VAR").orElse(txMap.get("MATCHED_VAR".toLowerCase())).toList
+          case "MATCHED_VARS" =>  txMap.get("MATCHED_LIST").toList.flatMap { v =>
+            Json.parse(v).asOpt[List[String]].getOrElse(List.empty)
+          }
           //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
           case "AUTH_TYPE" => unimplementedVariable("AUTH_TYPE") // TODO: implement it
           case "FULL_REQUEST" => unimplementedVariable("FULL_REQUEST") // TODO: implement it
           case "FULL_REQUEST_LENGTH" => unimplementedVariable("FULL_REQUEST_LENGTH") // TODO: implement it
           case "HIGHEST_SEVERITY" => unimplementedVariable("HIGHEST_SEVERITY") // TODO: implement it
           case "INBOUND_DATA_ERROR" => unimplementedVariable("INBOUND_DATA_ERROR") // TODO: implement it
-          case "MATCHED_VAR" => unimplementedVariable("MATCHED_VAR") // TODO: implement it
-          case "MATCHED_VARS" => unimplementedVariable("MATCHED_VARS") // TODO: implement it
           case "MATCHED_VAR_NAME" => unimplementedVariable("MATCHED_VAR_NAME") // TODO: implement it
           case "MATCHED_VARS_NAMES" => unimplementedVariable("MATCHED_VARS_NAMES") // TODO: implement it
           case "MODSEC_BUILD" => unimplementedVariable("MODSEC_BUILD") // TODO: implement it
@@ -727,13 +726,12 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
       case (v, "cssDecode") => Transformations.cssDecode(v)
       case (v, "replaceComments") => Transformations.replaceComments(v)
       case (v, "cmdLine") => Transformations.cmdLine(v)
+      case (v, "escapeSeqDecode") => EscapeSeq.escapeSeqDecode(v)
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
       case (v, "replaceNulls") => unimplementedTransform("replaceNulls", v) // TODO: implement it
       case (v, "parityEven7bit") => unimplementedTransform("parityEven7bit", v) // TODO: implement it
       case (v, "parityOdd7bit") => unimplementedTransform("parityOdd7bit", v) // TODO: implement it
       case (v, "parityZero7bit") => unimplementedTransform("parityZero7bit", v) // TODO: implement it
-      case (v, "escapeSeqDecode") => unimplementedTransform("escapeSeqDecode", v) // TODO: implement it
       case (v, "sqlHexDecode") => unimplementedTransform("sqlHexDecode", v) // TODO: implement it
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       case (v, _) => v

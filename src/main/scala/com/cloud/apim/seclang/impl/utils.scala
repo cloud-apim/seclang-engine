@@ -738,3 +738,99 @@ object EncodingHelper {
   }
 }
 
+object EscapeSeq {
+
+  /** Decodes ANSI C escape sequences:
+   * \a, \b, \f, \n, \r, \t, \v, \\, \?, \', \", \xHH (1..2 hex digits), \0OOO (octal, 1..3 digits)
+   * Invalid encodings are left in the output.
+   */
+  def escapeSeqDecode(input: String): String = {
+    if (input == null || input.isEmpty) return input
+
+    val sb = new StringBuilder(input.length)
+    val n  = input.length
+
+    @inline def isHex(c: Char): Boolean =
+      (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')
+
+    @inline def hexVal(c: Char): Int =
+      if (c >= '0' && c <= '9') c - '0'
+      else if (c >= 'a' && c <= 'f') 10 + (c - 'a')
+      else 10 + (c - 'A')
+
+    @inline def isOct(c: Char): Boolean = c >= '0' && c <= '7'
+    @inline def octVal(c: Char): Int = c - '0'
+
+    var i = 0
+    while (i < n) {
+      val ch = input.charAt(i)
+      if (ch != '\\') {
+        sb.append(ch)
+        i += 1
+      } else {
+        // '\' at end => invalid, keep as-is
+        if (i + 1 >= n) {
+          sb.append('\\')
+          i += 1
+        } else {
+          val next = input.charAt(i + 1)
+          next match {
+            case 'a'  => sb.append('\u0007'); i += 2 // BEL
+            case 'b'  => sb.append('\b');     i += 2
+            case 'f'  => sb.append('\f');     i += 2
+            case 'n'  => sb.append('\n');     i += 2
+            case 'r'  => sb.append('\r');     i += 2
+            case 't'  => sb.append('\t');     i += 2
+            case 'v'  => sb.append('\u000B'); i += 2 // VT
+            case '\\' => sb.append('\\');     i += 2
+            case '?'  => sb.append('?');      i += 2
+            case '\'' => sb.append('\'');     i += 2
+            case '"'  => sb.append('"');      i += 2
+
+            case 'x' =>
+              // \xHH where H is hex; accept 1..2 hex digits (common C behavior); otherwise invalid
+              var j = i + 2
+              var value = 0
+              var count = 0
+              while (j < n && count < 2 && isHex(input.charAt(j))) {
+                value = (value << 4) | hexVal(input.charAt(j))
+                j += 1
+                count += 1
+              }
+              if (count == 0) {
+                // invalid: keep "\x" literally
+                sb.append('\\').append('x')
+                i += 2
+              } else {
+                sb.append((value & 0xFF).toChar)
+                i = j
+              }
+
+            case '0' =>
+              // \0OOO octal: after \0, take 0..3 octal digits (total 1..4 including the first 0)
+              var j = i + 2
+              var value = 0
+              var count = 0
+              while (j < n && count < 3 && isOct(input.charAt(j))) {
+                value = (value << 3) | octVal(input.charAt(j))
+                j += 1
+                count += 1
+              }
+              // Even if there are no extra digits, "\0" is valid => NUL
+              sb.append((value & 0xFF).toChar)
+              i = j
+
+            case _ =>
+              // Not a recognized escape => keep '\' and the next char as-is
+              sb.append('\\').append(next)
+              i += 2
+          }
+        }
+      }
+    }
+
+    sb.result()
+  }
+}
+
+
