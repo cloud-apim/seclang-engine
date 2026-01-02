@@ -1,6 +1,7 @@
 
 package com.cloud.apim.seclang.impl.engine
 
+import com.cloud.apim.libinjection.LibInjection
 import com.cloud.apim.seclang.impl.compiler._
 import com.cloud.apim.seclang.impl.utils._
 import com.cloud.apim.seclang.model.Action.CtlAction
@@ -779,6 +780,8 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
         }
       }
     }
+    case Operator.DetectXSS(x) => LibInjection.isXSS(evalTxExpressions(x))
+    case Operator.DetectSQLi(x) => LibInjection.isSQLi(evalTxExpressions(x))
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     case Operator.ValidateUrlEncoding(x) => unimplementedOperator("validateUrlEncoding") // TODO: implement it
     case Operator.ValidateUtf8Encoding(x) => unimplementedOperator("validateUtf8Encoding") // TODO: implement it
@@ -789,8 +792,6 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
     case Operator.Rbl(x) => unimplementedOperator("rbl") // TODO: implement it
     case Operator.RxGlobal(x) => unimplementedOperator("rxGlobal") // TODO: implement it
     case Operator.FuzzyHash(x) => unimplementedOperator("fuzzyHash") // TODO: implement it
-    case Operator.DetectXSS(x) => unimplementedOperator("detectXSS") // TODO: implement it
-    case Operator.DetectSQLi(x) => unimplementedOperator("detectSQLi") // TODO: implement it
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     case Operator.ValidateDTD(x) => unsupportedOperator("validateDTD")
     case Operator.ValidateSchema(x) => unsupportedOperator("validateSchema")
