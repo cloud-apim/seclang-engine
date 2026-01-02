@@ -7,7 +7,7 @@ import com.cloud.apim.seclang.impl.compiler._
 import com.cloud.apim.seclang.impl.utils._
 import com.cloud.apim.seclang.model.Action.CtlAction
 import com.cloud.apim.seclang.model._
-import play.api.libs.json.Json
+import play.api.libs.json.{JsArray, JsString, Json}
 
 import java.net.{URLDecoder, URLEncoder}
 import java.nio.charset.StandardCharsets
@@ -131,6 +131,15 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
     }
     executableActions.foreach {
       case Action.AuditLog() => logAudit(s"${context.requestId} - ${context.method} ${context.uri} matched on: $events")
+      case Action.Capture() => {
+        txMap.get("MATCHED_VAR").foreach(v => txMap.put("0", v))
+        txMap.get("MATCHED_LIST").foreach { list =>
+          val liststr = Json.parse(list).asOpt[Seq[String]].getOrElse(Seq.empty)
+          liststr.zipWithIndex.foreach {
+            case (v, idx) => txMap.put(s"${idx + 1}", v)
+          }
+        }
+      }
       case Action.Log => logInfo(s"${context.requestId} - ${context.method} ${context.uri} matched on: $events")
       case Action.SetEnv(expr) => {
         val parts = expr.split("=")
@@ -328,6 +337,9 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
   }
 
   private def evalRule(rule: SecRule, ctx: RequestContext, debug: Boolean): Boolean = {
+    //if (rule.id.contains(944130)) {
+    println("eval rule " + rule.id)
+    //}
     // 1) extract values from variables
     val extracted: List[String] = {
       val vrbls = rule.variables.variables.flatMap(v => resolveVariable(v, rule.variables.count, rule.variables.negated, ctx))
@@ -753,10 +765,15 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
     case Operator.Rx(pattern) => {
       try {
         val r: Regex = evalTxExpressions(pattern).r
-        val rs = r.findFirstIn(value)
-        rs.foreach { str =>
+        val rs = r.findFirstMatchIn(value)
+        rs.foreach { m =>
+          val str = m.group(0)
           txMap.put("MATCHED_VAR".toLowerCase, str)
           txMap.put("MATCHED_VAR".toUpperCase, str)
+          val list = JsArray((1 to m.groupCount).map { idx =>
+            JsString(m.group(idx))
+          })
+          txMap.put("MATCHED_LIST", Json.stringify(list))
         }
         rs.nonEmpty
       } catch {
@@ -808,7 +825,7 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
     case Operator.DetectXSS(x) => LibInjection.isXSS(evalTxExpressions(x))
     case Operator.DetectSQLi(x) => LibInjection.isSQLi(evalTxExpressions(x))
     case Operator.ValidateUrlEncoding(x) => EncodingHelper.validateUrlEncoding(x)
-    case Operator.ValidateUtf8Encoding(x) => EncodingHelper.validateUtf8Encoding(ByteString(x))
+    case Operator.ValidateUtf8Encoding(x) => !EncodingHelper.validateUtf8Encoding(ByteString(x))
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     case Operator.VerifyCC(x) => unimplementedOperator("verifyCC") // TODO: implement it
     case Operator.VerifyCPF(x) => unimplementedOperator("verifyCPF") // TODO: implement it

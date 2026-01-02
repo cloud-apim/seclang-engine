@@ -990,7 +990,7 @@ object Action {
   final case class Block() extends DisruptiveAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "block")
   }
-  final case class Capture() extends NonDisruptiveAction {
+  final case class Capture() extends NonDisruptiveAction with NeedRunAction {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "capture")
   }
   case object Chain extends FlowAction {
@@ -1207,13 +1207,11 @@ object SeverityValue {
 
 object RequestContext {
   def apply(json: JsValue): RequestContext = {
-    val path = (json \ "uri").asOpt[String].getOrElse("/")
+    val uri = (json \ "uri").asOpt[String].getOrElse("/")
     val port = (json \ "port").asOpt[Int].getOrElse(80)
     val address = (json \ "dest_addr").asOpt[String].getOrElse("127.0.0.1")
-    val scheme = if (port == 80) "http" else "https"
-    val uri = s"$scheme://$address:$port$path"
     val body = (json \ "data").asOpt[String].map(s => ByteString(s))
-    val isResponse = path.startsWith("/reflect")
+    val isResponse = uri.startsWith("/reflect")
     val respStruct = if (isResponse) Try(Json.parse(body.map(_.utf8String).getOrElse("{}"))).getOrElse(Json.obj("body" -> body.getOrElse(ByteString.empty).utf8String)) else Json.obj()
     val respStatus = if (isResponse) Some((respStruct \ "status").asOpt[Int].getOrElse(200)) else None
     val respStatusTxt = if (isResponse) StatusCodes.get((respStruct \ "status").asOpt[Int].getOrElse(200)) else None
@@ -1221,14 +1219,23 @@ object RequestContext {
     val respHeaders: Map[String, List[String]] = (respStruct \ "headers").asOpt[Map[String, String]].map(_.mapValues(v => List(v))).getOrElse(Map.empty)
     val encBody = (respStruct \ "encodedBody").asOpt[String].map(s => ByteString(s).decodeBase64)
     val respBody = encBody.orElse((respStruct \ "body").asOpt[String].map(s => ByteString(s)))
+    val finalBody = if (isResponse) respBody else body
+    val pfheaders = if (isResponse) respHeaders else headers
+    val finalHeaders: Map[String, List[String]] = {
+      if (finalBody.isDefined) {
+        pfheaders + ("Content-Length" -> List(finalBody.get.length.toString))
+      } else {
+        pfheaders
+      }
+    }
     RequestContext(
       method = (json \ "method").asOpt[String].getOrElse("GET"),
       uri = uri,
       status = respStatus,
       statusTxt = respStatusTxt,
       // cookies = (json \ "cookies").asOpt[Map[String, String]].map(_.mapValues(v => List(v))).getOrElse(Map.empty),
-      headers = if (isResponse) respHeaders else headers,
-      body = if (isResponse) respBody else body,
+      headers = finalHeaders,
+      body = finalBody,
       protocol = (json \ "protocol").asOpt[String].getOrElse("HTTP/1.1"),
     )
   }
