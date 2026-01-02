@@ -3,6 +3,46 @@
 A Scala-based engine implementation of a subset of the [OWASP/ModSecurity SecLang language](https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29) that can run on the JVM.
 Built to efficiently execute the [OWASP Core Rule Set (CRS)](https://coreruleset.org/) with user based customizations in highly concurrent and multi-tenant environments.
 
+## Installation
+
+Add the following dependency to your `build.sbt`:
+
+```scala
+libraryDependencies += "com.cloud-apim" %% "seclang-engine" % "1.0.0"
+```
+
+The library is cross-compiled for Scala 2.12 and 2.13.
+
+### Using Snapshots
+
+To use snapshot versions, add the Sonatype snapshots repository:
+
+```scala
+resolvers += "Sonatype OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots"
+
+libraryDependencies += "com.cloud-apim" %% "seclang-engine" % "1.0.0-SNAPSHOT"
+```
+
+### Maven
+
+For Maven projects, add to your `pom.xml`:
+
+```xml
+<dependency>
+  <groupId>com.cloud-apim</groupId>
+  <artifactId>seclang-engine_2.12</artifactId>
+  <version>1.0.0</version>
+</dependency>
+```
+
+### Gradle
+
+For Gradle projects:
+
+```gradle
+implementation 'com.cloud-apim:seclang-engine_2.12:1.0.0'
+```
+
 ## TODO
 
 - [-] Implement missing variables

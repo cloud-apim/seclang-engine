@@ -162,7 +162,7 @@ class SecLangBasicTest extends munit.FunSuite {
         val stop = System.currentTimeMillis()
 
         val out1 = Json.prettyPrint(config.json)
-        // java.nio.file.Files.writeString(new java.io.File("./crs.json").toPath, out1)
+        java.nio.file.Files.writeString(new java.io.File("./crs.json").toPath, out1)
         val config2 = Configuration.format.reads(Json.parse(out1)).get
         val out2 = Json.prettyPrint(config2.json)
         assertEquals(out1, out2)

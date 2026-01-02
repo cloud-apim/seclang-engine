@@ -5,6 +5,32 @@ ThisBuild / version          := "1.0.0-dev"
 ThisBuild / organization     := "com.cloud-apim"
 ThisBuild / organizationName := "Cloud-APIM"
 
+ThisBuild / versionScheme := Some("early-semver")
+ThisBuild / homepage := Some(url("https://github.com/cloud-apim/seclang-engine"))
+ThisBuild / licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
+ThisBuild / developers := List(
+  Developer(
+    "cloud-apim",
+    "Cloud-APIM Team",
+    "contact@cloud-apim.com",
+    url("https://github.com/cloud-apim")
+  )
+)
+
+ThisBuild / scmInfo := Some(
+  ScmInfo(
+    url("https://github.com/cloud-apim/seclang-engine"),
+    "scm:git@github.com:cloud-apim/seclang-engine.git"
+  )
+)
+
+ThisBuild / pomIncludeRepository := { _ => false }
+ThisBuild / publishTo := sonatypePublishToBundle.value
+ThisBuild / publishMavenStyle := true
+ThisBuild / sonatypeCredentialHost := "s01.oss.sonatype.org"
+ThisBuild / sonatypeRepository := "https://s01.oss.sonatype.org/service/local"
+ThisBuild / sonatypeProfileName := "com.cloud-apim"
+
 lazy val root = (project in file("."))
   .settings(
     name := "seclang-engine",
@@ -13,5 +39,10 @@ lazy val root = (project in file("."))
       "org.antlr" % "antlr4" % "4.13.2",
       "com.typesafe.play" %% "play-json" % "2.9.3",
       munit % Test
+    ),
+    crossScalaVersions := Seq("2.12.21", "2.13.15"),
+    Compile / doc / scalacOptions ++= Seq(
+      "-doc-title", "SecLang Engine",
+      "-doc-version", version.value
     )
   )
