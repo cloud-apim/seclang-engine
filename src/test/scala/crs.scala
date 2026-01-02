@@ -132,7 +132,7 @@ class SecLangCRSTest extends munit.FunSuite {
   private val failures = new AtomicLong(0L)
   private val dev = true
 
-  //private val testOnly: List[(String, Int)] = List(("944130", 106))
+  //private val testOnly: List[(String, Int)] = List(("934100", 6))
   private val testOnly: List[(String, Int)] = List.empty
 
   def execTest(rule: String, path: String): Unit = Try {
@@ -204,11 +204,11 @@ class SecLangCRSTest extends munit.FunSuite {
             println(s"[${rule} - ${testId}] ${desc.getOrElse("--")}")
             println(s"      nothing checked for test ${testId} ")
           }
-          // if (!ok) {
-          //   result.displayPrintln()
-          //   println(Json.prettyPrint(test))
-          //   println(Json.prettyPrint(Json.parse(result.events.last.raw)))
-          // }
+          if (!ok && testOnly.nonEmpty && testOnly.contains((rule, testId))) {
+            result.displayPrintln()
+            println(Json.prettyPrint(test))
+            println(Json.prettyPrint(Json.parse(result.events.last.raw)))
+          }
           if (!dev) assert(checked, s"nothing checked for test ${testId}")
         }
       }

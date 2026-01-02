@@ -4,6 +4,8 @@ import akka.util.ByteString
 import com.cloud.apim.seclang.impl.utils.StatusCodes
 import play.api.libs.json._
 
+import java.net.{URI, URLDecoder}
+import java.nio.charset.StandardCharsets
 import scala.collection.concurrent.TrieMap
 import scala.util.{Failure, Success, Try}
 
@@ -1206,6 +1208,26 @@ object SeverityValue {
 }
 
 object RequestContext {
+  def parseQueryString(qs: String): Map[String, List[String]] = {
+    val params = new TrieMap[String, List[String]]
+    if (qs == null || qs.isEmpty) return Map.empty
+    qs.split("&").foreach { pair =>
+      val idx = pair.indexOf('=')
+      val key =
+        if (idx > 0)
+          URLDecoder.decode(pair.substring(0, idx), StandardCharsets.UTF_8)
+        else
+          URLDecoder.decode(pair, StandardCharsets.UTF_8)
+      val value =
+        if (idx > 0 && pair.length > idx + 1)
+          URLDecoder.decode(pair.substring(idx + 1), StandardCharsets.UTF_8)
+        else
+          ""
+      params.put(key, params.get(key).getOrElse(List.empty) :+ value)
+    }
+
+    params.toMap
+  }
   def apply(json: JsValue): RequestContext = {
     val uri = (json \ "uri").asOpt[String].getOrElse("/")
     val port = (json \ "port").asOpt[Int].getOrElse(80)
@@ -1228,11 +1250,17 @@ object RequestContext {
         pfheaders
       }
     }
+    val query: Map[String, List[String]] = try {
+      parseQueryString(new URI(uri).getQuery)
+    } catch {
+      case e: Throwable => Map.empty
+    }
     RequestContext(
       method = (json \ "method").asOpt[String].getOrElse("GET"),
       uri = uri,
       status = respStatus,
       statusTxt = respStatusTxt,
+      query = query,
       // cookies = (json \ "cookies").asOpt[Map[String, String]].map(_.mapValues(v => List(v))).getOrElse(Map.empty),
       headers = finalHeaders,
       body = finalBody,

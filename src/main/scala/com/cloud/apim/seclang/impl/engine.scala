@@ -271,9 +271,13 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
     var skipAfter: Option[String] = None
     var lastRuleId: Option[Int] = None
 
+    val isChain = rules.size > 1
+    val firstRule = rules.head
+
     // Evaluate sequentially; if one fails -> chain fails
     rules.foreach { r =>
       lastRuleId = r.id.orElse(lastRuleId)
+      val isLast = rules.last == r
       if (allMatched) {
         val matched = evalRule(r, ctx, debug = false)
         // TODO: implement actions: https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29#actions
@@ -308,8 +312,10 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
             st = st.copy(disabledIds = st.disabledIds + id)
           }
 
-          st = st.copy(events = MatchEvent(r.id, msg, phase, Json.stringify(r.json)) :: st.events)
-          st = performActions(r.id.getOrElse(0), actionsList, phase, ctx, st)
+          if (isLast) {
+            st = st.copy(events = MatchEvent(r.id, msg, phase, Json.stringify(r.json)) :: st.events)
+            st = performActions(r.id.getOrElse(0), actionsList, phase, ctx, st)
+          }
         } else {
           allMatched = false
         }
@@ -339,7 +345,9 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
   private def evalRule(rule: SecRule, ctx: RequestContext, debug: Boolean): Boolean = {
     // 1) extract values from variables
     val extracted: List[String] = {
-      val vrbls = rule.variables.variables.flatMap(v => resolveVariable(v, rule.variables.count, rule.variables.negated, ctx))
+      val vrbls = rule.variables.variables.flatMap { v =>
+        resolveVariable(v, rule.variables.count, rule.variables.negated, ctx)
+      }
       if (rule.variables.count) {
         vrbls.size.toString :: Nil
       } else {
