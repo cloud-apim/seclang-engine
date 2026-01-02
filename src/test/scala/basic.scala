@@ -3,7 +3,7 @@ package com.cloud.apim.seclang.test
 import com.cloud.apim.seclang.model.Disposition._
 import com.cloud.apim.seclang.model._
 import com.cloud.apim.seclang.scaladsl.SecLang
-import play.api.libs.json.Json
+import play.api.libs.json._
 
 import java.net.URI
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}

@@ -340,7 +340,7 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
     val transforms = rule.actions.toList.flatMap(_.actions).toList.collect { case Action.Transform(name) => name }.filterNot(_ == "none")
     val transformed = extracted.map(v => applyTransforms(v, transforms))
     // 3) operator match on ANY extracted value
-    val matched = transformed.exists(v => evalOperator(rule.operator, v))
+    val matched = transformed.exists(v => evalOperator(rule.id.getOrElse(-1), rule.operator, v))
     matched
   }
 
@@ -374,7 +374,23 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
     //ctx.cache.get(col) match {
     //  case Some(v) => v
     //  case None => {
-        val uri = new java.net.URI(ctx.uri)
+        //val uri = new java.net.URI(ctx.uri)
+        val (rawPath, path, rawQuery) = {
+          Try(new java.net.URI(ctx.uri)) match {
+            case Success(uri) => (uri.getRawPath, uri.getPath, uri.getRawQuery)
+            case Failure(e) => {
+              val uri = if (!ctx.uri.startsWith("/")) {
+                ctx.uri.replaceFirst("https://", "").replaceFirst("http://", "").split("/").tail.mkString("/")
+              } else {
+                ctx.uri
+              }
+              val parts = uri.split("\\?")
+              val p = parts.headOption.getOrElse("")
+              val rq = parts.tail.mkString("?")
+              (uri, p, rq)
+            }
+          }
+        }
         val datetime = LocalDateTime.now()
         val res = col match {
           case "REQUEST_URI" => List(ctx.uri)
@@ -439,15 +455,15 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
           case "REQUEST_BODY" | "RESPONSE_BODY" => ctx.body.toList
           case "REQUEST_HEADERS_NAMES" | "RESPONSE_HEADERS_NAMES" => ctx.headers.keySet.toList
           case "DURATION" => List((System.currentTimeMillis() - ctx.startTime).toString)
-          case "PATH_INFO" => List(uri.getPath)
-          case "QUERY_STRING" => List(uri.getRawQuery)
+          case "PATH_INFO" => List(path)
+          case "QUERY_STRING" => List(rawQuery)
           case "REMOTE_ADDR" => List(ctx.remoteAddr)
           case "REMOTE_HOST" => List(ctx.remoteAddr)
           case "REMOTE_PORT" => List(ctx.remotePort.toString)
           case "REMOTE_USER" => ctx.headers.get("Authorization").orElse(ctx.headers.get("authorization")).flatMap(_.lastOption).collect {
             case auth if auth.startsWith("Basic ") => Try(new String(Base64.getDecoder.decode(auth.substring("Basic ".length).split(":")(0)), StandardCharsets.UTF_8)).getOrElse("")
           }.toList.filter(_.nonEmpty)
-          case "REQUEST_BASENAME" => uri.getPath.split('/').lastOption.toList
+          case "REQUEST_BASENAME" => path.split('/').lastOption.toList
           case "REQUEST_COOKIES" => key match {
             case None =>
               ctx.cookies.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
@@ -457,8 +473,8 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
               }.flatten.toList
           }
           case "REQUEST_COOKIES_NAMES" => ctx.cookies.keySet.toList
-          case "REQUEST_FILENAME" => List(uri.getPath)
-          case "REQUEST_LINE" => List(s"${ctx.method.toUpperCase()} ${uri.getRawPath} ${ctx.protocol}")
+          case "REQUEST_FILENAME" => List(path)
+          case "REQUEST_LINE" => List(s"${ctx.method.toUpperCase()} ${rawPath} ${ctx.protocol}")
           case "REQUEST_PROTOCOL" | "RESPONSE_PROTOCOL" => List(ctx.protocol)
           case "REQUEST_URI_RAW" => List(ctx.uriRaw)
           case "REQUEST_CONTENT_TYPE" | "RESPONSE_CONTENT_TYPE" => ctx.contentType.toList
@@ -726,9 +742,9 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
     false
   }
 
-  private def evalOperator(op: Operator, value: String): Boolean = op match {
+  private def evalOperator(ruleId: Int, op: Operator, value: String): Boolean = op match {
     // https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29#user-content-Operators
-    case Operator.Negated(oop)         => !evalOperator(oop, value)
+    case Operator.Negated(oop)         => !evalOperator(ruleId, oop, value)
     case Operator.UnconditionalMatch() => true
     case Operator.Contains(x)          => value.contains(evalTxExpressions(x))
     case Operator.Streq(x)             => value == evalTxExpressions(x)
@@ -763,7 +779,11 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
         case Some(file) => {
           file
             .linesIterator
-            .exists(ex => ex.split(" ").exists(it => value.toLowerCase().contains(it.toLowerCase)))
+            .filter(_.trim.nonEmpty)
+            .filterNot(_.startsWith("#"))
+            .exists { ex =>
+              ex.split(" ").exists(it => value.toLowerCase().contains(it.toLowerCase))
+            }
         }
       }
     }

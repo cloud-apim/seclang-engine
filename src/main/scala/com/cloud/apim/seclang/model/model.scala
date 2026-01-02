@@ -1204,6 +1204,24 @@ object SeverityValue {
   }
 }
 
+object RequestContext {
+  def apply(json: JsValue): RequestContext = {
+    val path = (json \ "uri").asOpt[String].getOrElse("/")
+    val port = (json \ "port").asOpt[Int].getOrElse(80)
+    val address = (json \ "dest_addr").asOpt[String].getOrElse("127.0.0.1")
+    val scheme = if (port == 80) "http" else "https"
+    val uri = s"$scheme://$address:$port$path"
+    RequestContext(
+      method = (json \ "method").asOpt[String].getOrElse("GET"),
+      uri = uri,
+      cookies = (json \ "cookies").asOpt[Map[String, String]].map(_.mapValues(v => List(v))).getOrElse(Map.empty),
+      headers = (json \ "headers").asOpt[Map[String, String]].map(_.mapValues(v => List(v))).getOrElse(Map.empty),
+      body = (json \ "data").asOpt[String],
+      protocol = (json \ "protocol").asOpt[String].getOrElse("HTTP/1.1"),
+    )
+  }
+}
+
 final case class RequestContext(
   requestId: String = s"${System.currentTimeMillis}.${scala.util.Random.nextInt(1000000).formatted("%06d")}",
   method: String,

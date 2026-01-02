@@ -41,6 +41,7 @@ lazy val root = (project in file("."))
       "org.antlr" % "antlr4" % "4.13.2",
       "com.typesafe.play" %% "play-json" % "2.9.3",
       "com.cloud-apim" % "libinjection-jvm" % "1.0.0",
+      "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % "2.13.4" % Test,
       munit % Test
     ),
     crossScalaVersions := Seq("2.12.21", "2.13.15"),
