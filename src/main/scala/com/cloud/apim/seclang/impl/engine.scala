@@ -19,7 +19,7 @@ import scala.collection.concurrent.TrieMap
 import scala.util._
 import scala.util.matching.Regex
 
-final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] = Map.empty, env: Map[String, String] = Map.empty, config: SecRulesEngineConfig = SecRulesEngineConfig.default) {
+final class SecRulesEngine(program: CompiledProgram, config: SecRulesEngineConfig, files: Map[String, String] = Map.empty, env: Map[String, String] = Map.empty) {
 
   // TODO: declare in evaluate, just to be sure !
   private val txMap = new TrieMap[String, String]()
@@ -57,6 +57,7 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
 
     var i = 0
     var st = st0
+    var disps = List.empty[Disposition]
 
     while (i < items.length) {
       items(i) match {
@@ -88,7 +89,14 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
             st = stAfterMatch
 
             dispOpt match {
-              case Some(d) => return (d, st)
+              case Some(d) if config.failFast => return (d, st)
+              case Some(d) if !config.failFast => {
+                disps = disps :+ d
+                skipToIdxOpt match {
+                  case Some(j) => i = j
+                  case None    => i += 1
+                }
+              }
               case None =>
                 skipToIdxOpt match {
                   case Some(j) => i = j
@@ -98,8 +106,15 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
           }
       }
     }
-
-    (Disposition.Continue, st)
+    if (config.failFast) {
+      (Disposition.Continue, st)
+    } else {
+      if (disps.nonEmpty) {
+        (disps.head, st)
+      } else {
+        (Disposition.Continue, st)
+      }
+    }
   }
 
   // (?i) => case-insensitive
@@ -397,18 +412,22 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
     //  case None => {
         //val uri = new java.net.URI(ctx.uri)
         val (rawPath, path, rawQuery) = {
-          Try(new java.net.URI(ctx.uri)) match {
-            case Success(uri) => (uri.getRawPath, uri.getPath, uri.getRawQuery)
-            case Failure(e) => {
-              val uri = if (!ctx.uri.startsWith("/")) {
-                ctx.uri.replaceFirst("https://", "").replaceFirst("http://", "").split("/").tail.mkString("/")
-              } else {
-                ctx.uri
+          if (ctx.method.toLowerCase == "connect") {
+            (ctx.uri, ctx.uri, "")
+          } else {
+            Try(new java.net.URI(ctx.uri)) match {
+              case Success(uri) => (uri.getRawPath, uri.getPath, uri.getRawQuery)
+              case Failure(e) => {
+                val uri = if (!ctx.uri.startsWith("/")) {
+                  ctx.uri.replaceFirst("https://", "").replaceFirst("http://", "").split("/").tail.mkString("/")
+                } else {
+                  ctx.uri
+                }
+                val parts = uri.split("\\?")
+                val p = parts.headOption.getOrElse("")
+                val rq = parts.tail.mkString("?")
+                (uri, p, rq)
               }
-              val parts = uri.split("\\?")
-              val p = parts.headOption.getOrElse("")
-              val rq = parts.tail.mkString("?")
-              (uri, p, rq)
             }
           }
         }
@@ -772,6 +791,10 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
     case Operator.Streq(x)             => value == evalTxExpressions(x)
     case Operator.Pm(xs)               => evalTxExpressions(xs).split(" ").exists(it => value.toLowerCase().contains(it.toLowerCase))
     case Operator.Rx(pattern) => {
+      //if (ruleId == 920470) {
+      //  println(s"value: ${value}")
+      //  println(s"pattern: ${pattern}")
+      //}
       try {
         val r: Regex = evalTxExpressions(pattern).r
         val rs = r.findFirstMatchIn(value)
@@ -784,6 +807,9 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
           })
           txMap.put("MATCHED_LIST", Json.stringify(list))
         }
+        //if (ruleId == 920470) {
+        //  println(s"matched ???: ${rs.nonEmpty}")
+        //}
         rs.nonEmpty
       } catch {
         case _: Throwable => false

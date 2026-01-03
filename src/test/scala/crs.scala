@@ -4,7 +4,7 @@ import akka.util.ByteString
 import com.cloud.apim.seclang.impl.engine.SecRulesEngine
 import com.cloud.apim.seclang.impl.utils.StatusCodes
 import com.cloud.apim.seclang.model.Disposition.{Block, Continue}
-import com.cloud.apim.seclang.model.RequestContext
+import com.cloud.apim.seclang.model.{RequestContext, SecRulesEngineConfig}
 import com.cloud.apim.seclang.scaladsl.SecLang
 import play.api.libs.json.{JsObject, JsValue, Json}
 
@@ -117,14 +117,15 @@ object CRSTestUtils {
         |  setvar:tx.total_arg_length=64000,\\
         |  setvar:tx.max_num_args=255,\\
         |  setvar:tx.max_file_size=64100,\\
-        |  setvar:tx.combined_file_sizes=65535"
+        |  setvar:tx.combined_file_sizes=65535,\\
+        |  setvar:tx.allowed_methods=GET HEAD POST OPTIONS CONNECT"
         |
         |# then include crs
         |${rules}
         |""".stripMargin
     val config = SecLang.parse(finalRules).right.get
     val program = SecLang.compile(config).copy(removedRuleIds = Set(920273, 920274)) // TODO: remove and fix
-    SecLang.engine(program, files = files)
+    SecLang.engine(program, SecRulesEngineConfig(failFast = false), files = files)
   }
 
   private def parseQueryString(qs: String): Map[String, List[String]] = {
@@ -221,7 +222,7 @@ class SecLangCRSTest extends munit.FunSuite {
   private val failures = new AtomicLong(0L)
   private val dev = true
 
-  //private val testOnly: List[(String, Int)] = List(("934100", 6))
+  //private val testOnly: List[(String, Int)] = List(("920120", 2))
   private val testOnly: List[(String, Int)] = List.empty
 
   def execTest(rule: String, path: String): Unit = Try {

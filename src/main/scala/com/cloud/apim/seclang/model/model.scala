@@ -1268,8 +1268,8 @@ final case class EngineResult(
 }
 final case class RuntimeState(disabledIds: Set[Int], events: List[MatchEvent])
 
-final case class SecRulesEngineConfig()
+final case class SecRulesEngineConfig(failFast: Boolean)
 
 object SecRulesEngineConfig {
-  val default = SecRulesEngineConfig()
+  val default = SecRulesEngineConfig(failFast = true)
 }

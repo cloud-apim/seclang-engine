@@ -10,10 +10,10 @@ object SecLang {
   def compile(configuration: Configuration): CompiledProgram = Compiler.compile(configuration)
   def engine(
     program: CompiledProgram,
+    config: SecRulesEngineConfig = SecRulesEngineConfig.default,
     files: Map[String, String] = Map.empty,
     env: Map[String, String] = Map.empty,
-    config: SecRulesEngineConfig = SecRulesEngineConfig.default
   ): SecRulesEngine = {
-    new SecRulesEngine(program, files, env, config)
+    new SecRulesEngine(program, config, files, env)
   }
 }

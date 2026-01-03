@@ -153,7 +153,7 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
   def visitOperatorInner(ctx: SecLangParser.OperatorContext): Operator = {
     val opName = ctx.operator_name()
     val opValue = if (ctx.operator_value() != null) {
-      ctx.operator_value().getText.replaceAll("\"", "")
+      ctx.operator_value().getText//.replaceAll("\"", "")
     } else ""
     
     if (opName.OPERATOR_RX() != null) Operator.Rx(opValue)
