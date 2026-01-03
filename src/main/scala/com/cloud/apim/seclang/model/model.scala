@@ -1207,68 +1207,6 @@ object SeverityValue {
   }
 }
 
-object RequestContext {
-  def parseQueryString(qs: String): Map[String, List[String]] = {
-    val params = new TrieMap[String, List[String]]
-    if (qs == null || qs.isEmpty) return Map.empty
-    qs.split("&").foreach { pair =>
-      val idx = pair.indexOf('=')
-      val key =
-        if (idx > 0)
-          URLDecoder.decode(pair.substring(0, idx), StandardCharsets.UTF_8)
-        else
-          URLDecoder.decode(pair, StandardCharsets.UTF_8)
-      val value =
-        if (idx > 0 && pair.length > idx + 1)
-          URLDecoder.decode(pair.substring(idx + 1), StandardCharsets.UTF_8)
-        else
-          ""
-      params.put(key, params.get(key).getOrElse(List.empty) :+ value)
-    }
-
-    params.toMap
-  }
-  def apply(json: JsValue): RequestContext = {
-    val uri = (json \ "uri").asOpt[String].getOrElse("/")
-    val port = (json \ "port").asOpt[Int].getOrElse(80)
-    val address = (json \ "dest_addr").asOpt[String].getOrElse("127.0.0.1")
-    val body = (json \ "data").asOpt[String].map(s => ByteString(s))
-    val isResponse = uri.startsWith("/reflect")
-    val respStruct = if (isResponse) Try(Json.parse(body.map(_.utf8String).getOrElse("{}"))).getOrElse(Json.obj("body" -> body.getOrElse(ByteString.empty).utf8String)) else Json.obj()
-    val respStatus = if (isResponse) Some((respStruct \ "status").asOpt[Int].getOrElse(200)) else None
-    val respStatusTxt = if (isResponse) StatusCodes.get((respStruct \ "status").asOpt[Int].getOrElse(200)) else None
-    val headers: Map[String, List[String]] = (json \ "headers").asOpt[Map[String, String]].map(_.mapValues(v => List(v))).getOrElse(Map.empty)
-    val respHeaders: Map[String, List[String]] = (respStruct \ "headers").asOpt[Map[String, String]].map(_.mapValues(v => List(v))).getOrElse(Map.empty)
-    val encBody = (respStruct \ "encodedBody").asOpt[String].map(s => ByteString(s).decodeBase64)
-    val respBody = encBody.orElse((respStruct \ "body").asOpt[String].map(s => ByteString(s)))
-    val finalBody = if (isResponse) respBody else body
-    val pfheaders = if (isResponse) respHeaders else headers
-    val finalHeaders: Map[String, List[String]] = {
-      if (finalBody.isDefined) {
-        pfheaders + ("Content-Length" -> List(finalBody.get.length.toString))
-      } else {
-        pfheaders
-      }
-    }
-    val query: Map[String, List[String]] = try {
-      parseQueryString(new URI(uri).getQuery)
-    } catch {
-      case e: Throwable => Map.empty
-    }
-    RequestContext(
-      method = (json \ "method").asOpt[String].getOrElse("GET"),
-      uri = uri,
-      status = respStatus,
-      statusTxt = respStatusTxt,
-      query = query,
-      // cookies = (json \ "cookies").asOpt[Map[String, String]].map(_.mapValues(v => List(v))).getOrElse(Map.empty),
-      headers = finalHeaders,
-      body = finalBody,
-      protocol = (json \ "protocol").asOpt[String].getOrElse("HTTP/1.1"),
-    )
-  }
-}
-
 final case class RequestContext(
   requestId: String = s"${System.currentTimeMillis}.${scala.util.Random.nextInt(1000000).formatted("%06d")}",
   method: String,

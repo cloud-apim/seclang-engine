@@ -484,7 +484,7 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
           case "REQUEST_BASENAME" => path.split('/').lastOption.toList
           case "REQUEST_COOKIES" => key match {
             case None =>
-              ctx.cookies.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
+              ctx.cookies.toList.flatMap { case (k, vs) => vs }//.map(v => s"$k: $v") }
             case Some(h) =>
               ctx.cookies.collect {
                 case (k, vs) if k.toLowerCase == h => vs

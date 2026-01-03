@@ -1,19 +1,23 @@
 package com.cloud.apim.seclang.test
 
+import akka.util.ByteString
 import com.cloud.apim.seclang.impl.engine.SecRulesEngine
+import com.cloud.apim.seclang.impl.utils.StatusCodes
 import com.cloud.apim.seclang.model.Disposition.{Block, Continue}
 import com.cloud.apim.seclang.model.RequestContext
 import com.cloud.apim.seclang.scaladsl.SecLang
 import play.api.libs.json.{JsObject, JsValue, Json}
 
 import java.io.File
-import java.net.URI
+import java.net.{URI, URLDecoder}
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicLong
+import scala.collection.concurrent.TrieMap
 import scala.util.{Failure, Success, Try}
 
-object CRS {
+object CRSTestUtils {
 
   val client = HttpClient.newHttpClient()
 
@@ -123,11 +127,96 @@ object CRS {
     SecLang.engine(program, files = files)
   }
 
+  private def parseQueryString(qs: String): Map[String, List[String]] = {
+    val params = new TrieMap[String, List[String]]
+    if (qs == null || qs.isEmpty) return Map.empty
+    qs.split("&").foreach { pair =>
+      val idx = pair.indexOf('=')
+      val key =
+        if (idx > 0)
+          URLDecoder.decode(pair.substring(0, idx), StandardCharsets.UTF_8)
+        else
+          URLDecoder.decode(pair, StandardCharsets.UTF_8)
+      val value =
+        if (idx > 0 && pair.length > idx + 1)
+          URLDecoder.decode(pair.substring(idx + 1), StandardCharsets.UTF_8)
+        else
+          ""
+      params.put(key, params.get(key).getOrElse(List.empty) :+ value)
+    }
+
+    params.toMap
+  }
+
+  private def parseCookies(rawCookieHeaders: List[String]): Map[String, List[String]] = {
+    rawCookieHeaders
+      .flatMap { header =>
+        header
+          .split(";")
+          .toList
+          .flatMap { part =>
+            val idx = part.indexOf('=')
+            if (idx > 0) {
+              val name  = part.substring(0, idx).trim
+              val value = part.substring(idx + 1).trim
+              if (name.nonEmpty) Some(name -> value) else None
+            } else {
+              None
+            }
+          }
+      }.groupBy(_._1).mapValues(_.map(_._2))
+  }
+
+  def requestContext(json: JsValue): RequestContext = {
+    val uri = (json \ "uri").asOpt[String].getOrElse("/")
+    val port = (json \ "port").asOpt[Int].getOrElse(80)
+    val address = (json \ "dest_addr").asOpt[String].getOrElse("127.0.0.1")
+    val body = (json \ "data").asOpt[String].map(s => ByteString(s))
+    val isResponse = uri.startsWith("/reflect")
+    val respStruct = if (isResponse) Try(Json.parse(body.map(_.utf8String).getOrElse("{}"))).getOrElse(Json.obj("body" -> body.getOrElse(ByteString.empty).utf8String)) else Json.obj()
+    val respStatus = if (isResponse) Some((respStruct \ "status").asOpt[Int].getOrElse(200)) else None
+    val respStatusTxt = if (isResponse) StatusCodes.get((respStruct \ "status").asOpt[Int].getOrElse(200)) else None
+    val headers: Map[String, List[String]] = (json \ "headers").asOpt[Map[String, String]].map(_.mapValues(v => List(v))).getOrElse(Map.empty)
+    val respHeaders: Map[String, List[String]] = (respStruct \ "headers").asOpt[Map[String, String]].map(_.mapValues(v => List(v))).getOrElse(Map.empty)
+    val encBody = (respStruct \ "encodedBody").asOpt[String].map(s => ByteString(s).decodeBase64)
+    val respBody = encBody.orElse((respStruct \ "body").asOpt[String].map(s => ByteString(s)))
+    val finalBody = if (isResponse) respBody else body
+    val pfheaders = if (isResponse) respHeaders else headers
+    val finalHeaders: Map[String, List[String]] = {
+      if (finalBody.isDefined) {
+        pfheaders + ("Content-Length" -> List(finalBody.get.length.toString))
+      } else {
+        pfheaders
+      }
+    }
+    val query: Map[String, List[String]] = try {
+      parseQueryString(new URI(uri).getQuery)
+    } catch {
+      case e: Throwable => Map.empty
+    }
+    val cookies: Map[String, List[String]] = try {
+      val rawCookie: List[String] = finalHeaders.get("Cookie").orElse(finalHeaders.get("cookie")).getOrElse(List.empty)
+      parseCookies(rawCookie)
+    } catch {
+      case e: Throwable => Map.empty
+    }
+    RequestContext(
+      method = (json \ "method").asOpt[String].getOrElse("GET"),
+      uri = uri,
+      status = respStatus,
+      statusTxt = respStatusTxt,
+      query = query,
+      cookies = cookies,
+      headers = finalHeaders,
+      body = finalBody,
+      protocol = (json \ "protocol").asOpt[String].getOrElse("HTTP/1.1"),
+    )
+  }
 }
 
 class SecLangCRSTest extends munit.FunSuite {
 
-  private val engine = CRS.setupCRSEngine()
+  private val engine = CRSTestUtils.setupCRSEngine()
   private val counter = new AtomicLong(0L)
   private val failures = new AtomicLong(0L)
   private val dev = true
@@ -137,7 +226,7 @@ class SecLangCRSTest extends munit.FunSuite {
 
   def execTest(rule: String, path: String): Unit = Try {
     // println(s"running tests for rule ${rule} ...")
-    val testsFile = CRS.read(s"./test-data/coreruleset/tests/regression/tests/${path}")
+    val testsFile = CRSTestUtils.read(s"./test-data/coreruleset/tests/regression/tests/${path}")
     val testsYaml = Yaml.parse(testsFile).get
     val tests = (testsYaml \ "tests").as[Seq[JsObject]]
     tests.foreach { test =>
@@ -147,7 +236,7 @@ class SecLangCRSTest extends munit.FunSuite {
         (test \ "stages").as[Seq[JsObject]].foreach { stage =>
           counter.incrementAndGet()
           val input = (stage \ "input").as[JsObject]
-          val ctx = RequestContext(input)
+          val ctx = CRSTestUtils.requestContext(input)
           val result = engine.evaluate(ctx, if(ctx.isResponse) List(3, 4) else List(1, 2))
           val output = (stage \ "output").as[JsObject]
           val status = (output \ "status").asOpt[Int]
