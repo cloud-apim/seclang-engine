@@ -270,6 +270,7 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
     var disruptive: Option[Action] = None
     var skipAfter: Option[String] = None
     var lastRuleId: Option[Int] = None
+    var events = List.empty[MatchEvent]
 
     val isChain = rules.size > 1
     val firstRule = rules.head
@@ -313,8 +314,10 @@ final class SecRulesEngine(program: CompiledProgram, files: Map[String, String] 
           }
 
           if (isLast) {
-            st = st.copy(events = MatchEvent(r.id, msg, phase, Json.stringify(r.json)) :: st.events)
+            st = st.copy(events = MatchEvent(r.id, msg, phase, Json.stringify(r.json)) :: events ++ st.events)
             st = performActions(r.id.getOrElse(0), actionsList, phase, ctx, st)
+          } else {
+            events = events :+ MatchEvent(r.id, msg, phase, Json.stringify(r.json))
           }
         } else {
           allMatched = false
