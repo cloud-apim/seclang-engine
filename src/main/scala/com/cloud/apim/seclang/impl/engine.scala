@@ -322,7 +322,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
       lastRuleId = r.id.orElse(lastRuleId)
       val isLast = rules.last == r
       if (allMatched) {
-        val matched = evalRule(r, ctx, debug = false)
+        val matched = evalRule(r, lastRuleId, ctx, debug = false)
         // TODO: implement actions: https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29#actions
         if (matched) {
           val actionsList = r.actions.toList.flatMap(_.actions)
@@ -387,7 +387,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
     }
   }
 
-  private def evalRule(rule: SecRule, ctx: RequestContext, debug: Boolean): Boolean = {
+  private def evalRule(rule: SecRule, lastRuleId: Option[Int], ctx: RequestContext, debug: Boolean): Boolean = {
     // 1) extract values from variables
     val extracted: List[String] = {
       val vrbls = rule.variables.variables.flatMap { v =>
@@ -403,7 +403,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
     val transforms = rule.actions.toList.flatMap(_.actions).toList.collect { case Action.Transform(name) => name }.filterNot(_ == "none")
     val transformed = extracted.map(v => applyTransforms(v, transforms))
     // 3) operator match on ANY extracted value
-    val matched = transformed.exists(v => evalOperator(rule.id.getOrElse(-1), rule.operator, v))
+    val matched = transformed.exists(v => evalOperator(lastRuleId.getOrElse(-1), rule.operator, v))
     matched
   }
 
@@ -530,7 +530,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
           case "REMOTE_USER" => ctx.headers.get("Authorization").orElse(ctx.headers.get("authorization")).flatMap(_.lastOption).collect {
             case auth if auth.startsWith("Basic ") => Try(new String(Base64.getDecoder.decode(auth.substring("Basic ".length).split(":")(0)), StandardCharsets.UTF_8)).getOrElse("")
           }.toList.filter(_.nonEmpty)
-          case "REQUEST_BASENAME" => path.split('/').lastOption.toList
+          case "REQUEST_BASENAME" => path.split("/").lastOption.orElse(Some("")).toList
           case "REQUEST_COOKIES" => key match {
             case None =>
               ctx.cookies.toList.flatMap { case (k, vs) => vs }//.map(v => s"$k: $v") }
