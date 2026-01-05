@@ -563,11 +563,11 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
           case "UNIQUE_ID" => List(ctx.requestId)
           case "USERID" => Option(uidRef.get).toList
           case "FILES" => ctx.contentType match {
-            case Some("multipart/form-data") if ctx.body.isDefined => {
+            case Some(ct) if ct.startsWith("multipart/form-data") && ctx.body.isDefined => {
               ctx.body.get.utf8String.linesIterator
                 .collect {
-                  case line if line.toLowerCase.startsWith("content-disposition:") =>
-                    """filename="([^"]+)"""".r
+                  case line if line.toLowerCase.startsWith("content-disposition:") && line.toLowerCase.contains("filename=") =>
+                    """(?:^|[;\s])name="([^"]+)"""".r
                       .findFirstMatchIn(line)
                       .map(_.group(1))
                 }.flatten.toList
@@ -575,14 +575,14 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
             case _ => List.empty
           }
           case "FILES_COMBINED_SIZE" => ctx.contentType match {
-            case Some("multipart/form-data") => ctx.contentLength.toList
+            case Some(ct) if ct.startsWith("multipart/form-data") => ctx.contentLength.toList
             case _ => List.empty
           }
           case "FILES_NAMES" => ctx.contentType match {
-            case Some("multipart/form-data") if ctx.body.isDefined => {
+            case Some(ct) if ct.startsWith("multipart/form-data") && ctx.body.isDefined => {
               ctx.body.get.utf8String.linesIterator
                 .collect {
-                  case line if line.toLowerCase.startsWith("content-disposition:") =>
+                  case line if line.toLowerCase.startsWith("content-disposition:") && line.toLowerCase.contains("filename=") =>
                     """filename="([^"]+)"""".r
                       .findFirstMatchIn(line)
                       .map(_.group(1))
@@ -591,7 +591,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
             case _ => List.empty
           }
           case "FILES_SIZES" => ctx.contentType match {
-            case Some("multipart/form-data") => ctx.contentLength.toList
+            case Some(ct) if ct.startsWith("multipart/form-data") => ctx.contentLength.toList
             case _ => List.empty
           }
           case "FILES_TMPNAMES" => List.empty
