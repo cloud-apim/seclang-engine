@@ -356,11 +356,11 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
           }
 
           if (isLast) {
-            st = st.copy(events = MatchEvent(r.id, msg, phase, Json.stringify(r.json)) :: events ++ st.events)
-            st = performActions(r.id.getOrElse(0), actionsList, phase, ctx, st)
+            st = st.copy(events = MatchEvent(lastRuleId, msg, phase, Json.stringify(r.json)) :: events ++ st.events)
           } else {
-            events = events :+ MatchEvent(r.id, msg, phase, Json.stringify(r.json))
+            events = events :+ MatchEvent(lastRuleId, msg, phase, Json.stringify(r.json))
           }
+          st = performActions(lastRuleId.getOrElse(0), actionsList, phase, ctx, st)
         } else {
           allMatched = false
         }
@@ -818,10 +818,6 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
     case Operator.Streq(x)             => value == evalTxExpressions(x)
     case Operator.Pm(xs)               => evalTxExpressions(xs).split(" ").exists(it => value.toLowerCase().contains(it.toLowerCase))
     case Operator.Rx(pattern) => {
-      //if (ruleId == 920470) {
-      //  println(s"value: ${value}")
-      //  println(s"pattern: ${pattern}")
-      //}
       try {
         val r: Regex = evalTxExpressions(pattern).r
         val rs = r.findFirstMatchIn(value)
@@ -834,9 +830,6 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
           })
           txMap.put("MATCHED_LIST", Json.stringify(list))
         }
-        //if (ruleId == 920470) {
-        //  println(s"matched ???: ${rs.nonEmpty}")
-        //}
         rs.nonEmpty
       } catch {
         case _: Throwable => false
