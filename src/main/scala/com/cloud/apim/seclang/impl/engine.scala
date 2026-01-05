@@ -404,7 +404,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
     val transformed = extracted.map(v => applyTransforms(v, transforms))
     // 3) operator match on ANY extracted value
     val matched = transformed.exists(v => evalOperator(lastRuleId.getOrElse(-1), rule.operator, v))
-    // if (lastRuleId.contains(920230)) {
+    // if (lastRuleId.contains(920240)) {
     //   println(s"extracted: ${extracted.mkString(", ")}")
     //   println(s"variables: ${transformed.mkString(", ")}")
     //   println(s"matched: ${matched}")
@@ -884,10 +884,10 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
         }
       }
     }
-    case Operator.DetectXSS(x) => LibInjection.isXSS(evalTxExpressions(x))
-    case Operator.DetectSQLi(x) => LibInjection.isSQLi(evalTxExpressions(x))
-    case Operator.ValidateUrlEncoding(x) => EncodingHelper.validateUrlEncoding(x)
-    case Operator.ValidateUtf8Encoding(x) => !EncodingHelper.validateUtf8Encoding(ByteString(x))
+    case Operator.DetectXSS(x) => LibInjection.isXSS(evalTxExpressions(value))
+    case Operator.DetectSQLi(x) => LibInjection.isSQLi(evalTxExpressions(value))
+    case Operator.ValidateUrlEncoding(x) => !EncodingHelper.validateUrlEncoding(value)
+    case Operator.ValidateUtf8Encoding(x) => !EncodingHelper.validateUtf8Encoding(ByteString(value))
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     case Operator.VerifyCC(x) => unimplementedOperator("verifyCC") // TODO: implement it
     case Operator.VerifyCPF(x) => unimplementedOperator("verifyCPF") // TODO: implement it

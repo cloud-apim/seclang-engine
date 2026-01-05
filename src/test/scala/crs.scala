@@ -528,7 +528,7 @@ class SecLangCRSTest extends munit.FunSuite {
     case RuleChain(rules) => rules
   }.flatten
 
-  //private val testOnly: List[(String, Int)] = List(("920230", 1))
+  //private val testOnly: List[(String, Int)] = List(("920240", 1), ("920240", 2))
   private val testOnly: List[(String, Int)] = List.empty
 
   def writeStats(): Unit = {

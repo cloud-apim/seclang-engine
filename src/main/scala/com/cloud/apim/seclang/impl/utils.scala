@@ -632,6 +632,12 @@ object IpMatch {
 object EncodingHelper {
 
   def validateUrlEncoding(input: String): Boolean = {
+    //try {
+    //  URLDecoder.decode(input, StandardCharsets.UTF_8)
+    //  true
+    //} catch {
+    //  case _: Throwable => false
+    //}
     val len = input.length
     var i = 0
 
