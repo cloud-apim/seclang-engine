@@ -561,13 +561,34 @@ object CRSTestUtils {
                                 |    }
                                 |  } ]
                                 |}""".stripMargin),
+    (920280, 3) -> Json.parse("""{
+                                |  "test_id" : 3,
+                                |  "stages" : [ {
+                                |    "input" : {
+                                |      "dest_addr" : "127.0.0.1",
+                                |      "port" : 80,
+                                |      "version" : "HTTP/0.9",
+                                |      "headers" : {
+                                |        "User-Agent" : "OWASP CRS test agent",
+                                |        "Host" : "localhost",
+                                |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
+                                |      },
+                                |      "uri" : "/"
+                                |    },
+                                |    "output" : {
+                                |      "log" : {
+                                |        "no_expect_ids" : [ 920280 ]
+                                |      }
+                                |    }
+                                |  } ]
+                                |}""".stripMargin),
   )
 }
 
 class SecLangCRSTest extends munit.FunSuite {
 
-  //private val testOnly: List[(String, Int)] = List(("942100", 1))
-  private val testOnly: List[(String, Int)] = List.empty
+  private val testOnly: List[(String, Int)] = List(("920390", 1))
+  //private val testOnly: List[(String, Int)] = List.empty
   private val ignoreTests: List[(String, Int)] = List( // TODO: fix later
     ("920160", 5),
     ("920250", 1),
