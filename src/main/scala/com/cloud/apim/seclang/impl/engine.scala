@@ -833,7 +833,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
       case (v, "sha1") => try java.security.MessageDigest.getInstance("SHA-1").digest(v.getBytes(StandardCharsets.UTF_8)).map("%02x".format(_)).mkString catch { case _: Throwable => v }
       case (v, "trimLeft") => v.dropWhile(_ == ' ')
       case (v, "trimRight") => v.reverse.dropWhile(_ == ' ').reverse
-      case (v, "utf8toUnicode") => Transformations.utf8toUnicode(v)
+      case (v, "utf8toUnicode") => v //Transformations.utf8toUnicode(v)// TODO: fixme
       case (v, "jsDecode") => Transformations.jsDecode(v)
       case (v, "htmlEntityDecode") => Transformations.htmlEntityDecode(v)
       case (v, "cssDecode") => Transformations.cssDecode(v)
