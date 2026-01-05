@@ -104,6 +104,7 @@ object CRSTestUtils {
       .mkString("\n")
     val finalRules =
       s"""# setup for test
+        |
         |SecAction "id:900005,\\
         |  phase:1,\\
         |  nolog,\\
@@ -122,10 +123,13 @@ object CRSTestUtils {
         |
         |# then include crs
         |${rules}
+        |
+        |# DetectionOnly mode
+        |# SecRuleEngine DetectionOnly
         |""".stripMargin
     val config = SecLang.parse(finalRules).right.get
     val program = SecLang.compile(config).copy(removedRuleIds = Set(920273, 920274)) // TODO: remove and fix
-    SecLang.engine(program, SecRulesEngineConfig(failFast = false), files = files)
+    SecLang.engine(program, files = files)
   }
 
   private def parseQueryString(qs: String): Map[String, List[String]] = {

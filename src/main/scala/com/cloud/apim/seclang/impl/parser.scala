@@ -111,6 +111,12 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
     } else if (stmt == "SecComponentSignature") {
       val param = ctx.values().getText.replaceAll("\"", "")
       ConfigDirective.ComponentSignature(param)
+    } else if (stmt == "SecRuleEngine") {
+      val param = ctx.values().getText.replaceAll("\"", "")
+      ConfigDirective.RuleEngine(param)
+    } else if (stmt == "SecRuleEngineDetectionOnly" || stmt == "SecRuleEngineOn" || stmt == "SecRuleEngineOff") {
+      val param = stmt.replaceFirst("SecRuleEngine", "")
+      ConfigDirective.RuleEngine(param)
     } else {
       println(s"unknown engine config directive: ${stmt}")
       ConfigDirective.Raw("unknown", "")

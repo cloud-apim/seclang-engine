@@ -1,5 +1,6 @@
 package com.cloud.apim.seclang.impl.compiler
 
+import com.cloud.apim.seclang.impl.compiler.EngineMode.{Off, On}
 import com.cloud.apim.seclang.model.ConfigDirective.{ComponentSignature, DefaultAction}
 import com.cloud.apim.seclang.model._
 
@@ -17,9 +18,27 @@ final case class ActionItem(action: SecAction) extends CompiledItem {
   lazy val id: Option[Int] = action.id
 }
 
+sealed trait EngineMode {
+  def isOff: Boolean = this == EngineMode.Off
+  def isOn: Boolean = !isOff
+  def isDetectionOnly: Boolean = this == EngineMode.DetectionOnly
+  def isBlocking: Boolean = this == EngineMode.On
+}
+object EngineMode {
+  case object Off extends EngineMode
+  case object On extends EngineMode
+  case object DetectionOnly extends EngineMode
+  def apply(str: String): EngineMode = str.toLowerCase match {
+    case "on" => On
+    case "detectiononly" => DetectionOnly
+    case _ => Off
+  }
+}
+
 final case class CompiledProgram(
   itemsByPhase: Map[Int, Vector[CompiledItem]],
-  removedRuleIds: Set[Int]
+  removedRuleIds: Set[Int],
+  mode: EngineMode
 )
 
 object Compiler {
@@ -35,10 +54,11 @@ object Compiler {
     // flatten into CompiledItem with chain logic
     val items = scala.collection.mutable.ArrayBuffer.empty[CompiledItem]
     val it = statements.iterator
+    var mode: EngineMode = On
 
     while (it.hasNext) {
       it.next() match {
-        case r: SecRule =>
+        case r: SecRule => {
           if (removed.contains(r.id.getOrElse(-1))) {
             // skip removed (if no id, can't remove)
           } else if (r.isChain) {
@@ -60,8 +80,8 @@ object Compiler {
                   other match {
                     case mm: SecMarker =>
                       items += MarkerItem(mm.name)
-                    case _                =>
-                      // ignore other directives for now
+                    case _ =>
+                    // ignore other directives for now
                   }
                   done = true
               }
@@ -70,10 +90,13 @@ object Compiler {
           } else {
             items += RuleChain(List(r))
           }
-        case m: SecMarker =>
+        }
+        case m: SecMarker => {
           items += MarkerItem(m.name)
-        case s: SecAction =>
+        }
+        case s: SecAction => {
           items += ActionItem(s.copy(commentBlock = None))
+        }
         case s: SecRuleScript => unimplementedStatement("SecRuleScript")
         case s: SecRuleRemoveById => unimplementedStatement("SecRuleRemoveById")
         case s: SecRuleRemoveByMsg => unimplementedStatement("SecRuleRemoveByMsg")
@@ -84,12 +107,17 @@ object Compiler {
         case s: SecRuleUpdateActionById => unimplementedStatement("SecRuleUpdateActionById")
         case EngineConfigDirective(_, DefaultAction(actions)) => unimplementedStatement("DefaultAction")
         case EngineConfigDirective(_, ComponentSignature(expr)) => ()
-        case s: EngineConfigDirective =>
+        case EngineConfigDirective(_, ConfigDirective.RuleEngine(expr)) => {
+          mode = EngineMode(expr)
+        }
+        case s: EngineConfigDirective => {
           // println(s.directive.getClass.getSimpleName)
           unimplementedStatement("EngineConfigDirective")
-        case s =>
+        }
+        case s => {
           println(s"unknown statement ${s.getClass.getSimpleName}")
           // ignore for now (SecAction etc.)
+        }
       }
     }
 
@@ -115,6 +143,6 @@ object Compiler {
         // TODO: support all statements here
     }
 
-    CompiledProgram(byPhase.toMap, removed)
+    CompiledProgram(byPhase.toMap, removed, mode)
   }
 }

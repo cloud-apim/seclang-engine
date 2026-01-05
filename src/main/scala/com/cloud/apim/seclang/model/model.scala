@@ -1,6 +1,7 @@
 package com.cloud.apim.seclang.model
 
 import akka.util.ByteString
+import com.cloud.apim.seclang.impl.compiler.EngineMode
 import com.cloud.apim.seclang.impl.utils.StatusCodes
 import play.api.libs.json._
 
@@ -999,7 +1000,7 @@ object Action {
     def json: JsValue = Json.obj("type" -> "Action", "action_type" -> "chain")
   }
   
-  sealed trait CtlAction extends Action {
+  sealed trait CtlAction extends Action with NeedRunAction {
     def json: JsValue
     override def isCtl: Boolean = true
   }
@@ -1266,10 +1267,10 @@ final case class EngineResult(
     this
   }
 }
-final case class RuntimeState(disabledIds: Set[Int], events: List[MatchEvent])
+final case class RuntimeState(mode: EngineMode, disabledIds: Set[Int], events: List[MatchEvent])
 
-final case class SecRulesEngineConfig(failFast: Boolean)
+final case class SecRulesEngineConfig()
 
 object SecRulesEngineConfig {
-  val default = SecRulesEngineConfig(failFast = true)
+  val default = SecRulesEngineConfig()
 }

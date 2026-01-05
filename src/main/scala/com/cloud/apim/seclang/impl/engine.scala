@@ -37,14 +37,23 @@ final class SecRulesEngine(program: CompiledProgram, config: SecRulesEngineConfi
 
   // runtime disables (ctl:ruleRemoveById)
   def evaluate(ctx: RequestContext, phases: List[Int] = List(1, 2)): EngineResult = {
-    val init = RuntimeState(Set.empty, Nil)
-    val (disp, st) = phases.foldLeft((Disposition.Continue: Disposition, init)) {
-      case ((Disposition.Block(a, b, c), st), _) => (Disposition.Block(a, b, c), st) // already blocked, keep
-      case ((Disposition.Continue, st), ph) =>
-        val (d2, st2) = runPhase(ph, ctx, st)
-        (d2, st2)
+    if (program.mode.isOff) {
+      EngineResult(Disposition.Continue, List.empty)
+    } else {
+      val init = RuntimeState(program.mode, Set.empty, Nil)
+      val (disp, st) = phases.foldLeft((Disposition.Continue: Disposition, init)) {
+        case ((Disposition.Block(a, b, c), st), _) if st.mode.isBlocking => (Disposition.Block(a, b, c), st) // already blocked, keep
+        case ((Disposition.Block(a, b, c), st), ph) if st.mode.isDetectionOnly => {
+          val (d2, st2) = runPhase(ph, ctx, st)
+          (d2, st2)
+        }
+        case ((Disposition.Continue, st), ph) => {
+          val (d2, st2) = runPhase(ph, ctx, st)
+          (d2, st2)
+        }
+      }
+      EngineResult(disp, st.events.reverse)
     }
-    EngineResult(disp, st.events.reverse)
   }
 
   private def runPhase(phase: Int, ctx: RequestContext, st0: RuntimeState): (Disposition, RuntimeState) = {
@@ -89,8 +98,8 @@ final class SecRulesEngine(program: CompiledProgram, config: SecRulesEngineConfi
             st = stAfterMatch
 
             dispOpt match {
-              case Some(d) if config.failFast => return (d, st)
-              case Some(d) if !config.failFast => {
+              case Some(d) if !st.mode.isDetectionOnly => return (d, st)
+              case Some(d) if st.mode.isDetectionOnly => {
                 disps = disps :+ d
                 skipToIdxOpt match {
                   case Some(j) => i = j
@@ -106,7 +115,7 @@ final class SecRulesEngine(program: CompiledProgram, config: SecRulesEngineConfi
           }
       }
     }
-    if (config.failFast) {
+    if (st.mode.isDetectionOnly) {
       (Disposition.Continue, st)
     } else {
       if (disps.nonEmpty) {
@@ -138,6 +147,7 @@ final class SecRulesEngine(program: CompiledProgram, config: SecRulesEngineConfi
 
   private def performActions(ruleId: Int, actions: List[Action], phase: Int, context: RequestContext, state: RuntimeState): RuntimeState = {
     // TODO: implement it
+    var localState = state
     val events = state.events.filter(_.msg.isDefined).map { e =>
       s"phase=${e.phase} rule_id=${e.ruleId.getOrElse(0)} - ${e.msg.getOrElse("no msg")}"
     }.mkString(". ")
@@ -203,9 +213,26 @@ final class SecRulesEngine(program: CompiledProgram, config: SecRulesEngineConfi
           case expr => logError("invalid setvar expression: " + expr)
         }
       }
+      case Action.CtlAction.AuditEngine(id) => println("AuditEngine not implemented yet")
+      case Action.CtlAction.AuditLogParts(id) => println("AuditLogParts not implemented yet")
+      case Action.CtlAction.RequestBodyAccess(id) => println("RequestBodyAccess not implemented yet")
+      case Action.CtlAction.RequestBodyProcessor(id) => println("RequestBodyProcessor not implemented yet")
+      case Action.CtlAction.RuleEngine(value) => {
+        localState = localState.copy(mode = EngineMode(value))
+      }
+      case Action.CtlAction.ForceRequestBodyVariable(id) => println("ForceRequestBodyVariable not implemented yet")
+      case Action.CtlAction.RuleRemoveByTag(tag) => println("RuleRemoveByTag not implemented yet")
+      case Action.CtlAction.RuleRemoveTargetById(id, target) => println("RuleRemoveTargetById not implemented yet")
+      case Action.CtlAction.RuleRemoveTargetByTag(tag, target) => {
+        // println(s"RuleRemoveTargetByTag('${tag}', '${target}')")
+        // TODO: needs to be implemented
+      }
+      case Action.CtlAction.RuleRemoveById(id) => {
+        localState = localState.copy(disabledIds = localState.disabledIds + id)
+      }
       case act => logError("unimplemented action: " + act.getClass.getSimpleName)
     }
-    state
+    localState
   }
 
   private def evalAction(
