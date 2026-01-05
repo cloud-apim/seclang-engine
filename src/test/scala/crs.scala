@@ -7,7 +7,7 @@ import com.cloud.apim.seclang.impl.utils.StatusCodes
 import com.cloud.apim.seclang.model.Disposition.{Block, Continue}
 import com.cloud.apim.seclang.model.{RequestContext, SecRulesEngineConfig}
 import com.cloud.apim.seclang.scaladsl.SecLang
-import play.api.libs.json.{JsArray, JsNull, JsObject, JsString, JsValue, Json}
+import play.api.libs.json.{JsArray, JsBoolean, JsNull, JsNumber, JsObject, JsString, JsValue, Json}
 
 import java.io.File
 import java.net.{URI, URLDecoder}
@@ -147,7 +147,8 @@ object CRSTestUtils {
           URLDecoder.decode(pair, StandardCharsets.UTF_8)
       val value =
         if (idx > 0 && pair.length > idx + 1)
-          URLDecoder.decode(pair.substring(idx + 1), StandardCharsets.UTF_8)
+          pair.substring(idx + 1)
+          //URLDecoder.decode(pair.substring(idx + 1), StandardCharsets.UTF_8)
         else
           ""
       params.put(key, params.get(key).getOrElse(List.empty) :+ value)
@@ -201,6 +202,15 @@ object CRSTestUtils {
     )
   }
 
+  def jsToStr(js: JsValue): String = js match {
+    case JsString(s) => s
+    case JsNull => "null"
+    case JsNumber(s) => s.toString()
+    case JsBoolean(s) => s.toString
+    case o @ JsObject(_) => Json.stringify(o)
+    case a @ JsArray(_) => Json.stringify(a)
+  }
+
   def requestContext(_json: JsValue): RequestContext = {
     val json = (_json \ "encoded_request").asOpt[String] match {
       case None => _json
@@ -217,8 +227,8 @@ object CRSTestUtils {
     val respStruct = if (isResponse) Try(Json.parse(body.map(_.utf8String).getOrElse("{}"))).getOrElse(Json.obj("body" -> body.getOrElse(ByteString.empty).utf8String)) else Json.obj()
     val respStatus = if (isResponse) Some((respStruct \ "status").asOpt[Int].getOrElse(200)) else None
     val respStatusTxt = if (isResponse) StatusCodes.get((respStruct \ "status").asOpt[Int].getOrElse(200)) else None
-    val headers: Map[String, List[String]] = (json \ "headers").asOpt[Map[String, String]].map(_.mapValues(v => List(v))).getOrElse(Map.empty)
-    val respHeaders: Map[String, List[String]] = (respStruct \ "headers").asOpt[Map[String, String]].map(_.mapValues(v => List(v))).getOrElse(Map.empty)
+    val headers: Map[String, List[String]] = (json \ "headers").asOpt[JsObject].map(_.value.mapValues(v => List(jsToStr(v))).toMap).getOrElse(Map.empty)
+    val respHeaders: Map[String, List[String]] = (respStruct \ "headers").asOpt[JsObject].map(_.value.mapValues(v => List(jsToStr(v))).toMap).getOrElse(Map.empty)
     val encBody = (respStruct \ "encodedBody").asOpt[String].map(s => ByteString(s).decodeBase64)
     val respBody = encBody.orElse((respStruct \ "body").asOpt[String].map(s => ByteString(s)))
     val finalBody = if (isResponse) respBody else body
@@ -518,8 +528,8 @@ class SecLangCRSTest extends munit.FunSuite {
     case RuleChain(rules) => rules
   }.flatten
 
-  private val testOnly: List[(String, Int)] = List(("920200", 2))
-  //private val testOnly: List[(String, Int)] = List.empty
+  //private val testOnly: List[(String, Int)] = List(("920230", 1))
+  private val testOnly: List[(String, Int)] = List.empty
 
   def writeStats(): Unit = {
     if (testOnly.isEmpty) {

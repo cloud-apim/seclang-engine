@@ -215,12 +215,12 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
       }
       case Action.CtlAction.AuditEngine(id) => println("AuditEngine not implemented yet")
       case Action.CtlAction.AuditLogParts(id) => println("AuditLogParts not implemented yet")
-      case Action.CtlAction.RequestBodyAccess(id) => println("RequestBodyAccess not implemented yet")
+      case Action.CtlAction.RequestBodyAccess(id) => ()
       case Action.CtlAction.RequestBodyProcessor(id) => println("RequestBodyProcessor not implemented yet")
       case Action.CtlAction.RuleEngine(value) => {
         localState = localState.copy(mode = EngineMode(value))
       }
-      case Action.CtlAction.ForceRequestBodyVariable(id) => println("ForceRequestBodyVariable not implemented yet")
+      case Action.CtlAction.ForceRequestBodyVariable(id) =>()
       case Action.CtlAction.RuleRemoveByTag(tag) => println("RuleRemoveByTag not implemented yet")
       case Action.CtlAction.RuleRemoveTargetById(id, target) => println("RuleRemoveTargetById not implemented yet")
       case Action.CtlAction.RuleRemoveTargetByTag(tag, target) => {
@@ -404,6 +404,11 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
     val transformed = extracted.map(v => applyTransforms(v, transforms))
     // 3) operator match on ANY extracted value
     val matched = transformed.exists(v => evalOperator(lastRuleId.getOrElse(-1), rule.operator, v))
+    // if (lastRuleId.contains(920230)) {
+    //   println(s"extracted: ${extracted.mkString(", ")}")
+    //   println(s"variables: ${transformed.mkString(", ")}")
+    //   println(s"matched: ${matched}")
+    // }
     matched
   }
 
@@ -465,7 +470,8 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
           case "REQUEST_HEADERS" | "RESPONSE_HEADERS" => {
             key match {
               case None =>
-                ctx.headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
+                //ctx.headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
+                ctx.headers.toList.flatMap(_._2)
               case Some(h) =>
                 ctx.headers.collect {
                   case (k, vs) if k.toLowerCase == h => vs
@@ -482,7 +488,8 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
             }
             key match {
               case None =>
-                headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
+                // headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
+                headers.toList.flatMap(_._2)
               case Some(h) =>
                 headers.collect {
                   case (k, vs) if k.toLowerCase == h => vs
