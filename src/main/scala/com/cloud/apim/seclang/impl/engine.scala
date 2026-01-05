@@ -393,10 +393,17 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
       val vrbls = rule.variables.variables.flatMap { v =>
         resolveVariable(v, rule.variables.count, rule.variables.negated, ctx)
       }
+      val negatedVariables = rule.variables.negatedVariables.flatMap { v =>
+        resolveVariable(v, false, true, ctx)
+      }
       if (rule.variables.count) {
         vrbls.size.toString :: Nil
       } else {
-        vrbls
+        if (negatedVariables.nonEmpty) {
+          vrbls.filterNot(v => negatedVariables.contains(v))
+        } else {
+          vrbls
+        }
       }
     }
     // 2) apply transformations
@@ -476,6 +483,11 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
               case None =>
                 //ctx.headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
                 ctx.headers.toList.flatMap(_._2)
+              case Some(h) if h.startsWith("/") && h.endsWith("/") =>
+                val r = h.r
+                ctx.headers.collect {
+                  case (k, vs) if r.findFirstIn(k).isDefined => vs
+                }.flatten.toList
               case Some(h) =>
                 ctx.headers.collect {
                   case (k, vs) if k.toLowerCase == h => vs
@@ -494,6 +506,11 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
               case None =>
                 // headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
                 headers.toList.flatMap(_._2)
+              case Some(h) if h.startsWith("/") && h.endsWith("/") =>
+                val r = h.r
+                headers.collect {
+                  case (k, vs) if r.findFirstIn(k).isDefined => vs
+                }.flatten.toList
               case Some(h) =>
                 headers.collect {
                   case (k, vs) if k.toLowerCase == h => vs
@@ -528,6 +545,11 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
           }
           case "ENV" => key match {
             case None => List.empty
+            case Some(h) if h.startsWith("/") && h.endsWith("/") =>
+              val r = h.r
+              envMap.collect {
+                case (k, vs) if r.findFirstIn(k).isDefined => vs
+              }.toList
             case Some(key) => envMap.get(key).toList
           }
           case "REQUEST_BODY" | "RESPONSE_BODY" => ctx.body.toList.map(_.utf8String)
@@ -545,6 +567,11 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
           case "REQUEST_COOKIES" => key match {
             case None =>
               ctx.cookies.toList.flatMap { case (k, vs) => vs }//.map(v => s"$k: $v") }
+            case Some(h) if h.startsWith("/") && h.endsWith("/") =>
+              val r = h.r
+              ctx.cookies.collect {
+                case (k, vs) if r.findFirstIn(k).isDefined => vs
+              }.flatten.toList
             case Some(h) =>
               ctx.cookies.collect {
                 case (k, vs) if k.toLowerCase == h => vs
@@ -624,7 +651,13 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
                 val headers = MultipartVars.multipartPartHeadersFromCtx(body.utf8String, ctx.contentType).getOrElse(Map.empty)
                 key match {
                   case None =>
-                    headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
+                    //headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
+                    headers.toList.flatMap(_._2)
+                  case Some(h) if h.startsWith("/") && h.endsWith("/") =>
+                    val r = h.r
+                    headers.collect {
+                      case (k, vs) if r.findFirstIn(k).isDefined => vs
+                    }.flatten.toList
                   case Some(h) =>
                     headers.collect {
                       case (k, vs) if k.toLowerCase == h => vs
@@ -638,7 +671,13 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
             val headers = ctx.query
             key match {
               case None =>
-                headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
+                // headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
+                headers.toList.flatMap(_._2)
+              case Some(h) if h.startsWith("/") && h.endsWith("/") =>
+                val r = h.r
+                headers.collect {
+                  case (k, vs) if r.findFirstIn(k).isDefined => vs
+                }.flatten.toList
               case Some(h) =>
                 headers.collect {
                   case (k, vs) if k.toLowerCase == h => vs
@@ -652,7 +691,13 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
                 val headers = FormUrlEncoded.parse(body.utf8String)
                 key match {
                   case None =>
-                    headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
+                    //headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
+                    headers.toList.flatMap(_._2)
+                  case Some(h) if h.startsWith("/") && h.endsWith("/") =>
+                    val r = h.r
+                    headers.collect {
+                      case (k, vs) if r.findFirstIn(k).isDefined => vs
+                    }.flatten.toList
                   case Some(h) =>
                     headers.collect {
                       case (k, vs) if k.toLowerCase == h => vs

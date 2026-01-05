@@ -26,7 +26,7 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
       val operator = visitOperator(ctx.operator())
       val actions = Option(ctx.actions()).map(visitActions)
       SecRule(commentBlock, variables, operator, actions)
-      
+
     } else if (ctx.rule_script_directive() != null && ctx.file_path() != null) {
       val filePath = ctx.file_path().getText
       val actions = Option(ctx.actions()).map(visitActions)
@@ -122,13 +122,25 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
       ConfigDirective.Raw("unknown", "")
     }
   }
-  
+
   override def visitVariables(ctx: SecLangParser.VariablesContext): Variables = {
     val negated = ctx.var_not() != null
     val count = ctx.var_count() != null
-    // TODO: handle ! correctly
     val variables = ctx.var_stmt().asScala.toList.map(visitVarStmt)
-    Variables(negated, count, variables)
+    if (negated && ctx.var_not().size > 0) {
+      val shouldRemoveN = ctx.var_not().size()
+      val nvars = ctx.getText.split("\\|").toList.filter(_.startsWith("!")).map { name =>
+        name.substring(1)
+      }.flatMap(n => variables.find {
+        case Variable.Simple(name) => name == n
+        case Variable.Collection(name, key) => s"$name:${key.getOrElse("--")}" == n
+      })
+      assert(shouldRemoveN == nvars.size, s"actual negated variables does not match announced count (${shouldRemoveN} != ${nvars.size})")
+      Variables(negated, count, variables, nvars)
+    } else {
+      Variables(negated, count, variables, List.empty)
+    }
+
   }
   
   def visitUpdateVariables(ctx: SecLangParser.Update_variablesContext): UpdateVariables = {

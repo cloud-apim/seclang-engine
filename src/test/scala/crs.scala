@@ -565,7 +565,7 @@ object CRSTestUtils {
 
 class SecLangCRSTest extends munit.FunSuite {
 
-  //private val testOnly: List[(String, Int)] = List(("920274", 1))
+  //private val testOnly: List[(String, Int)] = List(("920274", 5))
   private val testOnly: List[(String, Int)] = List.empty
   private val ignoreTests: List[(String, Int)] = List( // TODO: fix later
     ("920160", 5),

@@ -583,7 +583,8 @@ object Variables {
       val negated = (json \ "negated").as[Boolean]
       val count = (json \ "count").as[Boolean]
       val variables = (json \ "variables").as[List[JsValue]].flatMap(Variable.format.reads(_).asOpt)
-      Variables(negated, count, variables)
+      val negated_variables = (json \ "negated_variables").as[List[JsValue]].flatMap(Variable.format.reads(_).asOpt)
+      Variables(negated, count, variables, negated_variables)
     } match {
       case Failure(ex) => 
         ex.printStackTrace()
@@ -597,13 +598,15 @@ object Variables {
 final case class Variables(
     negated: Boolean,
     count: Boolean,
-    variables: List[Variable]
+    variables: List[Variable],
+    negatedVariables: List[Variable]
 ) extends AstNode {
   def json: JsValue = Json.obj(
     "type" -> "Variables",
     "negated" -> negated,
     "count" -> count,
-    "variables" -> JsArray(variables.map(_.json))
+    "variables" -> JsArray(variables.map(_.json)),
+    "negated_variables" -> JsArray(negatedVariables.map(_.json)),
   )
 }
 
