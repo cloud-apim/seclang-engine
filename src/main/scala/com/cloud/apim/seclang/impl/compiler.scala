@@ -1,6 +1,5 @@
 package com.cloud.apim.seclang.impl.compiler
 
-import com.cloud.apim.seclang.impl.compiler.EngineMode.{Off, On}
 import com.cloud.apim.seclang.model.ConfigDirective.{ComponentSignature, DefaultAction}
 import com.cloud.apim.seclang.model._
 
@@ -54,7 +53,7 @@ object Compiler {
     // flatten into CompiledItem with chain logic
     val items = scala.collection.mutable.ArrayBuffer.empty[CompiledItem]
     val it = statements.iterator
-    var mode: EngineMode = On
+    var mode: EngineMode = EngineMode.On
 
     while (it.hasNext) {
       it.next() match {
