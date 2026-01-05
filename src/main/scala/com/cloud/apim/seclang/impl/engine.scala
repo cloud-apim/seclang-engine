@@ -7,7 +7,7 @@ import com.cloud.apim.seclang.impl.compiler._
 import com.cloud.apim.seclang.impl.utils._
 import com.cloud.apim.seclang.model.Action.CtlAction
 import com.cloud.apim.seclang.model._
-import play.api.libs.json.{JsArray, JsString, Json}
+import play.api.libs.json._
 
 import java.net.{URLDecoder, URLEncoder}
 import java.nio.charset.StandardCharsets

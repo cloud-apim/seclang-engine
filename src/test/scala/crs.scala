@@ -6,7 +6,7 @@ import com.cloud.apim.seclang.impl.utils.StatusCodes
 import com.cloud.apim.seclang.model.Disposition.{Block, Continue}
 import com.cloud.apim.seclang.model.{RequestContext, SecRulesEngineConfig}
 import com.cloud.apim.seclang.scaladsl.SecLang
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 
 import java.io.File
 import java.net.{URI, URLDecoder}
@@ -225,9 +225,26 @@ class SecLangCRSTest extends munit.FunSuite {
   private val counter = new AtomicLong(0L)
   private val failures = new AtomicLong(0L)
   private val dev = true
+  private var failingTests = List.empty[JsObject]
 
   //private val testOnly: List[(String, Int)] = List(("920120", 2))
   private val testOnly: List[(String, Int)] = List.empty
+
+  def writeStats(): Unit = {
+    if (testOnly.isEmpty) {
+      val document = Json.obj(
+        "global_stats" -> Json.obj(
+          "failure_percentage" -> ((failures.get() * 100.0) / counter.get()),
+          "passing_percentage" -> (((counter.get() - failures.get()) * 100.0) / counter.get()),
+          "total_tests" -> counter.get(),
+          "success_tests" -> (counter.get() - failures.get()),
+          "failure_tests" -> failures.get(),
+        ),
+        "test_failures" -> JsArray(failingTests)
+      )
+      Files.writeString(new File("crs-tests-status.json").toPath, Json.prettyPrint(document))
+    }
+  }
 
   def execTest(rule: String, path: String): Unit = Try {
     // println(s"running tests for rule ${rule} ...")
@@ -250,6 +267,7 @@ class SecLangCRSTest extends munit.FunSuite {
           val no_expect_ids: List[Int] = (log \ "no_expect_ids").asOpt[List[Int]].getOrElse(List.empty)
           var checked = false
           var ok = true
+          var cause = "--"
           if (status.isDefined) {
             checked = true
             val outStatus = result.disposition match {
@@ -274,6 +292,7 @@ class SecLangCRSTest extends munit.FunSuite {
                 failures.incrementAndGet()
                 println(s"[${rule} - ${testId}] ${desc.getOrElse("--")}")
                 println(s"      failed expect_id check: $expect_id not found ")
+                cause = s"failed expect_id check: $expect_id not found"
               }
               if (!dev) assertEquals(passed, true, s"expect_id mismatch for test ${testId}")
             }
@@ -287,6 +306,7 @@ class SecLangCRSTest extends munit.FunSuite {
                 failures.incrementAndGet()
                 println(s"[${rule} - ${testId}] ${desc.getOrElse("--")}")
                 println(s"      failed no_expect_ids check: $no_expect_id was found ")
+                cause = s"failed no_expect_ids check: $no_expect_id was found"
               }
               if (!dev) assertEquals(notpassed, false, s"no_expect_ids mismatch for test ${testId}")
             }
@@ -294,9 +314,23 @@ class SecLangCRSTest extends munit.FunSuite {
           if (checked && ok) {
             //  println(s"    - [${rule} - ${testId}] passed")
           } else if (!checked && ok) {
+            ok = false
             failures.incrementAndGet()
             println(s"[${rule} - ${testId}] ${desc.getOrElse("--")}")
             println(s"      nothing checked for test ${testId} ")
+            cause = s"nothing checked for test ${testId}"
+          }
+          if (!ok) {
+            val descr = desc.getOrElse("--")
+            failingTests = failingTests :+ Json.obj(
+              "test_rule" -> rule,
+              "test_id" -> testId,
+              "test_path" -> path,
+              "description" -> descr,
+              "cause" -> cause,
+              "result" -> result.json,
+              "test" -> test,
+            )
           }
           if (!ok && testOnly.nonEmpty && testOnly.contains((rule, testId))) {
             result.displayPrintln()
@@ -676,6 +710,7 @@ class SecLangCRSTest extends munit.FunSuite {
     execTest("980170", "RESPONSE-980-CORRELATION/980170.yaml")
   }
   test("display results") {
+    writeStats()
     if (failures.get() > 0) {
       println(s"total test failures: ${failures.get()} / ${counter.get()}")
     }

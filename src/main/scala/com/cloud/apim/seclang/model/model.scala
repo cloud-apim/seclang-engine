@@ -1242,10 +1242,18 @@ final case class RequestContext(
   }
 }
 
-sealed trait Disposition
+sealed trait Disposition {
+  def json: JsValue
+}
 object Disposition {
-  case object Continue extends Disposition
-  final case class Block(status: Int, msg: Option[String], ruleId: Option[Int]) extends Disposition
+  case object Continue extends Disposition {
+    def json: JsValue = Json.obj("type" -> "Disposition", "action_type" -> "continue")
+  }
+  final case class Block(status: Int, msg: Option[String], ruleId: Option[Int]) extends Disposition {
+    val message = msg.getOrElse("--")
+    val id = ruleId.getOrElse(0)
+    def json: JsValue = Json.obj("type" -> "Disposition", "action_type" -> "block", "status" -> status, "msg" -> message, "rule_id" -> id)
+  }
 }
 
 final case class MatchEvent(
@@ -1253,7 +1261,20 @@ final case class MatchEvent(
     msg: Option[String],
     phase: Int,
     raw: String
-)
+) {
+  def simpleJson: JsValue = {
+    JsString(s"match phase=${phase} rule_id=${ruleId.getOrElse(0)} - ${msg.getOrElse("no msg")}")
+  }
+  def json: JsValue = {
+    val message = msg.getOrElse("--")
+    Json.obj(
+      "rule_id" -> ruleId,
+      "msg" -> message,
+      "phase" -> phase,
+      "raw" -> raw
+    )
+  }
+}
 
 final case class EngineResult(
     disposition: Disposition,
@@ -1266,6 +1287,10 @@ final case class EngineResult(
     println(display())
     this
   }
+  def json: JsValue = Json.obj(
+    "disposition" -> disposition.json,
+    "events" -> JsArray(events.filter(_.msg.isDefined).map(_.simpleJson))
+  )
 }
 final case class RuntimeState(mode: EngineMode, disabledIds: Set[Int], events: List[MatchEvent])
 
