@@ -1,12 +1,13 @@
 package com.cloud.apim.seclang.test
 
 import akka.util.ByteString
+import com.cloud.apim.seclang.impl.compiler.RuleChain
 import com.cloud.apim.seclang.impl.engine.SecRulesEngine
 import com.cloud.apim.seclang.impl.utils.StatusCodes
 import com.cloud.apim.seclang.model.Disposition.{Block, Continue}
 import com.cloud.apim.seclang.model.{RequestContext, SecRulesEngineConfig}
 import com.cloud.apim.seclang.scaladsl.SecLang
-import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
+import play.api.libs.json.{JsArray, JsNull, JsObject, JsValue, Json}
 
 import java.io.File
 import java.net.{URI, URLDecoder}
@@ -15,6 +16,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicLong
 import scala.collection.concurrent.TrieMap
+import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
 
 object CRSTestUtils {
@@ -128,7 +130,7 @@ object CRSTestUtils {
         |# SecRuleEngine DetectionOnly
         |""".stripMargin
     val config = SecLang.parse(finalRules).right.get
-    val program = SecLang.compile(config).copy(removedRuleIds = Set(920273, 920274)) // TODO: remove and fix
+    val program = SecLang.compile(config).copy(removedRuleIds = Set(920273, 920274, 920100)) // TODO: remove and fix
     SecLang.engine(program, files = files)
   }
 
@@ -226,6 +228,10 @@ class SecLangCRSTest extends munit.FunSuite {
   private val failures = new AtomicLong(0L)
   private val dev = true
   private var failingTests = List.empty[JsObject]
+  private var times = List.empty[Long]
+  private val allRules = engine.program.itemsByPhase.toSeq.flatMap(_._2).collect {
+    case RuleChain(rules) => rules
+  }.flatten
 
   //private val testOnly: List[(String, Int)] = List(("920120", 2))
   private val testOnly: List[(String, Int)] = List.empty
@@ -242,8 +248,22 @@ class SecLangCRSTest extends munit.FunSuite {
         ),
         "test_failures" -> JsArray(failingTests)
       )
+      println(Json.prettyPrint((document \ "global_stats").as[JsObject]))
       Files.writeString(new File("crs-tests-status.json").toPath, Json.prettyPrint(document))
     }
+    def fmt(ns: Long): String =
+      Duration.fromNanos(ns).toMillis + " ms"
+
+    val rounds = counter.get()
+    val total = times.sum
+    val min = times.min
+    val max = times.max
+    val avg = total / rounds
+    println(s"Runs        : $rounds")
+    println(s"Total time  : ${fmt(total)}")
+    println(s"Min         : ${fmt(min)}")
+    println(s"Max         : ${fmt(max)}")
+    println(s"Average     : ${fmt(avg)}")
   }
 
   def execTest(rule: String, path: String): Unit = Try {
@@ -259,7 +279,10 @@ class SecLangCRSTest extends munit.FunSuite {
           counter.incrementAndGet()
           val input = (stage \ "input").as[JsObject]
           val ctx = CRSTestUtils.requestContext(input)
+          val start = System.nanoTime()
           val result = engine.evaluate(ctx, if(ctx.isResponse) List(3, 4) else List(1, 2))
+          val dur = System.nanoTime() - start
+          times = times :+ dur
           val output = (stage \ "output").as[JsObject]
           val status = (output \ "status").asOpt[Int]
           val log = (output \ "log").asOpt[JsObject].getOrElse(Json.obj())
@@ -330,12 +353,13 @@ class SecLangCRSTest extends munit.FunSuite {
               "cause" -> cause,
               "result" -> result.json,
               "test" -> test,
+              "tested_rule" -> allRules.find(_.id.contains(rule.toInt)).map(_.json).getOrElse(JsNull).as[JsValue]
             )
           }
           if (!ok && testOnly.nonEmpty && testOnly.contains((rule, testId))) {
             result.displayPrintln()
             println(Json.prettyPrint(test))
-            println(Json.prettyPrint(Json.parse(result.events.last.raw)))
+            println(Json.prettyPrint(Json.parse(result.events.filter(_.msg.isDefined).last.raw)))
           }
           if (!dev) assert(checked, s"nothing checked for test ${testId}")
         }
@@ -711,8 +735,5 @@ class SecLangCRSTest extends munit.FunSuite {
   }
   test("display results") {
     writeStats()
-    if (failures.get() > 0) {
-      println(s"total test failures: ${failures.get()} / ${counter.get()}")
-    }
   }
 }

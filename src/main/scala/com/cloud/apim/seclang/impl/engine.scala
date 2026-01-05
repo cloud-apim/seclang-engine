@@ -19,7 +19,7 @@ import scala.collection.concurrent.TrieMap
 import scala.util._
 import scala.util.matching.Regex
 
-final class SecRulesEngine(program: CompiledProgram, config: SecRulesEngineConfig, files: Map[String, String] = Map.empty, env: Map[String, String] = Map.empty) {
+final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineConfig, files: Map[String, String] = Map.empty, env: Map[String, String] = Map.empty) {
 
   // TODO: declare in evaluate, just to be sure !
   private val txMap = new TrieMap[String, String]()

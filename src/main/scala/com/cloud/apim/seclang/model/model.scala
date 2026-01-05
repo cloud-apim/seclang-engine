@@ -1263,7 +1263,7 @@ final case class MatchEvent(
     raw: String
 ) {
   def simpleJson: JsValue = {
-    JsString(s"match phase=${phase} rule_id=${ruleId.getOrElse(0)} - ${msg.getOrElse("no msg")}")
+    JsString(s"phase=${phase} rule_id=${ruleId.getOrElse(0)} - ${msg.getOrElse("no msg")}")
   }
   def json: JsValue = {
     val message = msg.getOrElse("--")
