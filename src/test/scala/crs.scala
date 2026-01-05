@@ -513,6 +513,32 @@ object CRSTestUtils {
         |    }
         |  } ]
         |}""".stripMargin),
+    (920181, 1) -> Json.parse("""{
+        |  "test_id" : 1,
+        |  "stages" : [ {
+        |    "input" : {
+        |      "dest_addr" : "127.0.0.1",
+        |      "port" : 80,
+        |      "method" : "POST",
+        |      "uri" : "/anything",
+        |      "headers" : {
+        |        "Host" : "localhost",
+        |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5",
+        |        "Content-Length" : 7,
+        |        "Content-Type" : "application/x-www-form-urlencoded",
+        |        "Transfer-Encoding" : "chunked",
+        |        "User-Agent" : "OWASP CRS test agent"
+        |      },
+        |      "data" : "7\r\nfoo=bar\r\n0\r\n\r\n",
+        |      "autocomplete_headers" : false
+        |    },
+        |    "output" : {
+        |      "log" : {
+        |        "expect_ids" : [ 920181 ]
+        |      }
+        |    }
+        |  } ]
+        |}""".stripMargin),
   )
 }
 
@@ -528,7 +554,7 @@ class SecLangCRSTest extends munit.FunSuite {
     case RuleChain(rules) => rules
   }.flatten
 
-  //private val testOnly: List[(String, Int)] = List(("920240", 1), ("920240", 2))
+  //private val testOnly: List[(String, Int)] = List(("920181", 1))
   private val testOnly: List[(String, Int)] = List.empty
 
   def writeStats(): Unit = {
