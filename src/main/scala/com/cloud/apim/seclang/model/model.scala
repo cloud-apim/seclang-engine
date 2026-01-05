@@ -1294,8 +1294,8 @@ final case class EngineResult(
 }
 final case class RuntimeState(mode: EngineMode, disabledIds: Set[Int], events: List[MatchEvent])
 
-final case class SecRulesEngineConfig()
+final case class SecRulesEngineConfig(debugRules: List[Int])
 
 object SecRulesEngineConfig {
-  val default = SecRulesEngineConfig()
+  val default = SecRulesEngineConfig(debugRules = List.empty)
 }

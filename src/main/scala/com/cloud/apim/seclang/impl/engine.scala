@@ -322,7 +322,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
       lastRuleId = r.id.orElse(lastRuleId)
       val isLast = rules.last == r
       if (allMatched) {
-        val matched = evalRule(r, lastRuleId, ctx, debug = false)
+        val matched = evalRule(r, lastRuleId, ctx, debug = lastRuleId.exists(id => config.debugRules.contains(id)))
         // TODO: implement actions: https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29#actions
         if (matched) {
           val actionsList = r.actions.toList.flatMap(_.actions)
@@ -404,11 +404,15 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
     val transformed = extracted.map(v => applyTransforms(v, transforms))
     // 3) operator match on ANY extracted value
     val matched = transformed.exists(v => evalOperator(lastRuleId.getOrElse(-1), rule.operator, v))
-    // if (lastRuleId.contains(920181)) {
-    //   println(s"extracted: ${extracted.mkString(", ")}")
-    //   println(s"variables: ${transformed.mkString(", ")}")
-    //   println(s"matched: ${matched}")
-    // }
+    if (debug) {
+      println("---------------------------------------------------------")
+      println(s"debug for rule: ${lastRuleId.getOrElse(0)}")
+      println("---------------------------------------------------------")
+      println(s"extracted: ${extracted.mkString(", ")}")
+      println(s"variables: ${transformed.mkString(", ")}")
+      println(s"matched: ${matched}")
+      println("---------------------------------------------------------")
+    }
     matched
   }
 
@@ -887,7 +891,8 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
     case Operator.DetectXSS(x) => LibInjection.isXSS(evalTxExpressions(value))
     case Operator.DetectSQLi(x) => LibInjection.isSQLi(evalTxExpressions(value))
     case Operator.ValidateUrlEncoding(x) => !EncodingHelper.validateUrlEncoding(value)
-    case Operator.ValidateUtf8Encoding(x) => !EncodingHelper.validateUtf8Encoding(ByteString(value))
+    case Operator.ValidateUtf8Encoding(x) => !EncodingHelper.validateUtf8Encoding(value)
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     case Operator.VerifyCC(x) => unimplementedOperator("verifyCC") // TODO: implement it
     case Operator.VerifyCPF(x) => unimplementedOperator("verifyCPF") // TODO: implement it

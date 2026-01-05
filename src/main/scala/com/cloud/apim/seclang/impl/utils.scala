@@ -665,7 +665,7 @@ object EncodingHelper {
     true
   }
 
-  def validateUtf8Encoding(input: ByteString): Boolean = {
+  def validateUtf8Encoding(input: String): Boolean = {
     val bytes = input
     val len = bytes.length
 
