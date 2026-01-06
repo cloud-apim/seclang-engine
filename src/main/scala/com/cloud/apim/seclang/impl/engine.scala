@@ -391,15 +391,17 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
 
   private def evalRule(rule: SecRule, lastRuleId: Option[Int], ctx: RequestContext, debug: Boolean): Boolean = {
     // 1) extract values from variables
-    val extracted: List[String] = {
-      val vrbls = rule.variables.variables.flatMap { v =>
-        resolveVariable(v, rule.variables.count, rule.variables.negated, ctx, debug)
+    val extracted: List[(String, List[String])] = {
+      val vrbls = rule.variables.variables.map {
+        case v @ Variable.Simple(name) => (name, resolveVariable(v, rule.variables.count, rule.variables.negated, ctx, debug))
+        case v @ Variable.Collection(name, key) => (s"$name:${key.getOrElse("")}", resolveVariable(v, rule.variables.count, rule.variables.negated, ctx, debug))
       }
-      val negatedVariables = rule.variables.negatedVariables.flatMap { v =>
-        resolveVariable(v, false, true, ctx, debug)
+      val negatedVariables: List[(String, List[String])] = rule.variables.negatedVariables.map {
+        case v @ Variable.Simple(name) => (name, resolveVariable(v, false, true, ctx, debug))
+        case v @ Variable.Collection(name, key) => (s"$name:${key.getOrElse("")}", resolveVariable(v, false, true, ctx, debug))
       }
       if (rule.variables.count) {
-        vrbls.size.toString :: Nil
+        List((vrbls.headOption.map(v => s"&${v._1}").getOrElse("--"), vrbls.flatMap(_._2).size.toString :: Nil))
       } else {
         if (negatedVariables.nonEmpty) {
           vrbls.filterNot(v => negatedVariables.contains(v))
@@ -410,9 +412,27 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
     }
     // 2) apply transformations
     val transforms = rule.actions.toList.flatMap(_.actions).toList.collect { case Action.Transform(name) => name }.filterNot(_ == "none")
-    val transformed = extracted.map(v => applyTransforms(v, transforms))
+    val transformed = extracted.map {
+      case (name, values) => (name, values.map(v => applyTransforms(v, transforms)))
+    }
     // 3) operator match on ANY extracted value
-    val matched = transformed.exists(v => evalOperator(lastRuleId.getOrElse(-1), rule.operator, v))
+    var matched_vars = List.empty[String]
+    var matched_var_names = List.empty[String]
+    val matched = transformed.exists {
+      case (name, values) =>
+        val m = values.exists(v => evalOperator(lastRuleId.getOrElse(-1), rule.operator, v))
+        if (m) {
+          txMap.put("matched_var_name", name)
+          txMap.put("matched_var", values.mkString(" "))
+          matched_vars = matched_vars :+ values.mkString(" ")
+          matched_var_names = matched_var_names :+ name
+        }
+        m
+    }
+    if (matched_vars.nonEmpty) {
+      txMap.put("matched_vars", Json.stringify(JsArray(matched_vars.map(v => JsString(v)))))
+      txMap.put("matched_var_names", Json.stringify(JsArray(matched_var_names.map(v => JsString(v)))))
+    }
     if (debug) {
       println("---------------------------------------------------------")
       println(s"debug for rule: ${lastRuleId.getOrElse(0)}")
@@ -726,18 +746,18 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
               case _ => List.empty
             }
           }
-          case "MATCHED_VAR" => txMap.get("MATCHED_VAR").orElse(txMap.get("MATCHED_VAR".toLowerCase())).toList
-          case "MATCHED_VARS" =>  txMap.get("MATCHED_LIST").toList.flatMap { v =>
+          case "MATCHED_VAR" => txMap.get("matched_var").toList
+          case "MATCHED_VARS" =>  txMap.get("matched_vars").flatMap(v => Json.parse(v).asOpt[List[String]]).getOrElse(List.empty) /*txMap.get("MATCHED_LIST").toList.flatMap { v =>
             Json.parse(v).asOpt[List[String]].getOrElse(List.empty)
-          }
+          }*/
+          case "MATCHED_VAR_NAME" => txMap.get("matched_var_name").toList
+          case "MATCHED_VARS_NAMES" => txMap.get("matched_var_names").flatMap(v => Json.parse(v).asOpt[List[String]]).getOrElse(List.empty)
           //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
           case "AUTH_TYPE" => unimplementedVariable("AUTH_TYPE") // TODO: implement it
           case "FULL_REQUEST" => unimplementedVariable("FULL_REQUEST") // TODO: implement it
           case "FULL_REQUEST_LENGTH" => unimplementedVariable("FULL_REQUEST_LENGTH") // TODO: implement it
           case "HIGHEST_SEVERITY" => unimplementedVariable("HIGHEST_SEVERITY") // TODO: implement it
           case "INBOUND_DATA_ERROR" => unimplementedVariable("INBOUND_DATA_ERROR") // TODO: implement it
-          case "MATCHED_VAR_NAME" => unimplementedVariable("MATCHED_VAR_NAME") // TODO: implement it
-          case "MATCHED_VARS_NAMES" => unimplementedVariable("MATCHED_VARS_NAMES") // TODO: implement it
           case "MODSEC_BUILD" => unimplementedVariable("MODSEC_BUILD") // TODO: implement it
           case "MSC_PCRE_LIMITS_EXCEEDED" => unimplementedVariable("MSC_PCRE_LIMITS_EXCEEDED") // TODO: implement it
           case "MULTIPART_CRLF_LF_LINES" => unimplementedVariable("MULTIPART_CRLF_LF_LINES") // TODO: implement it
