@@ -215,8 +215,15 @@ object CRSTestUtils {
     val json = (_json \ "encoded_request").asOpt[String] match {
       case None => _json
       case Some(encodedRaw) => {
-        val enc = Base64.getDecoder.decode(encodedRaw.replaceAll("\\\\n", "").getBytes(StandardCharsets.UTF_8))
-        _json.as[JsObject].deepMerge(parseRawHttpRequest(new String(enc, StandardCharsets.UTF_8)))
+        try {
+          val enc = Base64.getDecoder.decode(encodedRaw.replaceAll("\\\\n", "").getBytes(StandardCharsets.UTF_8))
+          _json.as[JsObject].deepMerge(parseRawHttpRequest(new String(enc, StandardCharsets.UTF_8)))
+        } catch {
+          case t: Throwable =>
+            println("failed to parse request: " + encodedRaw)
+            t.printStackTrace()
+            Json.obj()
+        }
       }
     }
     val uri = (json \ "uri").asOpt[String].getOrElse("/")

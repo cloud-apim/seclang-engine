@@ -105,14 +105,20 @@ object FormUrlEncoded {
       .map(_.trim)
       .filter(_.nonEmpty)
       .flatMap { pair =>
-        val idx = pair.indexOf('=')
-        if (idx < 0) {
-          val k = dec(pair)
-          Some(k -> "")
-        } else {
-          val k = dec(pair.substring(0, idx))
-          val v = dec(pair.substring(idx + 1))
-          Some(k -> v)
+        try {
+          val idx = pair.indexOf('=')
+          if (idx < 0) {
+            val k = dec(pair)
+            Some(k -> "")
+          } else {
+            val k = dec(pair.substring(0, idx))
+            val v = dec(pair.substring(idx + 1))
+            Some(k -> v)
+          }
+        } catch {
+          case t: Throwable =>
+            t.printStackTrace()
+            None
         }
       }
       .toList
@@ -135,25 +141,33 @@ object XmlXPathParser {
   }
 
   def evalXPath(xml: String, xpathExpr: String): List[String] = {
-    val doc = parseXml(xml)
-    val xp = XPathFactory.newInstance().newXPath()
-    val expr = xp.compile(xpathExpr)
+    try {
+      val doc = parseXml(xml)
+      val xp = XPathFactory.newInstance().newXPath()
+      val expr = xp.compile(xpathExpr)
 
-    val nodes =
-      try expr.evaluate(doc, XPathConstants.NODESET).asInstanceOf[NodeList]
-      catch { case _: Throwable => null }
+      val nodes =
+        try expr.evaluate(doc, XPathConstants.NODESET).asInstanceOf[NodeList]
+        catch {
+          case _: Throwable => null
+        }
 
-    if (nodes != null && nodes.getLength > 0) {
-      val b = List.newBuilder[String]
-      var i = 0
-      while (i < nodes.getLength) {
-        b += nodeToString(nodes.item(i))
-        i += 1
+      if (nodes != null && nodes.getLength > 0) {
+        val b = List.newBuilder[String]
+        var i = 0
+        while (i < nodes.getLength) {
+          b += nodeToString(nodes.item(i))
+          i += 1
+        }
+        b.result()
+      } else {
+        val v = expr.evaluate(doc, XPathConstants.STRING).asInstanceOf[String]
+        if (v == null || v.isEmpty) Nil else List(v)
       }
-      b.result()
-    } else {
-      val v = expr.evaluate(doc, XPathConstants.STRING).asInstanceOf[String]
-      if (v == null || v.isEmpty) Nil else List(v)
+    } catch {
+      case t: Throwable =>
+        t.printStackTrace()
+        Nil
     }
   }
 
@@ -368,7 +382,7 @@ object Transformations {
     "gt"   -> '>'
   )
 
-  def htmlEntityDecode(input: String): String = {
+  def htmlEntityDecode(input: String): String = try {
     var out = input
 
     // Hexadecimal entities
@@ -391,6 +405,10 @@ object Transformations {
     }
 
     out
+  } catch {
+    case t: Throwable =>
+      t.printStackTrace()
+      input
   }
 
   /** ModSecurity / CRS "cmdLine" transformation
