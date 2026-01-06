@@ -96,7 +96,11 @@ object Compiler {
           items += MarkerItem(m.name)
         }
         case s: SecAction => {
-          items += ActionItem(s.copy(commentBlock = None))
+          if (removed.contains(s.id.getOrElse(-1)) || s.tags.exists(t => removedRuleTags.contains(t)) || s.msgs.exists(t => removedRuleMsgs.contains(t))) {
+            // skip removed (if no id, can't remove)
+          } else {
+            items += ActionItem(s.copy(commentBlock = None))
+          }
         }
         case s: SecRuleScript => unimplementedStatement("SecRuleScript")
         case s: SecRuleRemoveById => () // already implemented in remove

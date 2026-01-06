@@ -182,6 +182,12 @@ final case class SecAction(
   lazy val phase: Int = actions.actions.collectFirst {
     case Action.Phase(p) => p
   }.getOrElse(2)
+  lazy val tags: Set[String] = actions.actions.collect {
+    case Action.Tag(v) => v
+  }.toSet
+  lazy val msgs: Set[String] = actions.actions.collect {
+    case Action.Msg(v) => v
+  }.toSet
   def json: JsValue = Json.obj(
     "type" -> "SecAction",
     "id" -> id,
