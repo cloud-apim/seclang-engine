@@ -912,7 +912,13 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
     case Operator.Le(x) => scala.util.Try(value.toInt).getOrElse(0) <= scala.util.Try(evalTxExpressions(x).toInt).getOrElse(0)
     case Operator.Lt(x) => scala.util.Try(value.toInt).getOrElse(0) < scala.util.Try(evalTxExpressions(x).toInt).getOrElse(0)
     case Operator.StrMatch(x) => value.toLowerCase.contains(evalTxExpressions(x).toLowerCase)
-    case Operator.Within(x) => evalTxExpressions(x).toLowerCase().contains(value.toLowerCase())
+    case Operator.Within(x) =>
+      val expr = evalTxExpressions(x).toLowerCase()
+      val v = value.toLowerCase
+      if (v.isEmpty) {
+        return false
+      }
+      expr.contains(v)
     case Operator.PmFromFile(xs) => {
       val fileName = evalTxExpressions(xs)
       files.get(fileName) match {
