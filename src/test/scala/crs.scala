@@ -236,9 +236,12 @@ object CRSTestUtils {
     val autocomplete_headers = (json \ "autocomplete_headers").asOpt[Boolean].getOrElse(true)
     val finalHeaders: Map[String, List[String]] = {
       val contentType = pfheaders.get("Content-Type").orElse(pfheaders.get("content-type")).getOrElse(List("application/www-form-urlencoded"))
-      if (finalBody.isDefined && autocomplete_headers) {
+      val contentLength = pfheaders.get("Content-Length").orElse(pfheaders.get("content-length"))
+      if (finalBody.isDefined && autocomplete_headers && contentLength.isEmpty) {
         pfheaders + ("Content-Length" -> List(finalBody.get.length.toString)) + ("Content-Type" -> contentType)
-      } else {
+      } else if (finalBody.isDefined && autocomplete_headers && contentLength.isDefined) {
+        pfheaders + ("Content-Type" -> contentType)
+      }else {
         pfheaders
       }
     }
@@ -587,7 +590,7 @@ object CRSTestUtils {
 
 class SecLangCRSTest extends munit.FunSuite {
 
-  //private val testOnly: List[(String, Int)] = List(("920390", 1))
+  //private val testOnly: List[(String, Int)] = List(("920400", 1))
   private val testOnly: List[(String, Int)] = List.empty
   private val ignoreTests: List[(String, Int)] = List( // TODO: fix later
     ("920160", 5),
