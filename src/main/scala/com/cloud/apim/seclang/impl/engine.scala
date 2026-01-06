@@ -14,8 +14,10 @@ import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Base64
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import scala.collection.concurrent.TrieMap
+import scala.concurrent.duration.Duration
 import scala.util._
 import scala.util.matching.Regex
 
@@ -391,10 +393,10 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
     // 1) extract values from variables
     val extracted: List[String] = {
       val vrbls = rule.variables.variables.flatMap { v =>
-        resolveVariable(v, rule.variables.count, rule.variables.negated, ctx)
+        resolveVariable(v, rule.variables.count, rule.variables.negated, ctx, debug)
       }
       val negatedVariables = rule.variables.negatedVariables.flatMap { v =>
-        resolveVariable(v, false, true, ctx)
+        resolveVariable(v, false, true, ctx, debug)
       }
       if (rule.variables.count) {
         vrbls.size.toString :: Nil
@@ -415,8 +417,14 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
       println("---------------------------------------------------------")
       println(s"debug for rule: ${lastRuleId.getOrElse(0)}")
       println("---------------------------------------------------------")
+      println(s"variables: ${rule.variables.variables.map {
+        case Variable.Simple(name) if rule.variables.count => s"&${name}"
+        case Variable.Simple(name) => name
+        case Variable.Collection(name, key) if rule.variables.count => s"&$name:$key"
+        case Variable.Collection(name, key) => s"$name:$key"
+      }.mkString(", ")}")
       println(s"extracted: ${extracted.mkString(", ")}")
-      println(s"variables: ${transformed.mkString(", ")}")
+      println(s"variables_values: ${transformed.mkString(", ")}")
       println(s"matched: ${matched}")
       println("---------------------------------------------------------")
     }
@@ -444,7 +452,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
     }.toMap
   }
 
-  private def resolveVariable(sel: Variable, count: Boolean, negated: Boolean, ctx: RequestContext): List[String] = {
+  private def resolveVariable(sel: Variable, count: Boolean, negated: Boolean, ctx: RequestContext, debug: Boolean): List[String] = {
     // https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29#user-content-Variables
     val (col, key) = sel match {
       case Variable.Simple(name) => (name, None)
@@ -496,7 +504,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
           }
           case "ARGS" => {
             val headers = ctx.body match {
-              case Some(body) if ctx.contentType.contains("application/www-form-urlencoded") => {
+              case Some(body) if ctx.isXwwwFormUrlEncoded=> {
                 val bodyArgs = FormUrlEncoded.parse(body.utf8String)
                 deepMerge(ctx.query, bodyArgs)
               }
@@ -519,7 +527,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
           }
           case "ARGS_NAMES" => {
             val headers = ctx.body match {
-              case Some(body) if ctx.contentType.contains("application/www-form-urlencoded") => {
+              case Some(body) if ctx.isWwwFormUrlEncoded => {
                 val bodyArgs = FormUrlEncoded.parse(body.utf8String)
                 deepMerge(ctx.query, bodyArgs)
               }
@@ -528,14 +536,8 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
             headers.keySet.toList
           }
           case "ARGS_COMBINED_SIZE" => {
-            val headers = ctx.body match {
-              case Some(body) if ctx.contentType.contains("application/www-form-urlencoded") => {
-                val bodyArgs = FormUrlEncoded.parse(body.utf8String)
-                deepMerge(ctx.query, bodyArgs)
-              }
-              case _ => ctx.query
-            }
-            List(headers.size.toString)
+            val args = resolveVariable(Variable.Simple("ARGS"), false, false, ctx, debug)
+            List(args.map(_.length).sum.toString)
           }
           case "TX" => {
             key match {
@@ -687,7 +689,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
           case "ARGS_GET_NAMES" =>  ctx.query.keySet.toList
           case "ARGS_POST" => {
             ctx.body match {
-              case Some(body) if ctx.contentType.contains("application/www-form-urlencoded") => {
+              case Some(body) if ctx.isWwwFormUrlEncoded => {
                 val headers = FormUrlEncoded.parse(body.utf8String)
                 key match {
                   case None =>
@@ -709,7 +711,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
           }
           case "ARGS_POST_NAMES" => {
             ctx.body match {
-              case Some(body) if ctx.contentType.contains("application/www-form-urlencoded") => {
+              case Some(body) if ctx.isWwwFormUrlEncoded => {
                 val headers = FormUrlEncoded.parse(body.utf8String)
                 headers.keySet.toList
               }
@@ -874,9 +876,19 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
     case Operator.Streq(x)             => value == evalTxExpressions(x)
     case Operator.Pm(xs)               => evalTxExpressions(xs).split(" ").exists(it => value.toLowerCase().contains(it.toLowerCase))
     case Operator.Rx(pattern) => {
+      if ((ruleId == 932240 || ruleId == 941170) && value.length > (10*1024)) { // TODO: find a way to avoid that ?
+        return false
+      }
       try {
         val r: Regex = evalTxExpressions(pattern).r
+        val s = System.nanoTime()
         val rs = r.findFirstMatchIn(value)
+        val d = Duration(System.nanoTime() - s, TimeUnit.NANOSECONDS)
+        if (d.toMillis > 10000) {
+          logError("------------------------------------------------------------------------------------>")
+          logError(s"rule ${ruleId} match took: ${d.toMillis} ms for value length of ${value.length}")
+          logError("------------------------------------------------------------------------------------>")
+        }
         rs.foreach { m =>
           val str = m.group(0)
           txMap.put("MATCHED_VAR".toLowerCase, str)

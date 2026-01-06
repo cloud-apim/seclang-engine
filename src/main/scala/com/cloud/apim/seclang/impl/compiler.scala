@@ -49,6 +49,8 @@ object Compiler {
   def compile(configuration: Configuration): CompiledProgram = {
     val statements = configuration.statements
     val removed = statements.collect { case SecRuleRemoveById(_, ids) => ids }.flatten.toSet
+    val removedRuleTags: Set[String] = statements.collect { case SecRuleRemoveByTag(_, tag) => tag }.toSet
+    val removedRuleMsgs: Set[String] = statements.collect { case SecRuleRemoveByMsg(_, msg) => msg }.toSet
 
     // flatten into CompiledItem with chain logic
     val items = scala.collection.mutable.ArrayBuffer.empty[CompiledItem]
@@ -58,7 +60,7 @@ object Compiler {
     while (it.hasNext) {
       it.next() match {
         case r: SecRule => {
-          if (removed.contains(r.id.getOrElse(-1))) {
+          if (removed.contains(r.id.getOrElse(-1)) || r.tags.exists(t => removedRuleTags.contains(t)) || r.msgs.exists(t => removedRuleMsgs.contains(t))) {
             // skip removed (if no id, can't remove)
           } else if (r.isChain) {
             val chain = scala.collection.mutable.ListBuffer[SecRule](r)
@@ -97,9 +99,9 @@ object Compiler {
           items += ActionItem(s.copy(commentBlock = None))
         }
         case s: SecRuleScript => unimplementedStatement("SecRuleScript")
-        case s: SecRuleRemoveById => unimplementedStatement("SecRuleRemoveById")
-        case s: SecRuleRemoveByMsg => unimplementedStatement("SecRuleRemoveByMsg")
-        case s: SecRuleRemoveByTag => unimplementedStatement("SecRuleRemoveByTag")
+        case s: SecRuleRemoveById => () // already implemented in remove
+        case s: SecRuleRemoveByMsg => () // already implemented in remove
+        case s: SecRuleRemoveByTag => () // already implemented in remove
         case s: SecRuleUpdateTargetById => unimplementedStatement("SecRuleUpdateTargetById")
         case s: SecRuleUpdateTargetByMsg => unimplementedStatement("SecRuleUpdateTargetByMsg")
         case s: SecRuleUpdateTargetByTag => unimplementedStatement("SecRuleUpdateTargetByTag")

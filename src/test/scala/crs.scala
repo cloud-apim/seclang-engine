@@ -733,7 +733,7 @@ class SecLangCRSTest extends munit.FunSuite {
             if (!ok && testOnly.nonEmpty && testOnly.contains((rule, testId))) {
               result.displayPrintln()
               println(Json.prettyPrint(test))
-              println(Json.prettyPrint(Json.parse(result.events.filter(_.msg.isDefined).last.raw)))
+              println(Json.prettyPrint(Json.parse(result.events.filter(_.msg.isDefined).lastOption.map(_.raw).getOrElse("{}"))))
             }
             if (!dev) assert(checked, s"nothing checked for test ${testId}")
           }

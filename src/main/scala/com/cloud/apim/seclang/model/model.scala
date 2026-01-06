@@ -106,6 +106,14 @@ final case class SecRule(
   
   lazy val isChain: Boolean = actions.exists(_.actions.exists(_ == Action.Chain))
 
+  lazy val tags: Set[String] = actions.toList.flatMap(_.actions.collect {
+    case Action.Tag(v) => v
+  }).toSet
+
+  lazy val msgs: Set[String] = actions.toList.flatMap(_.actions.collect {
+    case Action.Msg(v) => v
+  }).toSet
+
   def json: JsValue = Json.obj(
     "type" -> "SecRule",
     "id" -> id.map(v => JsNumber(BigDecimal.valueOf(v))).getOrElse(JsNull).as[JsValue],
@@ -1242,6 +1250,12 @@ final case class RequestContext(
   }
   def contentLength: Option[String] = {
     headers.get("Content-Length").orElse(headers.get("content-length")).flatMap(_.lastOption)
+  }
+  def isXwwwFormUrlEncoded: Boolean = {
+    contentType.contains("application/www-form-urlencoded") || contentType.contains("application/x-www-form-urlencoded")
+  }
+  def isWwwFormUrlEncoded: Boolean = {
+    contentType.contains("application/www-form-urlencoded") || contentType.contains("application/x-www-form-urlencoded")
   }
 }
 
