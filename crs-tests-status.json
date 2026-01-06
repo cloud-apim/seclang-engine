@@ -71740,7 +71740,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944100 - Remote Command Execution: Suspicious Java class detected", "phase=2 rule_id=944110 - Remote Command Execution: Java process spawn (CVE-2017-9805)", "phase=2 rule_id=944130 - Suspicious Java class detected", "phase=2 rule_id=944250 - Remote Command Execution: Suspicious Java method detected" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944100 - Remote Command Execution: Suspicious Java class detected", "phase=2 rule_id=944110 - Remote Command Execution: Java process spawn (CVE-2017-9805)", "phase=2 rule_id=944130 - Suspicious Java class detected", "phase=2 rule_id=944250 - Remote Command Execution: Suspicious Java method detected" ]
     },
     "test" : {
       "test_id" : 11,
@@ -71957,7 +71957,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944100 - Remote Command Execution: Suspicious Java class detected", "phase=2 rule_id=944110 - Remote Command Execution: Java process spawn (CVE-2017-9805)", "phase=2 rule_id=944130 - Suspicious Java class detected", "phase=2 rule_id=944250 - Remote Command Execution: Suspicious Java method detected" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944100 - Remote Command Execution: Suspicious Java class detected", "phase=2 rule_id=944110 - Remote Command Execution: Java process spawn (CVE-2017-9805)", "phase=2 rule_id=944130 - Suspicious Java class detected", "phase=2 rule_id=944250 - Remote Command Execution: Suspicious Java method detected" ]
     },
     "test" : {
       "test_id" : 12,
@@ -72174,7 +72174,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944100 - Remote Command Execution: Suspicious Java class detected", "phase=2 rule_id=944110 - Remote Command Execution: Java process spawn (CVE-2017-9805)", "phase=2 rule_id=944130 - Suspicious Java class detected", "phase=2 rule_id=944250 - Remote Command Execution: Suspicious Java method detected" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944100 - Remote Command Execution: Suspicious Java class detected", "phase=2 rule_id=944110 - Remote Command Execution: Java process spawn (CVE-2017-9805)", "phase=2 rule_id=944130 - Suspicious Java class detected", "phase=2 rule_id=944250 - Remote Command Execution: Suspicious Java method detected" ]
     },
     "test" : {
       "test_id" : 15,
@@ -72391,7 +72391,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944100 - Remote Command Execution: Suspicious Java class detected", "phase=2 rule_id=944110 - Remote Command Execution: Java process spawn (CVE-2017-9805)", "phase=2 rule_id=944130 - Suspicious Java class detected", "phase=2 rule_id=944250 - Remote Command Execution: Suspicious Java method detected" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944100 - Remote Command Execution: Suspicious Java class detected", "phase=2 rule_id=944110 - Remote Command Execution: Java process spawn (CVE-2017-9805)", "phase=2 rule_id=944130 - Suspicious Java class detected", "phase=2 rule_id=944250 - Remote Command Execution: Suspicious Java method detected" ]
     },
     "test" : {
       "test_id" : 16,
@@ -72608,7 +72608,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944110 - Remote Command Execution: Java process spawn (CVE-2017-9805)", "phase=2 rule_id=944250 - Remote Command Execution: Suspicious Java method detected" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944110 - Remote Command Execution: Java process spawn (CVE-2017-9805)", "phase=2 rule_id=944250 - Remote Command Execution: Suspicious Java method detected" ]
     },
     "test" : {
       "test_id" : 11,
@@ -72808,7 +72808,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944110 - Remote Command Execution: Java process spawn (CVE-2017-9805)", "phase=2 rule_id=944250 - Remote Command Execution: Suspicious Java method detected" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944110 - Remote Command Execution: Java process spawn (CVE-2017-9805)", "phase=2 rule_id=944250 - Remote Command Execution: Suspicious Java method detected" ]
     },
     "test" : {
       "test_id" : 12,
@@ -73008,7 +73008,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944110 - Remote Command Execution: Java process spawn (CVE-2017-9805)", "phase=2 rule_id=944250 - Remote Command Execution: Suspicious Java method detected" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944110 - Remote Command Execution: Java process spawn (CVE-2017-9805)", "phase=2 rule_id=944250 - Remote Command Execution: Suspicious Java method detected" ]
     },
     "test" : {
       "test_id" : 15,
@@ -73208,7 +73208,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944110 - Remote Command Execution: Java process spawn (CVE-2017-9805)", "phase=2 rule_id=944250 - Remote Command Execution: Suspicious Java method detected" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944110 - Remote Command Execution: Java process spawn (CVE-2017-9805)", "phase=2 rule_id=944250 - Remote Command Execution: Suspicious Java method detected" ]
     },
     "test" : {
       "test_id" : 16,
@@ -73408,7 +73408,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
     },
     "test" : {
       "test_id" : 6,
@@ -73581,7 +73581,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
     },
     "test" : {
       "test_id" : 7,
@@ -73754,7 +73754,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
     },
     "test" : {
       "test_id" : 23,
@@ -73927,7 +73927,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
     },
     "test" : {
       "test_id" : 24,
@@ -74100,7 +74100,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
     },
     "test" : {
       "test_id" : 40,
@@ -74273,7 +74273,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
     },
     "test" : {
       "test_id" : 41,
@@ -74446,7 +74446,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
     },
     "test" : {
       "test_id" : 57,
@@ -74619,7 +74619,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
     },
     "test" : {
       "test_id" : 58,
@@ -74792,7 +74792,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
     },
     "test" : {
       "test_id" : 74,
@@ -74965,7 +74965,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
     },
     "test" : {
       "test_id" : 75,
@@ -75138,7 +75138,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
     },
     "test" : {
       "test_id" : 91,
@@ -75311,7 +75311,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
     },
     "test" : {
       "test_id" : 92,
@@ -75484,7 +75484,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
     },
     "test" : {
       "test_id" : 108,
@@ -75657,7 +75657,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
     },
     "test" : {
       "test_id" : 109,
@@ -75830,7 +75830,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
     },
     "test" : {
       "test_id" : 125,
@@ -76003,7 +76003,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944120 - Remote Command Execution: Java serialization (CVE-2015-4852)", "phase=2 rule_id=944240 - Remote Command Execution: Java serialization (CVE-2015-4852)" ]
     },
     "test" : {
       "test_id" : 126,
@@ -79725,7 +79725,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944210 - Magic bytes Detected Base64 Encoded, probable java serialization in use" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944210 - Magic bytes Detected Base64 Encoded, probable java serialization in use" ]
     },
     "test" : {
       "test_id" : 6,
@@ -79892,7 +79892,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944210 - Magic bytes Detected Base64 Encoded, probable java serialization in use" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944210 - Magic bytes Detected Base64 Encoded, probable java serialization in use" ]
     },
     "test" : {
       "test_id" : 7,
@@ -80059,7 +80059,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944210 - Magic bytes Detected Base64 Encoded, probable java serialization in use" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944210 - Magic bytes Detected Base64 Encoded, probable java serialization in use" ]
     },
     "test" : {
       "test_id" : 23,
@@ -80226,7 +80226,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944210 - Magic bytes Detected Base64 Encoded, probable java serialization in use" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944210 - Magic bytes Detected Base64 Encoded, probable java serialization in use" ]
     },
     "test" : {
       "test_id" : 24,
@@ -80393,7 +80393,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944210 - Magic bytes Detected Base64 Encoded, probable java serialization in use" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944210 - Magic bytes Detected Base64 Encoded, probable java serialization in use" ]
     },
     "test" : {
       "test_id" : 40,
@@ -80560,7 +80560,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=944210 - Magic bytes Detected Base64 Encoded, probable java serialization in use" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=944210 - Magic bytes Detected Base64 Encoded, probable java serialization in use" ]
     },
     "test" : {
       "test_id" : 41,

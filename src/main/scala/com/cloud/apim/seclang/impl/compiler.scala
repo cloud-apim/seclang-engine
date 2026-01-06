@@ -106,7 +106,10 @@ object Compiler {
         case s: SecRuleUpdateTargetByMsg => unimplementedStatement("SecRuleUpdateTargetByMsg")
         case s: SecRuleUpdateTargetByTag => unimplementedStatement("SecRuleUpdateTargetByTag")
         case s: SecRuleUpdateActionById => unimplementedStatement("SecRuleUpdateActionById")
-        case EngineConfigDirective(_, DefaultAction(actions)) => unimplementedStatement("DefaultAction")
+        case EngineConfigDirective(_, DefaultAction(actions)) => {
+          unimplementedStatement("DefaultAction")
+          //actions.actions.foreach { action => println(action)}
+        }
         case EngineConfigDirective(_, ComponentSignature(expr)) => ()
         case EngineConfigDirective(_, ConfigDirective.RuleEngine(expr)) => {
           mode = EngineMode(expr)

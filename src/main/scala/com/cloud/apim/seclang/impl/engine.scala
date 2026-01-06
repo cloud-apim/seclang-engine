@@ -437,14 +437,15 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
       println("---------------------------------------------------------")
       println(s"debug for rule: ${lastRuleId.getOrElse(0)}")
       println("---------------------------------------------------------")
-      println(s"variables: ${rule.variables.variables.map {
+      println(s"variables: \n${rule.variables.variables.map {
         case Variable.Simple(name) if rule.variables.count => s"&${name}"
         case Variable.Simple(name) => name
         case Variable.Collection(name, key) if rule.variables.count => s"&$name:$key"
         case Variable.Collection(name, key) => s"$name:$key"
-      }.mkString(", ")}")
-      println(s"extracted: ${extracted.mkString(", ")}")
-      println(s"variables_values: ${transformed.mkString(", ")}")
+      }.mkString("\n")}\n")
+      println(s"extracted: \n${extracted.mkString("\n")}\n")
+      println(s"variables_values: ${transformed.mkString("\n")}\n")
+      println(s"matched_vars: \n${matched_vars.zipWithIndex.map { case (v, idx) => s"${matched_var_names(idx)}: ${v}" }.mkString("\n")}\n")
       println(s"matched: ${matched}")
       println("---------------------------------------------------------")
     }
@@ -740,8 +741,8 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
           }
           case "XML" => {
             ctx.body match {
-              case Some(body) if key.isDefined && (ctx.contentType.exists(_.contains("application/xm")) || ctx.contentType.exists(_.contains("text/xm"))) => {
-                XmlXPathParser.xpathValues(body.utf8String, key.get)
+              case Some(body) if key.isDefined && (ctx.contentType.exists(_.contains("application/xml")) || ctx.contentType.exists(_.contains("text/xml"))) => {
+                XmlXPathParser.evalXPath(body.utf8String, key.get)
               }
               case _ => List.empty
             }

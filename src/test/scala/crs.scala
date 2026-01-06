@@ -590,7 +590,7 @@ object CRSTestUtils {
 
 class SecLangCRSTest extends munit.FunSuite {
 
-  //private val testOnly: List[(String, Int)] = List(("944120", 42))
+  //private val testOnly: List[(String, Int)] = List(("944120", 74))
   private val testOnly: List[(String, Int)] = List.empty
   private val ignoreTests: List[(String, Int)] = List( // TODO: fix later
     ("920160", 5),
@@ -747,6 +747,7 @@ class SecLangCRSTest extends munit.FunSuite {
         val clazzName = e.getStackTrace.apply(0).getClassName
         if (!clazzName.startsWith("munit.Assertions")) {
           println(e.getClass.getName + ": " + e.getMessage)
+          e.printStackTrace()
         } else {
           // println(e.getMessage)
         }

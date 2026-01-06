@@ -2,13 +2,16 @@ package com.cloud.apim.seclang.impl.utils
 
 import akka.util.ByteString
 import com.comcast.ip4s._
-import org.w3c.dom.{Document, NodeList}
+import org.w3c.dom.{Document, Node, NodeList}
 import org.xml.sax.InputSource
 
-import java.io.StringReader
+import java.io.{StringReader, StringWriter}
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import javax.xml.parsers.DocumentBuilderFactory
+import javax.xml.transform.dom.DOMSource
+import javax.xml.transform.{OutputKeys, TransformerFactory}
+import javax.xml.transform.stream.StreamResult
 import javax.xml.xpath.{XPath, XPathConstants, XPathFactory}
 import scala.util.Try
 import scala.util.matching.Regex
@@ -131,26 +134,62 @@ object XmlXPathParser {
     builder.parse(new InputSource(new StringReader(xml)))
   }
 
-  def xpathNodes(doc: Document, expr: String): NodeList = {
-    val xpath: XPath = XPathFactory.newInstance().newXPath()
-    xpath.evaluate(expr, doc, XPathConstants.NODESET).asInstanceOf[NodeList]
-  }
-
-  def xpathValues(xml: String, expr: String): List[String] = {
+  def evalXPath(xml: String, xpathExpr: String): List[String] = {
     val doc = parseXml(xml)
-    val xpath = XPathFactory.newInstance().newXPath()
-    val nodes = xpath
-      .evaluate(expr, doc, XPathConstants.NODESET)
-      .asInstanceOf[NodeList]
+    val xp = XPathFactory.newInstance().newXPath()
+    val expr = xp.compile(xpathExpr)
 
-    (0 until nodes.getLength).toList
-      .map(i => nodes.item(i).getTextContent)
+    val nodes =
+      try expr.evaluate(doc, XPathConstants.NODESET).asInstanceOf[NodeList]
+      catch { case _: Throwable => null }
+
+    if (nodes != null && nodes.getLength > 0) {
+      val b = List.newBuilder[String]
+      var i = 0
+      while (i < nodes.getLength) {
+        b += nodeToString(nodes.item(i))
+        i += 1
+      }
+      b.result()
+    } else {
+      val v = expr.evaluate(doc, XPathConstants.STRING).asInstanceOf[String]
+      if (v == null || v.isEmpty) Nil else List(v)
+    }
   }
 
-  def xpathString(doc: Document, expr: String): String = {
-    val xpath: XPath = XPathFactory.newInstance().newXPath()
-    xpath.evaluate(expr, doc)
+  def nodeToString(node: Node): String = {
+    node.getNodeType match {
+      case Node.TEXT_NODE | Node.ATTRIBUTE_NODE =>
+        node.getNodeValue
+
+      case _ =>
+        val tf = TransformerFactory.newInstance().newTransformer()
+        tf.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes")
+        tf.setOutputProperty(OutputKeys.INDENT, "no")
+
+        val sw = new StringWriter()
+        tf.transform(new DOMSource(node), new StreamResult(sw))
+        sw.toString
+    }
   }
+
+  //def xpathNodes(doc: Document, expr: String): NodeList = {
+  //  val xpath: XPath = XPathFactory.newInstance().newXPath()
+  //  xpath.evaluate(expr, doc, XPathConstants.NODESET).asInstanceOf[NodeList]
+  //}
+  //def xpathValues(xml: String, expr: String): List[String] = {
+  //  val doc = parseXml(xml)
+  //  val xpath = XPathFactory.newInstance().newXPath()
+  //  val nodes = xpath
+  //    .evaluate(expr, doc, XPathConstants.NODESET)
+  //    .asInstanceOf[NodeList]
+  //  (0 until nodes.getLength).toList
+  //    .map(i => nodes.item(i).getTextContent)
+  //}
+  //def xpathString(doc: Document, expr: String): String = {
+  //  val xpath: XPath = XPathFactory.newInstance().newXPath()
+  //  xpath.evaluate(expr, doc)
+  //}
 }
 
 object StatusCodes {
