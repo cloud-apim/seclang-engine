@@ -120,7 +120,7 @@ object FormUrlEncoded {
           }
         } catch {
           case t: Throwable =>
-            t.printStackTrace()
+            //t.printStackTrace()
             None
         }
       }
@@ -422,7 +422,7 @@ object Transformations {
     out
   } catch {
     case t: Throwable =>
-      t.printStackTrace()
+      //t.printStackTrace()
       input
   }
 

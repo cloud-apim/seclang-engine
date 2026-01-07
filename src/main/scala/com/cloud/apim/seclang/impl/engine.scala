@@ -134,21 +134,28 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
   private def evalTxExpressions(input: String): String = {
     if (input.contains("%{")) {
       val finalInput: String = if (input.contains("%{MATCHED_VAR}") && txMap.contains("MATCHED_VAR")) {
-        input.replaceAll("%\\{MATCHED_VAR\\}", txMap("MATCHED_VAR"))
+        try {
+          input.replaceAll("%\\{MATCHED_VAR\\}", txMap("MATCHED_VAR"))
+        } catch {
+          case t: Throwable => input
+        }
       } else {
         input
       }
-      TxExpr.replaceAllIn(finalInput, m => {
-        val key = m.group(1).toLowerCase
-        txMap.getOrElse(key, m.matched)
-      })
+      try {
+        TxExpr.replaceAllIn(finalInput, m => {
+          val key = m.group(1).toLowerCase
+          txMap.getOrElse(key, m.matched)
+        })
+      } catch {
+        case t: Throwable => finalInput
+      }
     } else {
       input
     }
   }
 
-  private def performActions(ruleId: Int, actions: List[Action], phase: Int, context: RequestContext, state: RuntimeState): RuntimeState = {
-    // TODO: implement it
+  private def performActions(ruleId: Int, actions: List[Action], phase: Int, context: RequestContext, state: RuntimeState, msg: Option[String], logdata: List[String], isLast: Boolean): RuntimeState = {
     var localState = state
     val events = state.events.filter(_.msg.isDefined).map { e =>
       s"phase=${e.phase} rule_id=${e.ruleId.getOrElse(0)} - ${e.msg.getOrElse("no msg")}"
@@ -158,9 +165,11 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
     }
     executableActions.foreach {
       case Action.AuditLog() => {
-        if (events.nonEmpty) {
-          // TODO: perform audit callback on integration api
-          logAudit(s"${context.requestId} - ${context.method} ${context.uri} matched on: $events")
+        if (isLast) {
+          msg.foreach { msg =>
+            // TODO: perform audit callback on integration api
+            // logAudit(s"${context.requestId} - ${context.method} ${context.uri} matched on: $msg. ${logdata.mkString(". ")}")
+          }
         }
       }
       case Action.Capture() => {
@@ -173,9 +182,11 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
         }
       }
       case Action.Log => {
-        if (events.nonEmpty) {
-          // TODO: perform log callback on integration api
-          logInfo(s"${context.requestId} - ${context.method} ${context.uri} matched on: $events")
+        if (isLast) {
+          msg.foreach { msg =>
+            // TODO: perform log callback on integration api
+            logInfo(s"${context.requestId} - ${context.method} ${context.uri} matched on: $msg. ${logdata.mkString(". ")}")
+          }
         }
       }
       case Action.SetEnv(expr) => {
@@ -261,12 +272,15 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
     var skipAfter: Option[String] = None
     var lastRuleId: Option[Int] = None
     val actionsList = action.actions.actions.toList
+    var addLogData = List.empty[String]
 
     val msg = actionsList.collectFirst {
       case Action.Msg(m) => m
     }
     if (msg.nonEmpty) collectedMsg = msg
-
+    addLogData = addLogData ++ actionsList.collect {
+      case Action.LogData(m) => evalTxExpressions(m)
+    }
     val status = actionsList.collectFirst {
       case Action.Status(s) => s
     }
@@ -292,7 +306,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
     }
 
     st = st.copy(events = MatchEvent(action.id, msg, phase, Json.stringify(action.json)) :: st.events)
-    st = performActions(action.id.getOrElse(0), actionsList, phase, ctx, st)
+    st = performActions(action.id.getOrElse(0), actionsList, phase, ctx, st, collectedMsg, addLogData, isLast = true)
     val disp =
       disruptive match {
         case Some(Action.Deny) | Some(Action.Drop) | Some(Action.Block()) =>
@@ -325,6 +339,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
     var skipAfter: Option[String] = None
     var lastRuleId: Option[Int] = None
     var events = List.empty[MatchEvent]
+    var addLogData = List.empty[String]
 
     val isChain = rules.size > 1
     val firstRule = rules.head
@@ -334,14 +349,17 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
       lastRuleId = r.id.orElse(lastRuleId)
       val isLast = rules.last == r
       if (allMatched) {
-        val matched = evalRule(r, lastRuleId, ctx, debug = lastRuleId.exists(id => config.debugRules.contains(id)))
-        // TODO: implement actions: https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29#actions
-        if (matched) {
+        val matched = evalRule(r, lastRuleId, ctx, debug = lastRuleId.exists(id => config.debugRules.contains(id))) { (_, _) =>
+          // TODO: implement actions: https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29#actions
+          //if (matched) {
           val actionsList = r.actions.toList.flatMap(_.actions)
           val msg = actionsList.collectFirst {
             case Action.Msg(m) => evalTxExpressions(m)
           }
           if (msg.nonEmpty) collectedMsg = msg
+          addLogData = addLogData ++ actionsList.collect {
+            case Action.LogData(m) => evalTxExpressions(m)
+          }
 
           val status = actionsList.collectFirst {
             case Action.Status(s) => s
@@ -370,10 +388,14 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
           if (isLast) {
             st = st.copy(events = MatchEvent(lastRuleId, msg, phase, Json.stringify(r.json)) :: events ++ st.events)
           } else {
-            events = events :+ MatchEvent(lastRuleId, msg, phase, Json.stringify(r.json))
+            //events = events :+ MatchEvent(lastRuleId, msg, phase, Json.stringify(r.json))
           }
-          st = performActions(lastRuleId.getOrElse(0), actionsList, phase, ctx, st)
-        } else {
+          st = performActions(lastRuleId.getOrElse(0), actionsList, phase, ctx, st, collectedMsg, addLogData, isLast)
+          //} else {
+          //  allMatched = false
+          //}
+        }
+        if (!matched) {
           allMatched = false
         }
       }
@@ -399,7 +421,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
     }
   }
 
-  private def evalRule(rule: SecRule, lastRuleId: Option[Int], ctx: RequestContext, debug: Boolean): Boolean = {
+  private def evalRule(rule: SecRule, lastRuleId: Option[Int], ctx: RequestContext, debug: Boolean)(f: (String, String) => Unit): Boolean = {
     // 1) extract values from variables
     val negatedVariables: List[(String, List[String])] = rule.variables.negatedVariables.map {
       case v @ Variable.Simple(name) => (name, resolveVariable(v, false, true, ctx, debug))
@@ -442,17 +464,30 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
           (name, currentValues)
         }
       }
-    }.filterNot(_._2.isEmpty).exists {
+    }.filterNot(_._2.isEmpty).filter {
       case (name, values) =>
-        val m = values.exists(v => evalOperator(lastRuleId.getOrElse(-1), rule.operator, v))
-        if (m) {
-          txMap.put("matched_var_name", name)
-          txMap.put("matched_var", values.mkString(" "))
-          matched_vars = matched_vars :+ values.mkString(" ")
-          matched_var_names = matched_var_names :+ name
-        }
-        m
-    }
+        // val m = values.exists(v => evalOperator(lastRuleId.getOrElse(-1), rule.operator, v))
+        // if (m) {
+        //   txMap.put("matched_var_name", name)
+        //   txMap.put("matched_var", values.mkString(" "))
+        //   matched_vars = matched_vars :+ values.mkString(" ")
+        //   matched_var_names = matched_var_names :+ name
+        // }
+        // m
+
+        values.filter { v =>
+          val m = evalOperator(lastRuleId.getOrElse(-1), rule.operator, v)
+          if (m) {
+            txMap.put("matched_var_name", name)
+            txMap.put("matched_var", v)//values.mkString(" "))
+            txMap.put("0", v)//values.mkString(" "))
+            matched_vars = matched_vars :+ v//values.mkString(" ")
+            matched_var_names = matched_var_names :+ name
+            f(name, v)
+          }
+          m
+        }.nonEmpty
+    }.nonEmpty
     if (matched_vars.nonEmpty) {
       txMap.put("matched_vars", Json.stringify(JsArray(matched_vars.map(v => JsString(v)))))
       txMap.put("matched_var_names", Json.stringify(JsArray(matched_var_names.map(v => JsString(v)))))
@@ -596,6 +631,12 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
           case "TX" => {
             key match {
               case None => List.empty
+              case Some(key) if key.startsWith("/") && key.endsWith("/") => {
+                val r = key.substring(1, key.length - 1).r
+                txMap.collect {
+                  case (k, vs) if r.findFirstIn(k).isDefined => vs
+                }.toList
+              }
               case Some(key) => txMap.get(key.toLowerCase()).toList
             }
           }
