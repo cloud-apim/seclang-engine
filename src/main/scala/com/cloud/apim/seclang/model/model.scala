@@ -7,6 +7,7 @@ import play.api.libs.json._
 
 import java.net.{URI, URLDecoder}
 import java.nio.charset.StandardCharsets
+import java.util.concurrent.atomic.AtomicReference
 import scala.collection.concurrent.TrieMap
 import scala.util.{Failure, Success, Try}
 
@@ -1336,7 +1337,7 @@ final case class EngineResult(
     "events" -> JsArray(events.filter(_.msg.isDefined).map(_.simpleJson))
   )
 }
-final case class RuntimeState(mode: EngineMode, disabledIds: Set[Int], events: List[MatchEvent])
+final case class RuntimeState(mode: EngineMode, disabledIds: Set[Int], events: List[MatchEvent], txMap: TrieMap[String, String], envMap: TrieMap[String, String], uidRef: AtomicReference[String])
 
 final case class SecRulesEngineConfig(debugRules: List[Int])
 

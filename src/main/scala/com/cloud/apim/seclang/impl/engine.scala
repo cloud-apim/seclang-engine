@@ -23,15 +23,6 @@ import scala.util.matching.Regex
 
 final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineConfig, files: Map[String, String] = Map.empty, env: Map[String, String] = Map.empty) {
 
-  // TODO: declare in evaluate, just to be sure !
-  private val txMap = new TrieMap[String, String]()
-  private val envMap = {
-    val tm = new TrieMap[String, String]()
-    env.foreach(tm += _)
-    tm
-  }
-  private val uidRef = new AtomicReference[String](null)
-
   private def logDebug(msg: String): Unit = println(s"[Debug]: $msg")
   private def logInfo(msg: String): Unit = println(s"[Info]: $msg")
   private def logAudit(msg: String): Unit = println(s"[Audit]: $msg")
@@ -42,8 +33,21 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
     if (program.mode.isOff) {
       EngineResult(Disposition.Continue, List.empty)
     } else {
-      txMap.clear()
-      val init = RuntimeState(program.mode, Set.empty, Nil)
+      val txMap = new TrieMap[String, String]()
+      val envMap = {
+        val tm = new TrieMap[String, String]()
+        env.foreach(tm += _)
+        tm
+      }
+      val uidRef = new AtomicReference[String](null)
+      val init = RuntimeState(
+        mode = program.mode,
+        disabledIds = Set.empty,
+        events = Nil,
+        txMap = txMap,
+        envMap = envMap,
+        uidRef = uidRef
+      )
       val (disp, st) = phases.foldLeft((Disposition.Continue: Disposition, init)) {
         case ((Disposition.Block(a, b, c), st), _) if st.mode.isBlocking => (Disposition.Block(a, b, c), st) // already blocked, keep
         case ((Disposition.Block(a, b, c), st), ph) if st.mode.isDetectionOnly => {
@@ -132,13 +136,13 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
   // (?i) => case-insensitive
   private val TxExpr: Regex = """(?i)%\{tx\.([a-z0-9_.-]+)\}""".r
 
-  private def evalTxExpressions(input: String): String = {
+  private def evalTxExpressions(input: String, state: RuntimeState): String = {
     if (input.contains("%{")) {
       val finalInput: String = if (input.contains("%{MATCHED_VAR}") || input.contains("%{MATCHED_VAR_NAME}")) {
         try {
           input
-            .replaceAll("%\\{MATCHED_VAR\\}", txMap.getOrElse("matched_var", "--"))
-            .replaceAll("%\\{MATCHED_VAR_NAME\\}", txMap.getOrElse("matched_var_name", "--"))
+            .replaceAll("%\\{MATCHED_VAR\\}", state.txMap.getOrElse("matched_var", "--"))
+            .replaceAll("%\\{MATCHED_VAR_NAME\\}", state.txMap.getOrElse("matched_var_name", "--"))
         } catch {
           case t: Throwable => input
         }
@@ -148,7 +152,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
       try {
         TxExpr.replaceAllIn(finalInput, m => {
           val key = m.group(1).toLowerCase
-          txMap.getOrElse(key, m.matched)
+          state.txMap.getOrElse(key, m.matched)
         })
       } catch {
         case t: Throwable => finalInput
@@ -176,11 +180,11 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
         }
       }
       case Action.Capture() => {
-        txMap.get("MATCHED_VAR").foreach(v => txMap.put("0", v))
-        txMap.get("MATCHED_LIST").foreach { list =>
+        state.txMap.get("MATCHED_VAR").foreach(v => state.txMap.put("0", v))
+        state.txMap.get("MATCHED_LIST").foreach { list =>
           val liststr = Json.parse(list).asOpt[Seq[String]].getOrElse(Seq.empty)
           liststr.zipWithIndex.foreach {
-            case (v, idx) => txMap.put(s"${idx + 1}", v)
+            case (v, idx) => state.txMap.put(s"${idx + 1}", v)
           }
         }
       }
@@ -195,46 +199,46 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
       case Action.SetEnv(expr) => {
         val parts = expr.split("=")
         val name = parts(0)
-        val value = evalTxExpressions(parts(1))
-        envMap.put(name, value)
+        val value = evalTxExpressions(parts(1), state)
+        state.envMap.put(name, value)
       }
       case Action.SetRsc(_) => ()
       case Action.SetSid(_) => ()
       case Action.SetUid(expr) => {
-        uidRef.set(expr)
+        state.uidRef.set(expr)
       }
       case Action.SetVar(expr) => {
-        evalTxExpressions(expr) match {
+        evalTxExpressions(expr, state) match {
           case expr if expr.startsWith("!") => {
             val name = expr.substring(1).replace("tx.", "").replace("TX.", "").toLowerCase()
-            txMap.remove(name)
+            state.txMap.remove(name)
           }
           case expr if expr.contains("+=") => {
             val ex = expr.replace("tx.", "").replace("TX.", "").toLowerCase()
             val parts = ex.split("=")
             val name = parts(0)
             val incr = parts(1).toInt
-            val value = txMap.get(name).map(_.toInt).getOrElse(0)
-            txMap.put(name, (value + incr).toString)
+            val value = state.txMap.get(name).map(_.toInt).getOrElse(0)
+            state.txMap.put(name, (value + incr).toString)
           }
           case expr if expr.contains("-=") => {
             val ex = expr.replace("tx.", "").replace("TX.", "").toLowerCase()
             val parts = ex.split("=")
             val name = parts(0)
             val decr = parts(1).toInt
-            val value = txMap.get(name).map(_.toInt).getOrElse(0)
-            txMap.put(name, (value - decr).toString)
+            val value = state.txMap.get(name).map(_.toInt).getOrElse(0)
+            state.txMap.put(name, (value - decr).toString)
           }
           case expr if expr.contains("=") => {
             val ex = expr.replace("tx.", "").replace("TX.", "").toLowerCase()
             val parts = ex.split("=")
             val name = parts(0)
             val value = parts(1)
-            txMap.put(name, value)
+            state.txMap.put(name, value)
           }
           case expr if !expr.contains("=") => {
             val name = expr.replace("tx.", "").replace("TX.", "").toLowerCase()
-            txMap.put(name, "0")
+            state.txMap.put(name, "0")
           }
           case expr => logError("invalid setvar expression: " + expr)
         }
@@ -282,7 +286,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
     }
     if (msg.nonEmpty) collectedMsg = msg
     addLogData = addLogData ++ actionsList.collect {
-      case Action.LogData(m) => evalTxExpressions(m)
+      case Action.LogData(m) => evalTxExpressions(m, st)
     }
     val status = actionsList.collectFirst {
       case Action.Status(s) => s
@@ -356,11 +360,11 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
           // TODO: implement actions: https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29#actions
           val actionsList = r.actions.toList.flatMap(_.actions)
           val msg = actionsList.collectFirst {
-            case Action.Msg(m) => evalTxExpressions(m)
+            case Action.Msg(m) => evalTxExpressions(m, st)
           }
           if (msg.nonEmpty) collectedMsg = msg
           addLogData = addLogData ++ actionsList.collect {
-            case Action.LogData(m) => evalTxExpressions(m)
+            case Action.LogData(m) => evalTxExpressions(m, st)
           }
 
           val status = actionsList.collectFirst {
@@ -424,13 +428,13 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
     //println(s"eval rule ${rule.id} - ${lastRuleId} - ${st.mode}")
     // 1) extract values from variables
     val negatedVariables: List[(String, List[String])] = rule.variables.negatedVariables.map {
-      case v @ Variable.Simple(name) => (name, resolveVariable(v, false, true, ctx, debug))
-      case v @ Variable.Collection(name, key) => (s"$name:${key.getOrElse("")}", resolveVariable(v, false, true, ctx, debug))
+      case v @ Variable.Simple(name) => (name, resolveVariable(v, false, true, ctx, debug, st))
+      case v @ Variable.Collection(name, key) => (s"$name:${key.getOrElse("")}", resolveVariable(v, false, true, ctx, debug, st))
     }
     val extracted: List[(String, List[String])] = {
       val vrbls = rule.variables.variables.map {
-        case v @ Variable.Simple(name) => (name, resolveVariable(v, rule.variables.count, rule.variables.negated, ctx, debug))
-        case v @ Variable.Collection(name, key) => (s"$name:${key.getOrElse("")}", resolveVariable(v, rule.variables.count, rule.variables.negated, ctx, debug))
+        case v @ Variable.Simple(name) => (name, resolveVariable(v, rule.variables.count, rule.variables.negated, ctx, debug, st))
+        case v @ Variable.Collection(name, key) => (s"$name:${key.getOrElse("")}", resolveVariable(v, rule.variables.count, rule.variables.negated, ctx, debug, st))
       }
       if (rule.variables.count) {
         List((vrbls.headOption.map(v => s"&${v._1}").getOrElse("--"), vrbls.flatMap(_._2).size.toString :: Nil))
@@ -467,11 +471,11 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
     }.filterNot(_._2.isEmpty).filter {
       case (name, values) =>
         values.filter { v =>
-          val m = evalOperator(lastRuleId.getOrElse(-1), rule.operator, v)
+          val m = evalOperator(lastRuleId.getOrElse(-1), rule.operator, v, st)
           if (m) {
-            txMap.put("matched_var_name", name)
-            txMap.put("matched_var", v)//values.mkString(" "))
-            txMap.put("0", v)//values.mkString(" "))
+            st.txMap.put("matched_var_name", name)
+            st.txMap.put("matched_var", v)//values.mkString(" "))
+            st.txMap.put("0", v)//values.mkString(" "))
             matched_vars = matched_vars :+ v//values.mkString(" ")
             matched_var_names = matched_var_names :+ name
             f(name, v)
@@ -480,8 +484,8 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
         }.nonEmpty
     }.nonEmpty
     if (matched_vars.nonEmpty) {
-      txMap.put("matched_vars", Json.stringify(JsArray(matched_vars.map(v => JsString(v)))))
-      txMap.put("matched_var_names", Json.stringify(JsArray(matched_var_names.map(v => JsString(v)))))
+      st.txMap.put("matched_vars", Json.stringify(JsArray(matched_vars.map(v => JsString(v)))))
+      st.txMap.put("matched_var_names", Json.stringify(JsArray(matched_var_names.map(v => JsString(v)))))
     }
     if (debug) {
       println("---------------------------------------------------------")
@@ -530,7 +534,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
     }.toMap
   }
 
-  private def resolveVariable(sel: Variable, count: Boolean, negated: Boolean, ctx: RequestContext, debug: Boolean): List[String] = {
+  private def resolveVariable(sel: Variable, count: Boolean, negated: Boolean, ctx: RequestContext, debug: Boolean, state: RuntimeState): List[String] = {
     // https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29#user-content-Variables
     val (col, key) = sel match {
       case Variable.Simple(name) => (name, None)
@@ -610,7 +614,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
           headers.keySet.toList
         }
         case "ARGS_COMBINED_SIZE" => {
-          val args = resolveVariable(Variable.Simple("ARGS"), false, false, ctx, debug)
+          val args = resolveVariable(Variable.Simple("ARGS"), false, false, ctx, debug, state)
           List(args.map(_.length).sum.toString)
         }
         case "TX" => {
@@ -618,21 +622,21 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
             case None => List.empty
             case Some(key) if key.startsWith("/") && key.endsWith("/") => {
               val r = key.substring(1, key.length - 1).r
-              txMap.collect {
+              state.txMap.collect {
                 case (k, vs) if r.findFirstIn(k).isDefined => vs
               }.toList
             }
-            case Some(key) => txMap.get(key.toLowerCase()).toList
+            case Some(key) => state.txMap.get(key.toLowerCase()).toList
           }
         }
         case "ENV" => key match {
           case None => List.empty
           case Some(h) if h.startsWith("/") && h.endsWith("/") =>
             val r = h.substring(1, h.length - 1).r
-            envMap.collect {
+            state.envMap.collect {
               case (k, vs) if r.findFirstIn(k).isDefined => vs
             }.toList
-          case Some(key) => envMap.get(key).toList
+          case Some(key) => state.envMap.get(key).toList
         }
         case "REQUEST_BODY" | "RESPONSE_BODY" => ctx.body.toList.map(_.utf8String)
         case "REQUEST_HEADERS_NAMES" | "RESPONSE_HEADERS_NAMES" => ctx.headers.keySet.toList
@@ -681,7 +685,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
         case "TIME_WDAY" => List(datetime.getDayOfWeek.getValue.toString)
         case "TIME_YEAR" => List(datetime.getYear.toString)
         case "UNIQUE_ID" => List(ctx.requestId)
-        case "USERID" => Option(uidRef.get).toList
+        case "USERID" => Option(state.uidRef.get).toList
         case "FILES" => ctx.contentType match {
           case Some(ct) if ct.startsWith("multipart/form-data") && ctx.body.isDefined => {
             ctx.body.get.utf8String.linesIterator
@@ -806,12 +810,12 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
             case _ => List.empty
           }
         }
-        case "MATCHED_VAR" => txMap.get("matched_var").toList
-        case "MATCHED_VARS" =>  txMap.get("matched_vars").flatMap(v => Json.parse(v).asOpt[List[String]]).getOrElse(List.empty) /*txMap.get("MATCHED_LIST").toList.flatMap { v =>
+        case "MATCHED_VAR" => state.txMap.get("matched_var").toList
+        case "MATCHED_VARS" =>  state.txMap.get("matched_vars").flatMap(v => Json.parse(v).asOpt[List[String]]).getOrElse(List.empty) /*txMap.get("MATCHED_LIST").toList.flatMap { v =>
           Json.parse(v).asOpt[List[String]].getOrElse(List.empty)
         }*/
-        case "MATCHED_VAR_NAME" => txMap.get("matched_var_name").toList
-        case "MATCHED_VARS_NAMES" => txMap.get("matched_var_names").flatMap(v => Json.parse(v).asOpt[List[String]]).getOrElse(List.empty)
+        case "MATCHED_VAR_NAME" => state.txMap.get("matched_var_name").toList
+        case "MATCHED_VARS_NAMES" => state.txMap.get("matched_var_names").flatMap(v => Json.parse(v).asOpt[List[String]]).getOrElse(List.empty)
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         case "AUTH_TYPE" => unimplementedVariable("AUTH_TYPE") // TODO: implement it
         case "FULL_REQUEST" => unimplementedVariable("FULL_REQUEST") // TODO: implement it
@@ -945,19 +949,19 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
     false
   }
 
-  private def evalOperator(ruleId: Int, op: Operator, value: String): Boolean = op match {
+  private def evalOperator(ruleId: Int, op: Operator, value: String, state: RuntimeState): Boolean = op match {
     // https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29#user-content-Operators
-    case Operator.Negated(oop)         => !evalOperator(ruleId, oop, value)
+    case Operator.Negated(oop)         => !evalOperator(ruleId, oop, value, state)
     case Operator.UnconditionalMatch() => true
-    case Operator.Contains(x)          => value.contains(evalTxExpressions(x))
-    case Operator.Streq(x)             => value == evalTxExpressions(x)
-    case Operator.Pm(xs)               => evalTxExpressions(xs).split(" ").exists(it => value.toLowerCase().contains(it.toLowerCase))
+    case Operator.Contains(x)          => value.contains(evalTxExpressions(x, state))
+    case Operator.Streq(x)             => value == evalTxExpressions(x, state)
+    case Operator.Pm(xs)               => evalTxExpressions(xs, state).split(" ").exists(it => value.toLowerCase().contains(it.toLowerCase))
     case Operator.Rx(pattern) => {
       if ((ruleId == 932240 || ruleId == 941170) && value.length > (10*1024)) { // TODO: find a way to avoid that ?
         return false
       }
       try {
-        val r: Regex = evalTxExpressions(pattern).r
+        val r: Regex = evalTxExpressions(pattern, state).r
         val s = System.nanoTime()
         val rs = r.findFirstMatchIn(value)
         val d = Duration(System.nanoTime() - s, TimeUnit.NANOSECONDS)
@@ -968,36 +972,36 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
         }
         rs.foreach { m =>
           val str = m.group(0)
-          txMap.put("MATCHED_VAR".toLowerCase, str)
-          txMap.put("MATCHED_VAR".toUpperCase, str)
+          state.txMap.put("MATCHED_VAR".toLowerCase, str)
+          state.txMap.put("MATCHED_VAR".toUpperCase, str)
           val list = JsArray((1 to m.groupCount).map { idx =>
             JsString(m.group(idx))
           })
-          txMap.put("MATCHED_LIST", Json.stringify(list))
+          state.txMap.put("MATCHED_LIST", Json.stringify(list))
         }
         rs.nonEmpty
       } catch {
         case _: Throwable => false
       }
     }
-    case Operator.BeginsWith(x) => value.startsWith(evalTxExpressions(x))
-    case Operator.ContainsWord(x) => value.contains(evalTxExpressions(x).split(" ").filterNot(_.isEmpty).headOption.getOrElse(""))
-    case Operator.EndsWith(x) => value.endsWith(evalTxExpressions(x))
-    case Operator.Eq(x) => scala.util.Try(value.toInt).getOrElse(0) == scala.util.Try(evalTxExpressions(x).toInt).getOrElse(0)
-    case Operator.Ge(x) => scala.util.Try(value.toInt).getOrElse(0) >= scala.util.Try(evalTxExpressions(x).toInt).getOrElse(0)
-    case Operator.Gt(x) => scala.util.Try(value.toInt).getOrElse(0) > scala.util.Try(evalTxExpressions(x).toInt).getOrElse(0)
-    case Operator.Le(x) => scala.util.Try(value.toInt).getOrElse(0) <= scala.util.Try(evalTxExpressions(x).toInt).getOrElse(0)
-    case Operator.Lt(x) => scala.util.Try(value.toInt).getOrElse(0) < scala.util.Try(evalTxExpressions(x).toInt).getOrElse(0)
-    case Operator.StrMatch(x) => value.toLowerCase.contains(evalTxExpressions(x).toLowerCase)
+    case Operator.BeginsWith(x) => value.startsWith(evalTxExpressions(x, state))
+    case Operator.ContainsWord(x) => value.contains(evalTxExpressions(x, state).split(" ").filterNot(_.isEmpty).headOption.getOrElse(""))
+    case Operator.EndsWith(x) => value.endsWith(evalTxExpressions(x, state))
+    case Operator.Eq(x) => scala.util.Try(value.toInt).getOrElse(0) == scala.util.Try(evalTxExpressions(x, state).toInt).getOrElse(0)
+    case Operator.Ge(x) => scala.util.Try(value.toInt).getOrElse(0) >= scala.util.Try(evalTxExpressions(x, state).toInt).getOrElse(0)
+    case Operator.Gt(x) => scala.util.Try(value.toInt).getOrElse(0) > scala.util.Try(evalTxExpressions(x, state).toInt).getOrElse(0)
+    case Operator.Le(x) => scala.util.Try(value.toInt).getOrElse(0) <= scala.util.Try(evalTxExpressions(x, state).toInt).getOrElse(0)
+    case Operator.Lt(x) => scala.util.Try(value.toInt).getOrElse(0) < scala.util.Try(evalTxExpressions(x, state).toInt).getOrElse(0)
+    case Operator.StrMatch(x) => value.toLowerCase.contains(evalTxExpressions(x, state).toLowerCase)
     case Operator.Within(x) =>
-      val expr = evalTxExpressions(x).toLowerCase().split(" ")
+      val expr = evalTxExpressions(x, state).toLowerCase().split(" ")
       val v = value.toLowerCase
       if (v.isEmpty) {
         return false
       }
       expr.contains(v)
     case Operator.PmFromFile(xs) => {
-      val fileName = evalTxExpressions(xs)
+      val fileName = evalTxExpressions(xs, state)
       files.get(fileName) match {
         case None => false
         case Some(file) => {
@@ -1015,7 +1019,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
     case Operator.ValidateByteRange(x) => ByteRangeValidator.validateByteRange(value, x)
     case Operator.IpMatch(x) => IpMatch.ipMatch(x, value)
     case Operator.IpMatchFromFile(xs) => {
-      val fileName = evalTxExpressions(xs)
+      val fileName = evalTxExpressions(xs, state)
       files.get(fileName) match {
         case None => false
         case Some(file) => {
@@ -1028,8 +1032,8 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
         }
       }
     }
-    case Operator.DetectXSS(x) => LibInjection.isXSS(evalTxExpressions(value))
-    case Operator.DetectSQLi(x) => LibInjection.isSQLi(evalTxExpressions(value))
+    case Operator.DetectXSS(x) => LibInjection.isXSS(evalTxExpressions(value, state))
+    case Operator.DetectSQLi(x) => LibInjection.isSQLi(evalTxExpressions(value, state))
     case Operator.ValidateUrlEncoding(x) => !EncodingHelper.validateUrlEncoding(value)
     case Operator.ValidateUtf8Encoding(x) => !EncodingHelper.validateUtf8Encoding(value)
 
