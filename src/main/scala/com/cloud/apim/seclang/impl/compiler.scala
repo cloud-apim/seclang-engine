@@ -51,6 +51,11 @@ object Compiler {
     val removed = statements.collect { case SecRuleRemoveById(_, ids) => ids }.flatten.toSet
     val removedRuleTags: Set[String] = statements.collect { case SecRuleRemoveByTag(_, tag) => tag }.toSet
     val removedRuleMsgs: Set[String] = statements.collect { case SecRuleRemoveByMsg(_, msg) => msg }.toSet
+    val defaultActions: Map[Int, List[Action]] = statements.collect {
+      case EngineConfigDirective(_, DefaultAction(actions)) if actions.hasPhase => actions.actions
+        .filterNot(_.isMetaData)
+        .map(a => (actions.phase.get, a))
+    }.flatten.groupBy(_._1).mapValues(_.map(_._2))
 
     // flatten into CompiledItem with chain logic
     val items = scala.collection.mutable.ArrayBuffer.empty[CompiledItem]
@@ -99,7 +104,7 @@ object Compiler {
           if (removed.contains(s.id.getOrElse(-1)) || s.tags.exists(t => removedRuleTags.contains(t)) || s.msgs.exists(t => removedRuleMsgs.contains(t))) {
             // skip removed (if no id, can't remove)
           } else {
-            items += ActionItem(s.copy(commentBlock = None))
+            items += ActionItem(s.copy(commentBlock = None, actions = s.actions.copy(actions = s.actions.actions ++ defaultActions.get(s.phase).toList.flatten)))
           }
         }
         case s: SecRuleScript => unimplementedStatement("SecRuleScript")
@@ -110,11 +115,8 @@ object Compiler {
         case s: SecRuleUpdateTargetByMsg => unimplementedStatement("SecRuleUpdateTargetByMsg")
         case s: SecRuleUpdateTargetByTag => unimplementedStatement("SecRuleUpdateTargetByTag")
         case s: SecRuleUpdateActionById => unimplementedStatement("SecRuleUpdateActionById")
-        case EngineConfigDirective(_, DefaultAction(actions)) => {
-          unimplementedStatement("DefaultAction")
-          //actions.actions.foreach { action => println(action)}
-        }
-        case EngineConfigDirective(_, ComponentSignature(expr)) => ()
+        case EngineConfigDirective(_, DefaultAction(_)) => () // already handled
+        case EngineConfigDirective(_, ComponentSignature(_)) => () // already handled
         case EngineConfigDirective(_, ConfigDirective.RuleEngine(expr)) => {
           mode = EngineMode(expr)
         }

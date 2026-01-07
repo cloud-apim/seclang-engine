@@ -888,6 +888,10 @@ final case class Actions(
     actions: List[Action]
 ) extends AstNode {
   def json: JsValue = Json.obj("type" -> "Actions", "actions" -> actions.map(_.json))
+  lazy val hasPhase: Boolean = phase.isDefined
+  lazy val phase: Option[Int] = actions.collectFirst {
+    case Action.Phase(p) => p
+  }
 }
 
 sealed trait Action extends AstNode {

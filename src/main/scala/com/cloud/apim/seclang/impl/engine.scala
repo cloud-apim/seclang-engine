@@ -157,7 +157,12 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
       case a: NeedRunAction => a
     }
     executableActions.foreach {
-      case Action.AuditLog() => logAudit(s"${context.requestId} - ${context.method} ${context.uri} matched on: $events")
+      case Action.AuditLog() => {
+        if (events.nonEmpty) {
+          // TODO: perform audit callback on integration api
+          logAudit(s"${context.requestId} - ${context.method} ${context.uri} matched on: $events")
+        }
+      }
       case Action.Capture() => {
         txMap.get("MATCHED_VAR").foreach(v => txMap.put("0", v))
         txMap.get("MATCHED_LIST").foreach { list =>
@@ -167,7 +172,12 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
           }
         }
       }
-      case Action.Log => logInfo(s"${context.requestId} - ${context.method} ${context.uri} matched on: $events")
+      case Action.Log => {
+        if (events.nonEmpty) {
+          // TODO: perform log callback on integration api
+          logInfo(s"${context.requestId} - ${context.method} ${context.uri} matched on: $events")
+        }
+      }
       case Action.SetEnv(expr) => {
         val parts = expr.split("=")
         val name = parts(0)
@@ -468,6 +478,9 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
       println(s"matched_vars: \n${matched_vars.zipWithIndex.map { case (v, idx) => s"${matched_var_names(idx)}: ${v}" }.mkString("\n")}\n")
       println(s"matched: ${matched}")
       println("---------------------------------------------------------")
+      //txMap.foreach {
+      //  case (k, v) => println(s"${k}: ${v}")
+      //}
     }
     matched
   }
