@@ -598,49 +598,6 @@ object CRSTestUtils {
   )
 }
 
-class NegatedVariableTest extends munit.FunSuite {
-  test("Get actual negated variables") {
-    val parsed = SecLang.parse(
-      """
-        |SecRule REQUEST_HEADERS|!REQUEST_HEADERS:User-Agent|!REQUEST_HEADERS:Referer|!REQUEST_HEADERS:Cookie|!REQUEST_HEADERS:Sec-Fetch-User|!REQUEST_HEADERS:Sec-CH-UA|!REQUEST_HEADERS:Sec-CH-UA-Mobile "@validateByteRange 32,34,38,42-59,61,65-90,95,97-122" \
-        |    "id:920274,\
-        |    phase:1,\
-        |    block,\
-        |    t:none,t:urlDecodeUni,\
-        |    msg:'Invalid character in request headers (outside of very strict set)',\
-        |    logdata:'%{MATCHED_VAR_NAME}=%{MATCHED_VAR}',\
-        |    tag:'application-multi',\
-        |    tag:'language-multi',\
-        |    tag:'platform-multi',\
-        |    tag:'attack-protocol',\
-        |    tag:'paranoia-level/4',\
-        |    tag:'OWASP_CRS',\
-        |    tag:'OWASP_CRS/PROTOCOL-ENFORCEMENT',\
-        |    tag:'capec/1000/210/272',\
-        |    ver:'OWASP_CRS/4.22.0-dev',\
-        |    severity:'CRITICAL',\
-        |    setvar:'tx.inbound_anomaly_score_pl4=+%{tx.critical_anomaly_score}'"
-        |""".stripMargin).right.get
-    val compiled = SecLang.compile(parsed)
-    val engine = SecLang.engine(compiled,SecRulesEngineConfig.default.copy(debugRules = List(920274)))
-    val ctx = CRSTestUtils.requestContext(Json.parse(
-      s"""{
-         |  "dest_addr" : "127.0.0.1",
-         |  "port" : 80,
-         |  "uri" : "/get?test=test1HI",
-         |  "headers" : {
-         |    "User-Agent" : "OWASP CRS test agent",
-         |    "Host" : "localhost",
-         |    "Cookie" : "ThisIsATest%60",
-         |    "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
-         |  },
-         |  "version" : "HTTP/1.1"
-         |}""".stripMargin))
-    val res = engine.evaluate(ctx, List(1, 2, 3, 4))
-    res.displayPrintln()
-  }
-}
-
 class SecLangCRSTest extends munit.FunSuite {
 
   //private val testOnly: List[(String, Int)] = List(("932140", 10))
@@ -1167,5 +1124,6 @@ class SecLangCRSTest extends munit.FunSuite {
   }
   test("display results") {
     writeStats()
+    assertEquals(failures.get(), 0L, "There should be no failures here !")
   }
 }
