@@ -3,7 +3,7 @@ package com.cloud.apim.seclang.impl.utils
 import akka.util.ByteString
 import com.comcast.ip4s._
 import org.w3c.dom.{Document, Node, NodeList}
-import org.xml.sax.InputSource
+import org.xml.sax.{ErrorHandler, InputSource, SAXParseException}
 
 import java.io.{StringReader, StringWriter}
 import java.net.URLDecoder
@@ -140,6 +140,11 @@ object XmlXPathParser {
     val factory = DocumentBuilderFactory.newInstance()
     factory.setNamespaceAware(true) // important pour XPath
     val builder = factory.newDocumentBuilder()
+    builder.setErrorHandler(new ErrorHandler() {
+      override def warning(exception: SAXParseException): Unit = ()
+      override def error(exception: SAXParseException): Unit = ()
+      override def fatalError(exception: SAXParseException): Unit = throw exception
+    })
     builder.parse(new InputSource(new StringReader(xml)))
   }
 
