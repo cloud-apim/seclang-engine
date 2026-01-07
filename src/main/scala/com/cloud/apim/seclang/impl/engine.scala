@@ -391,23 +391,19 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
 
   private def evalRule(rule: SecRule, lastRuleId: Option[Int], ctx: RequestContext, debug: Boolean): Boolean = {
     // 1) extract values from variables
+    val negatedVariables: List[(String, List[String])] = rule.variables.negatedVariables.map {
+      case v @ Variable.Simple(name) => (name, resolveVariable(v, false, true, ctx, debug))
+      case v @ Variable.Collection(name, key) => (s"$name:${key.getOrElse("")}", resolveVariable(v, false, true, ctx, debug))
+    }
     val extracted: List[(String, List[String])] = {
       val vrbls = rule.variables.variables.map {
         case v @ Variable.Simple(name) => (name, resolveVariable(v, rule.variables.count, rule.variables.negated, ctx, debug))
         case v @ Variable.Collection(name, key) => (s"$name:${key.getOrElse("")}", resolveVariable(v, rule.variables.count, rule.variables.negated, ctx, debug))
       }
-      val negatedVariables: List[(String, List[String])] = rule.variables.negatedVariables.map {
-        case v @ Variable.Simple(name) => (name, resolveVariable(v, false, true, ctx, debug))
-        case v @ Variable.Collection(name, key) => (s"$name:${key.getOrElse("")}", resolveVariable(v, false, true, ctx, debug))
-      }
       if (rule.variables.count) {
         List((vrbls.headOption.map(v => s"&${v._1}").getOrElse("--"), vrbls.flatMap(_._2).size.toString :: Nil))
       } else {
-        if (negatedVariables.nonEmpty) {
-          vrbls.filterNot(v => negatedVariables.contains(v))
-        } else {
-          vrbls
-        }
+        vrbls
       }
     }
     // 2) apply transformations
@@ -415,10 +411,28 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
     val transformed = extracted.map {
       case (name, values) => (name, values.map(v => applyTransforms(v, transforms)))
     }
+    val negatedTransformed = negatedVariables.map {
+      case (name, values) => (name, values.map(v => applyTransforms(v, transforms)))
+    }
     // 3) operator match on ANY extracted value
     var matched_vars = List.empty[String]
     var matched_var_names = List.empty[String]
-    val matched = transformed.exists {
+    val matched = transformed.map {
+      case (name, values) => {
+        val strict = negatedVariables.exists(_._1 == name)
+        if (strict) {
+          (name, List.empty[String])
+        } else {
+          var currentValues = values
+          negatedVariables.filter(v => v._1.startsWith(name)).foreach { nameStartingWithNegatedVariableName =>
+            val (nname, _) = nameStartingWithNegatedVariableName
+            val nvalues = negatedTransformed.find(_._1 == nname).get._2
+            currentValues = currentValues.filterNot(v => nvalues.contains(v))
+          }
+          (name, currentValues)
+        }
+      }
+    }.filterNot(_._2.isEmpty).exists {
       case (name, values) =>
         val m = values.exists(v => evalOperator(lastRuleId.getOrElse(-1), rule.operator, v))
         if (m) {
@@ -438,6 +452,12 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
       println(s"debug for rule: ${lastRuleId.getOrElse(0)}")
       println("---------------------------------------------------------")
       println(s"variables: \n${rule.variables.variables.map {
+        case Variable.Simple(name) if rule.variables.count => s"&${name}"
+        case Variable.Simple(name) => name
+        case Variable.Collection(name, key) if rule.variables.count => s"&$name:$key"
+        case Variable.Collection(name, key) => s"$name:$key"
+      }.mkString("\n")}\n")
+      println(s"negated_variables: \n${rule.variables.negatedVariables.map {
         case Variable.Simple(name) if rule.variables.count => s"&${name}"
         case Variable.Simple(name) => name
         case Variable.Collection(name, key) if rule.variables.count => s"&$name:$key"

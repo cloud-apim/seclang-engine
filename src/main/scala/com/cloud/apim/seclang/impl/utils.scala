@@ -389,22 +389,34 @@ object Transformations {
     var out = input
 
     // Hexadecimal entities
-    out = hexEntity.replaceAllIn(out, m => {
-      val value = Integer.parseInt(m.group(1), 16) & 0xff
-      value.toChar.toString
-    })
+    try {
+      out = hexEntity.replaceAllIn(out, m => {
+        val value = Integer.parseInt(m.group(1), 16) & 0xff
+        value.toChar.toString
+      })
+    } catch {
+      case t: Throwable => // TODO: print exception
+    }
 
     // Decimal entities
-    out = decEntity.replaceAllIn(out, m => {
-      val value = Integer.parseInt(m.group(1), 10) & 0xff
-      value.toChar.toString
-    })
+    try {
+      out = decEntity.replaceAllIn(out, m => {
+        val value = Integer.parseInt(m.group(1), 10) & 0xff
+        value.toChar.toString
+      })
+    } catch {
+      case t: Throwable => // TODO: print exception
+    }
 
     // Named entities (with or without ;)
-    namedEntities.foreach { case (name, char) =>
-      out = out
-        .replace(s"&$name;", char.toString)
-        .replace(s"&$name", char.toString)
+    try {
+      namedEntities.foreach { case (name, char) =>
+        out = out
+          .replace(s"&$name;", char.toString)
+          .replace(s"&$name", char.toString)
+      }
+    } catch {
+      case t: Throwable => // TODO: print exception
     }
 
     out
