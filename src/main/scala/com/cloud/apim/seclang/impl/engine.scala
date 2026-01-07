@@ -133,9 +133,11 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
 
   private def evalTxExpressions(input: String): String = {
     if (input.contains("%{")) {
-      val finalInput: String = if (input.contains("%{MATCHED_VAR}") && txMap.contains("MATCHED_VAR")) {
+      val finalInput: String = if (input.contains("%{MATCHED_VAR}") || input.contains("%{MATCHED_VAR_NAME}")) {
         try {
-          input.replaceAll("%\\{MATCHED_VAR\\}", txMap("MATCHED_VAR"))
+          input
+            .replaceAll("%\\{MATCHED_VAR\\}", txMap.getOrElse("matched_var", "--"))
+            .replaceAll("%\\{MATCHED_VAR_NAME\\}", txMap.getOrElse("matched_var_name", "--"))
         } catch {
           case t: Throwable => input
         }
