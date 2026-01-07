@@ -351,7 +351,6 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
       if (allMatched) {
         val matched = evalRule(r, lastRuleId, ctx, debug = lastRuleId.exists(id => config.debugRules.contains(id))) { (_, _) =>
           // TODO: implement actions: https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29#actions
-          //if (matched) {
           val actionsList = r.actions.toList.flatMap(_.actions)
           val msg = actionsList.collectFirst {
             case Action.Msg(m) => evalTxExpressions(m)
@@ -391,9 +390,6 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
             //events = events :+ MatchEvent(lastRuleId, msg, phase, Json.stringify(r.json))
           }
           st = performActions(lastRuleId.getOrElse(0), actionsList, phase, ctx, st, collectedMsg, addLogData, isLast)
-          //} else {
-          //  allMatched = false
-          //}
         }
         if (!matched) {
           allMatched = false
@@ -466,15 +462,6 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
       }
     }.filterNot(_._2.isEmpty).filter {
       case (name, values) =>
-        // val m = values.exists(v => evalOperator(lastRuleId.getOrElse(-1), rule.operator, v))
-        // if (m) {
-        //   txMap.put("matched_var_name", name)
-        //   txMap.put("matched_var", values.mkString(" "))
-        //   matched_vars = matched_vars :+ values.mkString(" ")
-        //   matched_var_names = matched_var_names :+ name
-        // }
-        // m
-
         values.filter { v =>
           val m = evalOperator(lastRuleId.getOrElse(-1), rule.operator, v)
           if (m) {
@@ -502,20 +489,17 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
         case Variable.Collection(name, key) if rule.variables.count => s"&$name:$key"
         case Variable.Collection(name, key) => s"$name:$key"
       }.mkString("\n")}\n")
-      println(s"negated_variables: \n${rule.variables.negatedVariables.map {
-        case Variable.Simple(name) if rule.variables.count => s"&${name}"
-        case Variable.Simple(name) => name
-        case Variable.Collection(name, key) if rule.variables.count => s"&$name:$key"
-        case Variable.Collection(name, key) => s"$name:$key"
-      }.mkString("\n")}\n")
+      // println(s"negated_variables: \n${rule.variables.negatedVariables.map {
+      //   case Variable.Simple(name) if rule.variables.count => s"&${name}"
+      //   case Variable.Simple(name) => name
+      //   case Variable.Collection(name, key) if rule.variables.count => s"&$name:$key"
+      //   case Variable.Collection(name, key) => s"$name:$key"
+      // }.mkString("\n")}\n")
       println(s"extracted: \n${extracted.mkString("\n")}\n")
       println(s"variables_values: ${transformed.mkString("\n")}\n")
       println(s"matched_vars: \n${matched_vars.zipWithIndex.map { case (v, idx) => s"${matched_var_names(idx)}: ${v}" }.mkString("\n")}\n")
       println(s"matched: ${matched}")
       println("---------------------------------------------------------")
-      //txMap.foreach {
-      //  case (k, v) => println(s"${k}: ${v}")
-      //}
     }
     matched
   }
@@ -547,349 +531,342 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
       case Variable.Simple(name) => (name, None)
       case Variable.Collection(collection, key) => (collection, key.map(_.toLowerCase()))
     }
-    //ctx.cache.get(col) match {
-    //  case Some(v) => v
-    //  case None => {
-        //val uri = new java.net.URI(ctx.uri)
-        val (rawPath, path, rawQuery) = {
-          if (ctx.method.toLowerCase == "connect") {
-            (ctx.uri, ctx.uri, "")
-          } else {
-            Try(new java.net.URI(ctx.uri)) match {
-              case Success(uri) => (uri.getRawPath, uri.getPath, uri.getRawQuery)
-              case Failure(e) => {
-                val uri = if (!ctx.uri.startsWith("/")) {
-                  ctx.uri.replaceFirst("https://", "").replaceFirst("http://", "").split("/").tail.mkString("/")
-                } else {
-                  ctx.uri
-                }
-                val parts = uri.split("\\?")
-                val p = parts.headOption.getOrElse("")
-                val rq = parts.tail.mkString("?")
-                (uri, p, rq)
+      val (rawPath, path, rawQuery) = {
+        if (ctx.method.toLowerCase == "connect") {
+          (ctx.uri, ctx.uri, "")
+        } else {
+          Try(new java.net.URI(ctx.uri)) match {
+            case Success(uri) => (uri.getRawPath, uri.getPath, uri.getRawQuery)
+            case Failure(e) => {
+              val uri = if (!ctx.uri.startsWith("/")) {
+                ctx.uri.replaceFirst("https://", "").replaceFirst("http://", "").split("/").tail.mkString("/")
+              } else {
+                ctx.uri
               }
+              val parts = uri.split("\\?")
+              val p = parts.headOption.getOrElse("")
+              val rq = parts.tail.mkString("?")
+              (uri, p, rq)
             }
           }
         }
-        val datetime = LocalDateTime.now()
-        val res: List[String] = col match {
-          case "REQUEST_URI" => List(ctx.uri)
-          case "REQUEST_METHOD" => List(ctx.method)
-          case "REQUEST_HEADERS" | "RESPONSE_HEADERS" => {
-            key match {
-              case None =>
-                //ctx.headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
-                ctx.headers.toList.flatMap(_._2)
-              case Some(h) if h.startsWith("/") && h.endsWith("/") =>
-                val r = h.r
-                ctx.headers.collect {
-                  case (k, vs) if r.findFirstIn(k).isDefined => vs
-                }.flatten.toList
-              case Some(h) =>
-                ctx.headers.collect {
-                  case (k, vs) if k.toLowerCase == h => vs
-                }.flatten.toList
-            }
-          }
-          case "ARGS" => {
-            val headers = ctx.body match {
-              case Some(body) if ctx.isXwwwFormUrlEncoded=> {
-                val bodyArgs = FormUrlEncoded.parse(body.utf8String)
-                deepMerge(ctx.query, bodyArgs)
-              }
-              case _ => ctx.query
-            }
-            key match {
-              case None =>
-                // headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
-                headers.toList.flatMap(_._2)
-              case Some(h) if h.startsWith("/") && h.endsWith("/") =>
-                val r = h.r
-                headers.collect {
-                  case (k, vs) if r.findFirstIn(k).isDefined => vs
-                }.flatten.toList
-              case Some(h) =>
-                headers.collect {
-                  case (k, vs) if k.toLowerCase == h => vs
-                }.flatten.toList
-            }
-          }
-          case "ARGS_NAMES" => {
-            val headers = ctx.body match {
-              case Some(body) if ctx.isWwwFormUrlEncoded => {
-                val bodyArgs = FormUrlEncoded.parse(body.utf8String)
-                deepMerge(ctx.query, bodyArgs)
-              }
-              case _ => ctx.query
-            }
-            headers.keySet.toList
-          }
-          case "ARGS_COMBINED_SIZE" => {
-            val args = resolveVariable(Variable.Simple("ARGS"), false, false, ctx, debug)
-            List(args.map(_.length).sum.toString)
-          }
-          case "TX" => {
-            key match {
-              case None => List.empty
-              case Some(key) if key.startsWith("/") && key.endsWith("/") => {
-                val r = key.substring(1, key.length - 1).r
-                txMap.collect {
-                  case (k, vs) if r.findFirstIn(k).isDefined => vs
-                }.toList
-              }
-              case Some(key) => txMap.get(key.toLowerCase()).toList
-            }
-          }
-          case "ENV" => key match {
-            case None => List.empty
-            case Some(h) if h.startsWith("/") && h.endsWith("/") =>
-              val r = h.r
-              envMap.collect {
-                case (k, vs) if r.findFirstIn(k).isDefined => vs
-              }.toList
-            case Some(key) => envMap.get(key).toList
-          }
-          case "REQUEST_BODY" | "RESPONSE_BODY" => ctx.body.toList.map(_.utf8String)
-          case "REQUEST_HEADERS_NAMES" | "RESPONSE_HEADERS_NAMES" => ctx.headers.keySet.toList
-          case "DURATION" => List((System.currentTimeMillis() - ctx.startTime).toString)
-          case "PATH_INFO" => List(path)
-          case "QUERY_STRING" => List(rawQuery)
-          case "REMOTE_ADDR" => List(ctx.remoteAddr)
-          case "REMOTE_HOST" => List(ctx.remoteAddr)
-          case "REMOTE_PORT" => List(ctx.remotePort.toString)
-          case "REMOTE_USER" => ctx.headers.get("Authorization").orElse(ctx.headers.get("authorization")).flatMap(_.lastOption).collect {
-            case auth if auth.startsWith("Basic ") => Try(new String(Base64.getDecoder.decode(auth.substring("Basic ".length).split(":")(0)), StandardCharsets.UTF_8)).getOrElse("")
-          }.toList.filter(_.nonEmpty)
-          case "REQUEST_BASENAME" => path.split("/").lastOption.orElse(Some("")).toList
-          case "REQUEST_COOKIES" => key match {
+      }
+      val datetime = LocalDateTime.now()
+      val res: List[String] = col match {
+        case "REQUEST_URI" => List(ctx.uri)
+        case "REQUEST_METHOD" => List(ctx.method)
+        case "REQUEST_HEADERS" | "RESPONSE_HEADERS" => {
+          key match {
             case None =>
-              ctx.cookies.toList.flatMap { case (k, vs) => vs }//.map(v => s"$k: $v") }
+              //ctx.headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
+              ctx.headers.toList.flatMap(_._2)
             case Some(h) if h.startsWith("/") && h.endsWith("/") =>
               val r = h.r
-              ctx.cookies.collect {
+              ctx.headers.collect {
                 case (k, vs) if r.findFirstIn(k).isDefined => vs
               }.flatten.toList
             case Some(h) =>
-              ctx.cookies.collect {
+              ctx.headers.collect {
                 case (k, vs) if k.toLowerCase == h => vs
               }.flatten.toList
           }
-          case "REQUEST_COOKIES_NAMES" => ctx.cookies.keySet.toList
-          case "REQUEST_FILENAME" => List(path)
-          case "REQUEST_LINE" => List(s"${ctx.method.toUpperCase()} ${rawPath} ${ctx.protocol}")
-          case "REQUEST_PROTOCOL" | "RESPONSE_PROTOCOL" => List(ctx.protocol)
-          case "REQUEST_URI_RAW" => List(ctx.uriRaw)
-          case "REQUEST_CONTENT_TYPE" | "RESPONSE_CONTENT_TYPE" => ctx.contentType.toList
-          case "RESPONSE_STATUS" => ctx.status.map(_.toString).toList
-          case "REQUEST_BODY_LENGTH" | "RESPONSE_CONTENT_LENGTH" => ctx.contentLength.toList
-          // case "SERVER_ADDR" => unimplementedVariable("SERVER_ADDR") // from ctx.variables
-          // case "SERVER_NAME" => unimplementedVariable("SERVER_NAME") // from ctx.variables
-          // case "SERVER_PORT" => unimplementedVariable("SERVER_PORT") // from ctx.variables
-          case "STATUS_LINE" => List(ctx.statusLine)
-          case "TIME" => List(datetime.format(DateTimeFormatter.ofPattern("HH:mm:ss")))
-          case "TIME_DAY" => List(datetime.getDayOfMonth.toString)
-          case "TIME_EPOCH" => List((System.currentTimeMillis / 1000).toString)
-          case "TIME_HOUR" => List(datetime.getHour.toString)
-          case "TIME_MIN" => List(datetime.getMinute.toString)
-          case "TIME_MON" => List(datetime.getMonthValue.toString)
-          case "TIME_SEC" => List(datetime.getSecond.toString)
-          case "TIME_WDAY" => List(datetime.getDayOfWeek.getValue.toString)
-          case "TIME_YEAR" => List(datetime.getYear.toString)
-          case "UNIQUE_ID" => List(ctx.requestId)
-          case "USERID" => Option(uidRef.get).toList
-          case "FILES" => ctx.contentType match {
-            case Some(ct) if ct.startsWith("multipart/form-data") && ctx.body.isDefined => {
-              ctx.body.get.utf8String.linesIterator
-                .collect {
-                  case line if line.toLowerCase.startsWith("content-disposition:") && line.toLowerCase.contains("filename=") =>
-                    """(?:^|[;\s])name="([^"]+)"""".r
-                      .findFirstMatchIn(line)
-                      .map(_.group(1))
-                }.flatten.toList
-            }
-            case _ => List.empty
-          }
-          case "FILES_COMBINED_SIZE" => ctx.contentType match {
-            case Some(ct) if ct.startsWith("multipart/form-data") => ctx.contentLength.toList
-            case _ => List.empty
-          }
-          case "FILES_NAMES" => ctx.contentType match {
-            case Some(ct) if ct.startsWith("multipart/form-data") && ctx.body.isDefined => {
-              ctx.body.get.utf8String.linesIterator
-                .collect {
-                  case line if line.toLowerCase.startsWith("content-disposition:") && line.toLowerCase.contains("filename=") =>
-                    """filename="([^"]+)"""".r
-                      .findFirstMatchIn(line)
-                      .map(_.group(1))
-                }.flatten.toList
-            }
-            case _ => List.empty
-          }
-          case "FILES_SIZES" => ctx.contentType match {
-            case Some(ct) if ct.startsWith("multipart/form-data") => ctx.contentLength.toList
-            case _ => List.empty
-          }
-          case "FILES_TMPNAMES" => List.empty
-          case "FILES_TMP_CONTENT" => List.empty
-          case "REQBODY_PROCESSOR" => {
-            ctx.contentType
-              .map(_.toLowerCase)
-              .collect {
-                case ct if ct.startsWith("application/x-www-form-urlencoded") => "URLENCODED"
-                case ct if ct.startsWith("multipart/form-data")               => "MULTIPART"
-                case ct if ct.startsWith("application/xml") ||
-                  ct.startsWith("text/xml")                           => "XML"
-                case ct if ct.startsWith("application/json")                   => "JSON"
-              }.toList
-          }
-          case "MULTIPART_PART_HEADERS" => {
-            ctx.body match {
-              case Some(body) if ctx.contentType.contains("multipart/form-data")=> {
-                val headers = MultipartVars.multipartPartHeadersFromCtx(body.utf8String, ctx.contentType).getOrElse(Map.empty)
-                key match {
-                  case None =>
-                    //headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
-                    headers.toList.flatMap(_._2)
-                  case Some(h) if h.startsWith("/") && h.endsWith("/") =>
-                    val r = h.r
-                    headers.collect {
-                      case (k, vs) if r.findFirstIn(k).isDefined => vs
-                    }.flatten.toList
-                  case Some(h) =>
-                    headers.collect {
-                      case (k, vs) if k.toLowerCase == h => vs
-                    }.flatten.toList
-                }
-              }
-              case _ => List.empty
-            }
-          }
-          case "ARGS_GET" => {
-            val headers = ctx.query
-            key match {
-              case None =>
-                // headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
-                headers.toList.flatMap(_._2)
-              case Some(h) if h.startsWith("/") && h.endsWith("/") =>
-                val r = h.r
-                headers.collect {
-                  case (k, vs) if r.findFirstIn(k).isDefined => vs
-                }.flatten.toList
-              case Some(h) =>
-                headers.collect {
-                  case (k, vs) if k.toLowerCase == h => vs
-                }.flatten.toList
-            }
-          }
-          case "ARGS_GET_NAMES" =>  ctx.query.keySet.toList
-          case "ARGS_POST" => {
-            ctx.body match {
-              case Some(body) if ctx.isWwwFormUrlEncoded => {
-                val headers = FormUrlEncoded.parse(body.utf8String)
-                key match {
-                  case None =>
-                    //headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
-                    headers.toList.flatMap(_._2)
-                  case Some(h) if h.startsWith("/") && h.endsWith("/") =>
-                    val r = h.r
-                    headers.collect {
-                      case (k, vs) if r.findFirstIn(k).isDefined => vs
-                    }.flatten.toList
-                  case Some(h) =>
-                    headers.collect {
-                      case (k, vs) if k.toLowerCase == h => vs
-                    }.flatten.toList
-                }
-              }
-              case _ => List.empty
-            }
-          }
-          case "ARGS_POST_NAMES" => {
-            ctx.body match {
-              case Some(body) if ctx.isWwwFormUrlEncoded => {
-                val headers = FormUrlEncoded.parse(body.utf8String)
-                headers.keySet.toList
-              }
-              case _ => List.empty
-            }
-          }
-          case "XML" => {
-            ctx.body match {
-              case Some(body) if key.isDefined && (ctx.contentType.exists(_.contains("application/xml")) || ctx.contentType.exists(_.contains("text/xml"))) => {
-                XmlXPathParser.evalXPath(body.utf8String, key.get)
-              }
-              case _ => List.empty
-            }
-          }
-          case "MATCHED_VAR" => txMap.get("matched_var").toList
-          case "MATCHED_VARS" =>  txMap.get("matched_vars").flatMap(v => Json.parse(v).asOpt[List[String]]).getOrElse(List.empty) /*txMap.get("MATCHED_LIST").toList.flatMap { v =>
-            Json.parse(v).asOpt[List[String]].getOrElse(List.empty)
-          }*/
-          case "MATCHED_VAR_NAME" => txMap.get("matched_var_name").toList
-          case "MATCHED_VARS_NAMES" => txMap.get("matched_var_names").flatMap(v => Json.parse(v).asOpt[List[String]]).getOrElse(List.empty)
-          //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-          case "AUTH_TYPE" => unimplementedVariable("AUTH_TYPE") // TODO: implement it
-          case "FULL_REQUEST" => unimplementedVariable("FULL_REQUEST") // TODO: implement it
-          case "FULL_REQUEST_LENGTH" => unimplementedVariable("FULL_REQUEST_LENGTH") // TODO: implement it
-          case "HIGHEST_SEVERITY" => unimplementedVariable("HIGHEST_SEVERITY") // TODO: implement it
-          case "INBOUND_DATA_ERROR" => unimplementedVariable("INBOUND_DATA_ERROR") // TODO: implement it
-          case "MODSEC_BUILD" => unimplementedVariable("MODSEC_BUILD") // TODO: implement it
-          case "MSC_PCRE_LIMITS_EXCEEDED" => unimplementedVariable("MSC_PCRE_LIMITS_EXCEEDED") // TODO: implement it
-          case "MULTIPART_CRLF_LF_LINES" => unimplementedVariable("MULTIPART_CRLF_LF_LINES") // TODO: implement it
-          case "MULTIPART_FILENAME" => unimplementedVariable("MULTIPART_FILENAME") // TODO: implement it
-          case "MULTIPART_NAME" => unimplementedVariable("MULTIPART_NAME") // TODO: implement it
-          case "MULTIPART_STRICT_ERROR" => unimplementedVariable("MULTIPART_STRICT_ERROR") // TODO: implement it
-          case "MULTIPART_UNMATCHED_BOUNDARY" => unimplementedVariable("MULTIPART_UNMATCHED_BOUNDARY") // TODO: implement it
-          case "OUTBOUND_DATA_ERROR" => unimplementedVariable("OUTBOUND_DATA_ERROR") // TODO: implement it
-          case "REQBODY_ERROR" => unimplementedVariable("REQBODY_ERROR") // TODO: implement it
-          case "REQBODY_ERROR_MSG" => unimplementedVariable("REQBODY_ERROR_MSG") // TODO: implement it
-          case "RULE" => unimplementedVariable("RULE") // TODO: implement it
-          case "SDBM_DELETE_ERROR" => unimplementedVariable("SDBM_DELETE_ERROR") // TODO: implement it
-          case "SESSION" => unimplementedVariable("SESSION") // TODO: implement it
-          case "SESSIONID" => unimplementedVariable("SESSIONID") // TODO: implement it
-          case "URLENCODED_ERROR" => unimplementedVariable("URLENCODED_ERROR") // TODO: implement it
-          case "WEBAPPID" => unimplementedVariable("WEBAPPID") // TODO: implement it
-          //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-          case "GEO" => unsupportedVariable("GEO")
-          case "PERF_ALL" => unsupportedV3Variable("PERF_ALL")
-          case "PERF_COMBINED" => unsupportedV3Variable("PERF_COMBINED")
-          case "PERF_GC" => unsupportedV3Variable("PERF_GC")
-          case "PERF_LOGGING" => unsupportedV3Variable("PERF_LOGGING")
-          case "PERF_PHASE1" => unsupportedV3Variable("PERF_PHASE1")
-          case "PERF_PHASE2" => unsupportedV3Variable("PERF_PHASE2")
-          case "PERF_PHASE3" => unsupportedV3Variable("PERF_PHASE3")
-          case "PERF_PHASE4" => unsupportedV3Variable("PERF_PHASE4")
-          case "PERF_PHASE5" => unsupportedV3Variable("PERF_PHASE5")
-          case "PERF_RULES" => unsupportedV3Variable("PERF_RULES")
-          case "PERF_SREAD" => unsupportedV3Variable("PERF_SREAD")
-          case "PERF_SWRITE" => unsupportedV3Variable("PERF_SWRITE")
-          case "SCRIPT_BASENAME" => unsupportedV3Variable("SCRIPT_BASENAME")
-          case "SCRIPT_FILENAME" => unsupportedV3Variable("SCRIPT_FILENAME")
-          case "SCRIPT_GID" => unsupportedV3Variable("SCRIPT_GID")
-          case "SCRIPT_GROUPNAME" => unsupportedV3Variable("SCRIPT_GROUPNAME")
-          case "SCRIPT_MODE" => unsupportedV3Variable("SCRIPT_MODE")
-          case "SCRIPT_UID" => unsupportedV3Variable("SCRIPT_UID")
-          case "SCRIPT_USERNAME" => unsupportedV3Variable("SCRIPT_USERNAME")
-          case "STREAM_INPUT_BODY" => unsupportedV3Variable("STREAM_INPUT_BODY")
-          case "STREAM_OUTPUT_BODY" => unsupportedV3Variable("STREAM_OUTPUT_BODY")
-          case "WEBSERVER_ERROR_LOG" => unsupportedV3Variable("WEBSERVER_ERROR_LOG")
-          case "USERAGENT_IP" => unsupportedV3Variable("USERAGENT_IP")
-          //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-          case other =>
-            ctx.variables.get(other)
-              .orElse(ctx.variables.get(other.toLowerCase))
-              .orElse(ctx.variables.get(other.toUpperCase)) match {
-              case Some(v) => List(v)
-              case None =>
-                // fallback: unsupported collection
-                logDebug("unknown variable: " + other)
-                Nil
-            }
         }
-        //ctx.cache.put(col, res)
-        res
-      //}
-    //}
+        case "ARGS" => {
+          val headers = ctx.body match {
+            case Some(body) if ctx.isXwwwFormUrlEncoded=> {
+              val bodyArgs = FormUrlEncoded.parse(body.utf8String)
+              deepMerge(ctx.query, bodyArgs)
+            }
+            case _ => ctx.query
+          }
+          key match {
+            case None =>
+              // headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
+              headers.toList.flatMap(_._2)
+            case Some(h) if h.startsWith("/") && h.endsWith("/") =>
+              val r = h.r
+              headers.collect {
+                case (k, vs) if r.findFirstIn(k).isDefined => vs
+              }.flatten.toList
+            case Some(h) =>
+              headers.collect {
+                case (k, vs) if k.toLowerCase == h => vs
+              }.flatten.toList
+          }
+        }
+        case "ARGS_NAMES" => {
+          val headers = ctx.body match {
+            case Some(body) if ctx.isWwwFormUrlEncoded => {
+              val bodyArgs = FormUrlEncoded.parse(body.utf8String)
+              deepMerge(ctx.query, bodyArgs)
+            }
+            case _ => ctx.query
+          }
+          headers.keySet.toList
+        }
+        case "ARGS_COMBINED_SIZE" => {
+          val args = resolveVariable(Variable.Simple("ARGS"), false, false, ctx, debug)
+          List(args.map(_.length).sum.toString)
+        }
+        case "TX" => {
+          key match {
+            case None => List.empty
+            case Some(key) if key.startsWith("/") && key.endsWith("/") => {
+              val r = key.substring(1, key.length - 1).r
+              txMap.collect {
+                case (k, vs) if r.findFirstIn(k).isDefined => vs
+              }.toList
+            }
+            case Some(key) => txMap.get(key.toLowerCase()).toList
+          }
+        }
+        case "ENV" => key match {
+          case None => List.empty
+          case Some(h) if h.startsWith("/") && h.endsWith("/") =>
+            val r = h.r
+            envMap.collect {
+              case (k, vs) if r.findFirstIn(k).isDefined => vs
+            }.toList
+          case Some(key) => envMap.get(key).toList
+        }
+        case "REQUEST_BODY" | "RESPONSE_BODY" => ctx.body.toList.map(_.utf8String)
+        case "REQUEST_HEADERS_NAMES" | "RESPONSE_HEADERS_NAMES" => ctx.headers.keySet.toList
+        case "DURATION" => List((System.currentTimeMillis() - ctx.startTime).toString)
+        case "PATH_INFO" => List(path)
+        case "QUERY_STRING" => List(rawQuery)
+        case "REMOTE_ADDR" => List(ctx.remoteAddr)
+        case "REMOTE_HOST" => List(ctx.remoteAddr)
+        case "REMOTE_PORT" => List(ctx.remotePort.toString)
+        case "REMOTE_USER" => ctx.headers.get("Authorization").orElse(ctx.headers.get("authorization")).flatMap(_.lastOption).collect {
+          case auth if auth.startsWith("Basic ") => Try(new String(Base64.getDecoder.decode(auth.substring("Basic ".length).split(":")(0)), StandardCharsets.UTF_8)).getOrElse("")
+        }.toList.filter(_.nonEmpty)
+        case "REQUEST_BASENAME" => path.split("/").lastOption.orElse(Some("")).toList
+        case "REQUEST_COOKIES" => key match {
+          case None =>
+            ctx.cookies.toList.flatMap { case (k, vs) => vs }//.map(v => s"$k: $v") }
+          case Some(h) if h.startsWith("/") && h.endsWith("/") =>
+            val r = h.r
+            ctx.cookies.collect {
+              case (k, vs) if r.findFirstIn(k).isDefined => vs
+            }.flatten.toList
+          case Some(h) =>
+            ctx.cookies.collect {
+              case (k, vs) if k.toLowerCase == h => vs
+            }.flatten.toList
+        }
+        case "REQUEST_COOKIES_NAMES" => ctx.cookies.keySet.toList
+        case "REQUEST_FILENAME" => List(path)
+        case "REQUEST_LINE" => List(s"${ctx.method.toUpperCase()} ${rawPath} ${ctx.protocol}")
+        case "REQUEST_PROTOCOL" | "RESPONSE_PROTOCOL" => List(ctx.protocol)
+        case "REQUEST_URI_RAW" => List(ctx.uriRaw)
+        case "REQUEST_CONTENT_TYPE" | "RESPONSE_CONTENT_TYPE" => ctx.contentType.toList
+        case "RESPONSE_STATUS" => ctx.status.map(_.toString).toList
+        case "REQUEST_BODY_LENGTH" | "RESPONSE_CONTENT_LENGTH" => ctx.contentLength.toList
+        // case "SERVER_ADDR" => unimplementedVariable("SERVER_ADDR") // from ctx.variables
+        // case "SERVER_NAME" => unimplementedVariable("SERVER_NAME") // from ctx.variables
+        // case "SERVER_PORT" => unimplementedVariable("SERVER_PORT") // from ctx.variables
+        case "STATUS_LINE" => List(ctx.statusLine)
+        case "TIME" => List(datetime.format(DateTimeFormatter.ofPattern("HH:mm:ss")))
+        case "TIME_DAY" => List(datetime.getDayOfMonth.toString)
+        case "TIME_EPOCH" => List((System.currentTimeMillis / 1000).toString)
+        case "TIME_HOUR" => List(datetime.getHour.toString)
+        case "TIME_MIN" => List(datetime.getMinute.toString)
+        case "TIME_MON" => List(datetime.getMonthValue.toString)
+        case "TIME_SEC" => List(datetime.getSecond.toString)
+        case "TIME_WDAY" => List(datetime.getDayOfWeek.getValue.toString)
+        case "TIME_YEAR" => List(datetime.getYear.toString)
+        case "UNIQUE_ID" => List(ctx.requestId)
+        case "USERID" => Option(uidRef.get).toList
+        case "FILES" => ctx.contentType match {
+          case Some(ct) if ct.startsWith("multipart/form-data") && ctx.body.isDefined => {
+            ctx.body.get.utf8String.linesIterator
+              .collect {
+                case line if line.toLowerCase.startsWith("content-disposition:") && line.toLowerCase.contains("filename=") =>
+                  """(?:^|[;\s])name="([^"]+)"""".r
+                    .findFirstMatchIn(line)
+                    .map(_.group(1))
+              }.flatten.toList
+          }
+          case _ => List.empty
+        }
+        case "FILES_COMBINED_SIZE" => ctx.contentType match {
+          case Some(ct) if ct.startsWith("multipart/form-data") => ctx.contentLength.toList
+          case _ => List.empty
+        }
+        case "FILES_NAMES" => ctx.contentType match {
+          case Some(ct) if ct.startsWith("multipart/form-data") && ctx.body.isDefined => {
+            ctx.body.get.utf8String.linesIterator
+              .collect {
+                case line if line.toLowerCase.startsWith("content-disposition:") && line.toLowerCase.contains("filename=") =>
+                  """filename="([^"]+)"""".r
+                    .findFirstMatchIn(line)
+                    .map(_.group(1))
+              }.flatten.toList
+          }
+          case _ => List.empty
+        }
+        case "FILES_SIZES" => ctx.contentType match {
+          case Some(ct) if ct.startsWith("multipart/form-data") => ctx.contentLength.toList
+          case _ => List.empty
+        }
+        case "FILES_TMPNAMES" => List.empty
+        case "FILES_TMP_CONTENT" => List.empty
+        case "REQBODY_PROCESSOR" => {
+          ctx.contentType
+            .map(_.toLowerCase)
+            .collect {
+              case ct if ct.startsWith("application/x-www-form-urlencoded") => "URLENCODED"
+              case ct if ct.startsWith("multipart/form-data")               => "MULTIPART"
+              case ct if ct.startsWith("application/xml") ||
+                ct.startsWith("text/xml")                           => "XML"
+              case ct if ct.startsWith("application/json")                   => "JSON"
+            }.toList
+        }
+        case "MULTIPART_PART_HEADERS" => {
+          ctx.body match {
+            case Some(body) if ctx.contentType.contains("multipart/form-data")=> {
+              val headers = MultipartVars.multipartPartHeadersFromCtx(body.utf8String, ctx.contentType).getOrElse(Map.empty)
+              key match {
+                case None =>
+                  //headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
+                  headers.toList.flatMap(_._2)
+                case Some(h) if h.startsWith("/") && h.endsWith("/") =>
+                  val r = h.r
+                  headers.collect {
+                    case (k, vs) if r.findFirstIn(k).isDefined => vs
+                  }.flatten.toList
+                case Some(h) =>
+                  headers.collect {
+                    case (k, vs) if k.toLowerCase == h => vs
+                  }.flatten.toList
+              }
+            }
+            case _ => List.empty
+          }
+        }
+        case "ARGS_GET" => {
+          val headers = ctx.query
+          key match {
+            case None =>
+              // headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
+              headers.toList.flatMap(_._2)
+            case Some(h) if h.startsWith("/") && h.endsWith("/") =>
+              val r = h.r
+              headers.collect {
+                case (k, vs) if r.findFirstIn(k).isDefined => vs
+              }.flatten.toList
+            case Some(h) =>
+              headers.collect {
+                case (k, vs) if k.toLowerCase == h => vs
+              }.flatten.toList
+          }
+        }
+        case "ARGS_GET_NAMES" =>  ctx.query.keySet.toList
+        case "ARGS_POST" => {
+          ctx.body match {
+            case Some(body) if ctx.isWwwFormUrlEncoded => {
+              val headers = FormUrlEncoded.parse(body.utf8String)
+              key match {
+                case None =>
+                  //headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
+                  headers.toList.flatMap(_._2)
+                case Some(h) if h.startsWith("/") && h.endsWith("/") =>
+                  val r = h.r
+                  headers.collect {
+                    case (k, vs) if r.findFirstIn(k).isDefined => vs
+                  }.flatten.toList
+                case Some(h) =>
+                  headers.collect {
+                    case (k, vs) if k.toLowerCase == h => vs
+                  }.flatten.toList
+              }
+            }
+            case _ => List.empty
+          }
+        }
+        case "ARGS_POST_NAMES" => {
+          ctx.body match {
+            case Some(body) if ctx.isWwwFormUrlEncoded => {
+              val headers = FormUrlEncoded.parse(body.utf8String)
+              headers.keySet.toList
+            }
+            case _ => List.empty
+          }
+        }
+        case "XML" => {
+          ctx.body match {
+            case Some(body) if key.isDefined && (ctx.contentType.exists(_.contains("application/xml")) || ctx.contentType.exists(_.contains("text/xml"))) => {
+              XmlXPathParser.evalXPath(body.utf8String, key.get)
+            }
+            case _ => List.empty
+          }
+        }
+        case "MATCHED_VAR" => txMap.get("matched_var").toList
+        case "MATCHED_VARS" =>  txMap.get("matched_vars").flatMap(v => Json.parse(v).asOpt[List[String]]).getOrElse(List.empty) /*txMap.get("MATCHED_LIST").toList.flatMap { v =>
+          Json.parse(v).asOpt[List[String]].getOrElse(List.empty)
+        }*/
+        case "MATCHED_VAR_NAME" => txMap.get("matched_var_name").toList
+        case "MATCHED_VARS_NAMES" => txMap.get("matched_var_names").flatMap(v => Json.parse(v).asOpt[List[String]]).getOrElse(List.empty)
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        case "AUTH_TYPE" => unimplementedVariable("AUTH_TYPE") // TODO: implement it
+        case "FULL_REQUEST" => unimplementedVariable("FULL_REQUEST") // TODO: implement it
+        case "FULL_REQUEST_LENGTH" => unimplementedVariable("FULL_REQUEST_LENGTH") // TODO: implement it
+        case "HIGHEST_SEVERITY" => unimplementedVariable("HIGHEST_SEVERITY") // TODO: implement it
+        case "INBOUND_DATA_ERROR" => unimplementedVariable("INBOUND_DATA_ERROR") // TODO: implement it
+        case "MODSEC_BUILD" => unimplementedVariable("MODSEC_BUILD") // TODO: implement it
+        case "MSC_PCRE_LIMITS_EXCEEDED" => unimplementedVariable("MSC_PCRE_LIMITS_EXCEEDED") // TODO: implement it
+        case "MULTIPART_CRLF_LF_LINES" => unimplementedVariable("MULTIPART_CRLF_LF_LINES") // TODO: implement it
+        case "MULTIPART_FILENAME" => unimplementedVariable("MULTIPART_FILENAME") // TODO: implement it
+        case "MULTIPART_NAME" => unimplementedVariable("MULTIPART_NAME") // TODO: implement it
+        case "MULTIPART_STRICT_ERROR" => unimplementedVariable("MULTIPART_STRICT_ERROR") // TODO: implement it
+        case "MULTIPART_UNMATCHED_BOUNDARY" => unimplementedVariable("MULTIPART_UNMATCHED_BOUNDARY") // TODO: implement it
+        case "OUTBOUND_DATA_ERROR" => unimplementedVariable("OUTBOUND_DATA_ERROR") // TODO: implement it
+        case "REQBODY_ERROR" => unimplementedVariable("REQBODY_ERROR") // TODO: implement it
+        case "REQBODY_ERROR_MSG" => unimplementedVariable("REQBODY_ERROR_MSG") // TODO: implement it
+        case "RULE" => unimplementedVariable("RULE") // TODO: implement it
+        case "SDBM_DELETE_ERROR" => unimplementedVariable("SDBM_DELETE_ERROR") // TODO: implement it
+        case "SESSION" => unimplementedVariable("SESSION") // TODO: implement it
+        case "SESSIONID" => unimplementedVariable("SESSIONID") // TODO: implement it
+        case "URLENCODED_ERROR" => unimplementedVariable("URLENCODED_ERROR") // TODO: implement it
+        case "WEBAPPID" => unimplementedVariable("WEBAPPID") // TODO: implement it
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        case "GEO" => unsupportedVariable("GEO")
+        case "PERF_ALL" => unsupportedV3Variable("PERF_ALL")
+        case "PERF_COMBINED" => unsupportedV3Variable("PERF_COMBINED")
+        case "PERF_GC" => unsupportedV3Variable("PERF_GC")
+        case "PERF_LOGGING" => unsupportedV3Variable("PERF_LOGGING")
+        case "PERF_PHASE1" => unsupportedV3Variable("PERF_PHASE1")
+        case "PERF_PHASE2" => unsupportedV3Variable("PERF_PHASE2")
+        case "PERF_PHASE3" => unsupportedV3Variable("PERF_PHASE3")
+        case "PERF_PHASE4" => unsupportedV3Variable("PERF_PHASE4")
+        case "PERF_PHASE5" => unsupportedV3Variable("PERF_PHASE5")
+        case "PERF_RULES" => unsupportedV3Variable("PERF_RULES")
+        case "PERF_SREAD" => unsupportedV3Variable("PERF_SREAD")
+        case "PERF_SWRITE" => unsupportedV3Variable("PERF_SWRITE")
+        case "SCRIPT_BASENAME" => unsupportedV3Variable("SCRIPT_BASENAME")
+        case "SCRIPT_FILENAME" => unsupportedV3Variable("SCRIPT_FILENAME")
+        case "SCRIPT_GID" => unsupportedV3Variable("SCRIPT_GID")
+        case "SCRIPT_GROUPNAME" => unsupportedV3Variable("SCRIPT_GROUPNAME")
+        case "SCRIPT_MODE" => unsupportedV3Variable("SCRIPT_MODE")
+        case "SCRIPT_UID" => unsupportedV3Variable("SCRIPT_UID")
+        case "SCRIPT_USERNAME" => unsupportedV3Variable("SCRIPT_USERNAME")
+        case "STREAM_INPUT_BODY" => unsupportedV3Variable("STREAM_INPUT_BODY")
+        case "STREAM_OUTPUT_BODY" => unsupportedV3Variable("STREAM_OUTPUT_BODY")
+        case "WEBSERVER_ERROR_LOG" => unsupportedV3Variable("WEBSERVER_ERROR_LOG")
+        case "USERAGENT_IP" => unsupportedV3Variable("USERAGENT_IP")
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        case other =>
+          ctx.variables.get(other)
+            .orElse(ctx.variables.get(other.toLowerCase))
+            .orElse(ctx.variables.get(other.toUpperCase)) match {
+            case Some(v) => List(v)
+            case None =>
+              // fallback: unsupported collection
+              logDebug("unknown variable: " + other)
+              Nil
+          }
+      }
+      res
   }
 
   private def unimplementedTransform(name: String, v: String): String = {
