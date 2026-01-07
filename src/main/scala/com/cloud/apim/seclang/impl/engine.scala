@@ -42,6 +42,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
     if (program.mode.isOff) {
       EngineResult(Disposition.Continue, List.empty)
     } else {
+      txMap.clear()
       val init = RuntimeState(program.mode, Set.empty, Nil)
       val (disp, st) = phases.foldLeft((Disposition.Continue: Disposition, init)) {
         case ((Disposition.Block(a, b, c), st), _) if st.mode.isBlocking => (Disposition.Block(a, b, c), st) // already blocked, keep

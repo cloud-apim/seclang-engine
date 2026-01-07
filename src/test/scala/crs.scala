@@ -643,7 +643,7 @@ class NegatedVariableTest extends munit.FunSuite {
 
 class SecLangCRSTest extends munit.FunSuite {
 
-  //private val testOnly: List[(String, Int)] = List(("951180", 1))
+  //private val testOnly: List[(String, Int)] = List(("920450", 4))
   private val testOnly: List[(String, Int)] = List.empty
   private val ignoreTests: List[(String, Int)] = List( // TODO: fix later
     ("920160", 5),
