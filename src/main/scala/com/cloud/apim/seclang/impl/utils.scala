@@ -16,6 +16,29 @@ import javax.xml.xpath.{XPath, XPathConstants, XPathFactory}
 import scala.util.Try
 import scala.util.matching.Regex
 
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
+
+object HashUtilsFast {
+  private val HEX = "0123456789abcdef".toCharArray
+
+  def sha512Hex(input: String): String = {
+    val md    = MessageDigest.getInstance("SHA-512")
+    val bytes = md.digest(input.getBytes(StandardCharsets.UTF_8))
+
+    val out = new Array[Char](bytes.length * 2)
+    var i = 0
+    while (i < bytes.length) {
+      val v = bytes(i) & 0xff
+      out(i * 2)     = HEX(v >>> 4)
+      out(i * 2 + 1) = HEX(v & 0x0f)
+      i += 1
+    }
+    new String(out)
+  }
+}
+
+
 object Implicits {
   implicit class BetterString(val obj: String) extends AnyVal {
     def toIntOption: Option[Int] = {

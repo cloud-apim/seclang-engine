@@ -1,12 +1,9 @@
 package com.cloud.apim.seclang.model
 
 import akka.util.ByteString
-import com.cloud.apim.seclang.impl.compiler.EngineMode
 import com.cloud.apim.seclang.impl.utils.StatusCodes
 import play.api.libs.json._
 
-import java.net.{URI, URLDecoder}
-import java.nio.charset.StandardCharsets
 import java.util.concurrent.atomic.AtomicReference
 import scala.collection.concurrent.TrieMap
 import scala.util.{Failure, Success, Try}
@@ -16,22 +13,27 @@ sealed trait AstNode {
 }
 
 final case class Configuration(
-    statements: List[Statement]
+    statements: List[Statement],
+    hash: String,
 ) extends AstNode {
   def json: JsValue = Json.obj(
     "type" -> "Configuration",
-    "statements" -> JsArray(statements.map(_.json))
+    "statements" -> JsArray(statements.map(_.json)),
+    "hash" -> hash
   )
 }
 
 object Configuration {
-  def empty: Configuration = Configuration(List.empty)
+  def empty: Configuration = Configuration(List.empty, "")
   
   val format: Format[Configuration] = new Format[Configuration] {
     def reads(json: JsValue): JsResult[Configuration] = Try {
-      Configuration((json \ "statements").asOpt[List[JsValue]].getOrElse(List.empty).flatMap { statement =>
-        Statement.format.reads(statement).asOpt
-      })
+      Configuration(
+        statements = (json \ "statements").asOpt[List[JsValue]].getOrElse(List.empty).flatMap { statement =>
+          Statement.format.reads(statement).asOpt
+        },
+        hash = (json \ "hash").asOpt[String].getOrElse("")
+      )
     } match {
       case Failure(ex) => 
         ex.printStackTrace()
@@ -41,7 +43,6 @@ object Configuration {
     
     def writes(config: Configuration): JsValue = config.json
   }
-
 }
 
 sealed trait Statement extends AstNode
@@ -1344,3 +1345,41 @@ final case class SecRulesEngineConfig(debugRules: List[Int])
 object SecRulesEngineConfig {
   val default = SecRulesEngineConfig(debugRules = List.empty)
 }
+
+sealed trait CompiledItem
+
+final case class RuleChain(rules: List[SecRule]) extends CompiledItem {
+  require(rules.nonEmpty)
+  lazy val phase: Int = rules.head.phase
+  lazy val id: Option[Int] = rules.last.id.orElse(rules.head.id)
+}
+
+final case class MarkerItem(name: String) extends CompiledItem
+final case class ActionItem(action: SecAction) extends CompiledItem {
+  lazy val phase: Int = action.phase
+  lazy val id: Option[Int] = action.id
+}
+
+sealed trait EngineMode {
+  def isOff: Boolean = this == EngineMode.Off
+  def isOn: Boolean = !isOff
+  def isDetectionOnly: Boolean = this == EngineMode.DetectionOnly
+  def isBlocking: Boolean = this == EngineMode.On
+}
+object EngineMode {
+  case object Off extends EngineMode
+  case object On extends EngineMode
+  case object DetectionOnly extends EngineMode
+  def apply(str: String): EngineMode = str.toLowerCase match {
+    case "on" => On
+    case "detectiononly" => DetectionOnly
+    case _ => Off
+  }
+}
+
+final case class CompiledProgram(
+                                  itemsByPhase: Map[Int, Vector[CompiledItem]],
+                                  removedRuleIds: Set[Int],
+                                  mode: EngineMode,
+                                  hash: String,
+                                )

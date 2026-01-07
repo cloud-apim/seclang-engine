@@ -2,9 +2,11 @@ package com.cloud.apim.seclang.impl.parser
 
 import com.cloud.apim.seclang.antlr.SecLangParser._
 import com.cloud.apim.seclang.antlr._
+import com.cloud.apim.seclang.impl.utils.HashUtilsFast
 import com.cloud.apim.seclang.model._
 
 import scala.collection.JavaConverters._
+import scala.util.hashing.Hashing
 
 // https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29
 class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
@@ -15,7 +17,7 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
     val statements = ctx.stmt().asScala.toList.flatMap { stmtCtx =>
       Option(visitStmt(stmtCtx)).collect { case s: Statement => s }
     }
-    Configuration(statements)
+    Configuration(statements, "#")
   }
   
   override def visitStmt(ctx: SecLangParser.StmtContext): Statement = {
@@ -349,6 +351,7 @@ object AntlrParser {
     import org.antlr.v4.runtime._
     
     try {
+      val hash = HashUtilsFast.sha512Hex(in)
       val input = CharStreams.fromString(in)
       val lexer = new SecLangLexer(input)
       val tokens = new CommonTokenStream(lexer)
@@ -371,7 +374,7 @@ object AntlrParser {
       
       val tree = parser.configuration()
       val visitor = new AstBuilderVisitor()
-      val result = visitor.visitConfiguration(tree)
+      val result = visitor.visitConfiguration(tree).copy(hash = hash)
       Right(result)
     } catch {
       case e: Exception => Left(s"Parse error: ${e.getMessage}")

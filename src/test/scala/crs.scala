@@ -1,17 +1,16 @@
 package com.cloud.apim.seclang.test
 
 import akka.util.ByteString
-import com.cloud.apim.seclang.impl.compiler.RuleChain
 import com.cloud.apim.seclang.impl.engine.SecRulesEngine
 import com.cloud.apim.seclang.impl.utils.StatusCodes
 import com.cloud.apim.seclang.model.Disposition.{Block, Continue}
-import com.cloud.apim.seclang.model.{RequestContext, SecRulesEngineConfig}
+import com.cloud.apim.seclang.model.{RequestContext, RuleChain, SecRulesEngineConfig}
 import com.cloud.apim.seclang.scaladsl.SecLang
-import play.api.libs.json.{JsArray, JsBoolean, JsNull, JsNumber, JsObject, JsString, JsValue, Json}
+import play.api.libs.json._
 
 import java.io.File
-import java.net.{URI, URLDecoder}
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
+import java.net.{URI, URLDecoder}
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.util.Base64

@@ -3,43 +3,6 @@ package com.cloud.apim.seclang.impl.compiler
 import com.cloud.apim.seclang.model.ConfigDirective.{ComponentSignature, DefaultAction}
 import com.cloud.apim.seclang.model._
 
-sealed trait CompiledItem
-
-final case class RuleChain(rules: List[SecRule]) extends CompiledItem {
-  require(rules.nonEmpty)
-  lazy val phase: Int = rules.head.phase
-  lazy val id: Option[Int] = rules.last.id.orElse(rules.head.id)
-}
-
-final case class MarkerItem(name: String) extends CompiledItem
-final case class ActionItem(action: SecAction) extends CompiledItem {
-  lazy val phase: Int = action.phase
-  lazy val id: Option[Int] = action.id
-}
-
-sealed trait EngineMode {
-  def isOff: Boolean = this == EngineMode.Off
-  def isOn: Boolean = !isOff
-  def isDetectionOnly: Boolean = this == EngineMode.DetectionOnly
-  def isBlocking: Boolean = this == EngineMode.On
-}
-object EngineMode {
-  case object Off extends EngineMode
-  case object On extends EngineMode
-  case object DetectionOnly extends EngineMode
-  def apply(str: String): EngineMode = str.toLowerCase match {
-    case "on" => On
-    case "detectiononly" => DetectionOnly
-    case _ => Off
-  }
-}
-
-final case class CompiledProgram(
-  itemsByPhase: Map[Int, Vector[CompiledItem]],
-  removedRuleIds: Set[Int],
-  mode: EngineMode
-)
-
 object Compiler {
 
   private def unimplementedStatement(name: String): Unit = {
@@ -153,6 +116,6 @@ object Compiler {
         // TODO: support all statements here
     }
 
-    CompiledProgram(byPhase.toMap, removed, mode)
+    CompiledProgram(byPhase.toMap, removed, mode, configuration.hash)
   }
 }
