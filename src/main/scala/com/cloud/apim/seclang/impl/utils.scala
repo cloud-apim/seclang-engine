@@ -96,8 +96,11 @@ object FormUrlEncoded {
   def parse(body: String, charset: String = "UTF-8"): Map[String, List[String]] = {
     if (body == null || body.isEmpty) return Map.empty
 
-    def dec(s: String): String =
+    def dec(s: String): String = try {
       URLDecoder.decode(s, StandardCharsets.UTF_8.name()) // charset param could be used; UTF-8 is typical
+    } catch {
+      case e: Throwable => s // TODO: print exception...
+    }
 
     body
       .split("&", -1)                    // keep empty segments
@@ -166,7 +169,7 @@ object XmlXPathParser {
       }
     } catch {
       case t: Throwable =>
-        t.printStackTrace()
+        // t.printStackTrace() TODO: print exception
         Nil
     }
   }

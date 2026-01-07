@@ -216,7 +216,10 @@ object CRSTestUtils {
       case None => _json
       case Some(encodedRaw) => {
         try {
-          val enc = Base64.getDecoder.decode(encodedRaw.replaceAll("\\\\n", "").getBytes(StandardCharsets.UTF_8))
+          val enc = Try(Base64.getMimeDecoder.decode(encodedRaw.getBytes(StandardCharsets.UTF_8)))
+            .orElse(Try(Base64.getUrlDecoder.decode(encodedRaw.getBytes(StandardCharsets.UTF_8))))
+            .orElse(Try(Base64.getDecoder.decode(encodedRaw.getBytes(StandardCharsets.UTF_8))))
+            .get
           _json.as[JsObject].deepMerge(parseRawHttpRequest(new String(enc, StandardCharsets.UTF_8)))
         } catch {
           case t: Throwable =>
@@ -597,7 +600,7 @@ object CRSTestUtils {
 
 class SecLangCRSTest extends munit.FunSuite {
 
-  //private val testOnly: List[(String, Int)] = List(("944120", 74))
+  //private val testOnly: List[(String, Int)] = List(("920171", 2))
   private val testOnly: List[(String, Int)] = List.empty
   private val ignoreTests: List[(String, Int)] = List( // TODO: fix later
     ("920160", 5),
