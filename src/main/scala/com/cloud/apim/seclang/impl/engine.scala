@@ -349,7 +349,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
       lastRuleId = r.id.orElse(lastRuleId)
       val isLast = rules.last == r
       if (allMatched) {
-        val matched = evalRule(r, lastRuleId, ctx, debug = lastRuleId.exists(id => config.debugRules.contains(id))) { (_, _) =>
+        val matched = evalRule(r, lastRuleId, ctx, debug = lastRuleId.exists(id => config.debugRules.contains(id)), st) { (_, _) =>
           // TODO: implement actions: https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29#actions
           val actionsList = r.actions.toList.flatMap(_.actions)
           val msg = actionsList.collectFirst {
@@ -387,7 +387,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
           if (isLast) {
             st = st.copy(events = MatchEvent(lastRuleId, msg, phase, Json.stringify(r.json)) :: events ++ st.events)
           } else {
-            //events = events :+ MatchEvent(lastRuleId, msg, phase, Json.stringify(r.json))
+            events = events :+ MatchEvent(lastRuleId, msg, phase, Json.stringify(r.json))
           }
           st = performActions(lastRuleId.getOrElse(0), actionsList, phase, ctx, st, collectedMsg, addLogData, isLast)
         }
@@ -417,7 +417,8 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
     }
   }
 
-  private def evalRule(rule: SecRule, lastRuleId: Option[Int], ctx: RequestContext, debug: Boolean)(f: (String, String) => Unit): Boolean = {
+  private def evalRule(rule: SecRule, lastRuleId: Option[Int], ctx: RequestContext, debug: Boolean, st: RuntimeState)(f: (String, String) => Unit): Boolean = {
+    //println(s"eval rule ${rule.id} - ${lastRuleId} - ${st.mode}")
     // 1) extract values from variables
     val negatedVariables: List[(String, List[String])] = rule.variables.negatedVariables.map {
       case v @ Variable.Simple(name) => (name, resolveVariable(v, false, true, ctx, debug))
@@ -483,6 +484,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
       println("---------------------------------------------------------")
       println(s"debug for rule: ${lastRuleId.getOrElse(0)}")
       println("---------------------------------------------------------")
+      println(s"ctx: \n${Json.prettyPrint(ctx.json)}\n")
       println(s"variables: \n${rule.variables.variables.map {
         case Variable.Simple(name) if rule.variables.count => s"&${name}"
         case Variable.Simple(name) => name
@@ -561,7 +563,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
               //ctx.headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
               ctx.headers.toList.flatMap(_._2)
             case Some(h) if h.startsWith("/") && h.endsWith("/") =>
-              val r = h.r
+              val r = h.substring(1, h.length - 1).r
               ctx.headers.collect {
                 case (k, vs) if r.findFirstIn(k).isDefined => vs
               }.flatten.toList
@@ -584,7 +586,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
               // headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
               headers.toList.flatMap(_._2)
             case Some(h) if h.startsWith("/") && h.endsWith("/") =>
-              val r = h.r
+              val r = h.substring(1, h.length - 1).r
               headers.collect {
                 case (k, vs) if r.findFirstIn(k).isDefined => vs
               }.flatten.toList
@@ -623,7 +625,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
         case "ENV" => key match {
           case None => List.empty
           case Some(h) if h.startsWith("/") && h.endsWith("/") =>
-            val r = h.r
+            val r = h.substring(1, h.length - 1).r
             envMap.collect {
               case (k, vs) if r.findFirstIn(k).isDefined => vs
             }.toList
@@ -645,7 +647,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
           case None =>
             ctx.cookies.toList.flatMap { case (k, vs) => vs }//.map(v => s"$k: $v") }
           case Some(h) if h.startsWith("/") && h.endsWith("/") =>
-            val r = h.r
+            val r = h.substring(1, h.length - 1).r
             ctx.cookies.collect {
               case (k, vs) if r.findFirstIn(k).isDefined => vs
             }.flatten.toList
@@ -731,7 +733,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
                   //headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
                   headers.toList.flatMap(_._2)
                 case Some(h) if h.startsWith("/") && h.endsWith("/") =>
-                  val r = h.r
+                  val r = h.substring(1, h.length - 1).r
                   headers.collect {
                     case (k, vs) if r.findFirstIn(k).isDefined => vs
                   }.flatten.toList
@@ -751,7 +753,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
               // headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
               headers.toList.flatMap(_._2)
             case Some(h) if h.startsWith("/") && h.endsWith("/") =>
-              val r = h.r
+              val r = h.substring(1, h.length - 1).r
               headers.collect {
                 case (k, vs) if r.findFirstIn(k).isDefined => vs
               }.flatten.toList
@@ -771,7 +773,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
                   //headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
                   headers.toList.flatMap(_._2)
                 case Some(h) if h.startsWith("/") && h.endsWith("/") =>
-                  val r = h.r
+                  val r = h.substring(1, h.length - 1).r
                   headers.collect {
                     case (k, vs) if r.findFirstIn(k).isDefined => vs
                   }.flatten.toList

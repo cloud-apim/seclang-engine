@@ -1267,6 +1267,23 @@ final case class RequestContext(
   def isWwwFormUrlEncoded: Boolean = {
     contentType.contains("application/www-form-urlencoded") || contentType.contains("application/x-www-form-urlencoded")
   }
+  def json: JsValue = Json.obj(
+    "requestId" -> requestId,
+    "method" -> method,
+    "uri" -> uri,
+    "headers" -> headers,
+    "cookies" -> cookies,
+    "query" -> query,
+    "body" -> body,
+    "status" -> status,
+    "statusTxt" -> statusTxt,
+    "startTime" -> startTime,
+    "remoteAddr" -> remoteAddr,
+    "remotePort" -> remotePort,
+    "protocol" -> protocol,
+    "secure" -> secure,
+    "variables" -> variables,
+  )
 }
 
 sealed trait Disposition {
