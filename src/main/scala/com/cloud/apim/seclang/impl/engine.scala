@@ -954,7 +954,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
     case Operator.Lt(x) => scala.util.Try(value.toInt).getOrElse(0) < scala.util.Try(evalTxExpressions(x).toInt).getOrElse(0)
     case Operator.StrMatch(x) => value.toLowerCase.contains(evalTxExpressions(x).toLowerCase)
     case Operator.Within(x) =>
-      val expr = evalTxExpressions(x).toLowerCase()
+      val expr = evalTxExpressions(x).toLowerCase().split(" ")
       val v = value.toLowerCase
       if (v.isEmpty) {
         return false

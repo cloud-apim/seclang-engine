@@ -621,9 +621,7 @@ class NegatedVariableTest extends munit.FunSuite {
         |    severity:'CRITICAL',\
         |    setvar:'tx.inbound_anomaly_score_pl4=+%{tx.critical_anomaly_score}'"
         |""".stripMargin).right.get
-    //parsed.statements.foreach { stmt => println(Json.prettyPrint(stmt.json))}
     val compiled = SecLang.compile(parsed)
-    //compiled.itemsByPhase(1).foreach(it => it.asInstanceOf[RuleChain].rules.foreach(r =>  println(Json.prettyPrint(r.json))))
     val engine = SecLang.engine(compiled,SecRulesEngineConfig.default.copy(debugRules = List(920274)))
     val ctx = CRSTestUtils.requestContext(Json.parse(
       s"""{
@@ -645,8 +643,8 @@ class NegatedVariableTest extends munit.FunSuite {
 
 class SecLangCRSTest extends munit.FunSuite {
 
-  private val testOnly: List[(String, Int)] = List(("920274", 5))
-  // private val testOnly: List[(String, Int)] = List.empty
+  //private val testOnly: List[(String, Int)] = List(("920430", 6))
+  private val testOnly: List[(String, Int)] = List.empty
   private val ignoreTests: List[(String, Int)] = List( // TODO: fix later
     ("920160", 5),
     ("920250", 1),
