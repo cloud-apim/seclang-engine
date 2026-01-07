@@ -34,7 +34,7 @@ class SecLangEngineFactory(
     val programs = programsAndFiles.map(_._1)
     val files = programsAndFiles.map(_._2).flatMap(_.toList).toMap
     val program = ComposedCompiledProgram(programs)
-    val env = integration.getEnv()
+    val env = integration.getEnv
     new SecLangEngine(program, config: SecLangEngineConfig, files, env).evaluate(ctx, phases)
   }
 }

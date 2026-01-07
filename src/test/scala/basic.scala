@@ -38,7 +38,7 @@ object Stats {
 
 class SecLangBasicTest extends munit.FunSuite {
 
-  test("antlr".ignore) {
+  test("antlr") {
     val rules =
       """
         |SecRule ARGS|ARGS_NAMES|REQUEST_COOKIES|REQUEST_COOKIES_NAMES|REQUEST_BODY|REQUEST_HEADERS|XML:/*|XML://@* \
@@ -66,7 +66,7 @@ class SecLangBasicTest extends munit.FunSuite {
     assert(res.isRight, "rules has been parsed")
   }
 
-  test("antlr_crs".ignore) {
+  test("antlr_crs") {
     val client = HttpClient.newHttpClient()
     println("fetching files")
     val files: Map[String, String] = List(
@@ -350,7 +350,7 @@ class SecLangBasicTest extends munit.FunSuite {
     assertEquals(passing_res_2.disposition, Continue)
   }
 
-  test("Get actual negated variables".ignore) {
+  test("Get actual negated variables") {
     val parsed = SecLang.parse(
       """
         |SecRule REQUEST_HEADERS|!REQUEST_HEADERS:User-Agent|!REQUEST_HEADERS:Referer|!REQUEST_HEADERS:Cookie|!REQUEST_HEADERS:Sec-Fetch-User|!REQUEST_HEADERS:Sec-CH-UA|!REQUEST_HEADERS:Sec-CH-UA-Mobile "@validateByteRange 32,34,38,42-59,61,65-90,95,97-122" \

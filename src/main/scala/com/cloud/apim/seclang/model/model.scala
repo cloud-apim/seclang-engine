@@ -1390,12 +1390,8 @@ final case class SimpleCompiledProgram(
   mode: Option[EngineMode],
   hash: String,
 ) extends CompiledProgram {
-  def itemsForPhase(phase: Int): Vector[CompiledItem] = {
-    itemsByPhase.getOrElse(phase, Vector.empty)
-  }
-  def containsRemovedRuleId(id: Int): Boolean = {
-    itemsByPhase.contains(id)
-  }
+  def itemsForPhase(phase: Int): Vector[CompiledItem] = itemsByPhase.getOrElse(phase, Vector.empty)
+  def containsRemovedRuleId(id: Int): Boolean = removedRuleIds.contains(id)
 }
 
 final case class ComposedCompiledProgram(programs: List[CompiledProgram]) extends CompiledProgram {
@@ -1410,7 +1406,7 @@ trait SecLangEngineFactoryIntegration {
   def logInfo(msg: String): Unit
   def logAudit(msg: String): Unit
   def logError(msg: String): Unit
-  def getEnv(): Map[String, String]
+  def getEnv: Map[String, String]
 }
 
 class DefaultSecLangEngineFactoryIntegration extends SecLangEngineFactoryIntegration {
