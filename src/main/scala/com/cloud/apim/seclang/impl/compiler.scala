@@ -23,7 +23,7 @@ object Compiler {
     // flatten into CompiledItem with chain logic
     val items = scala.collection.mutable.ArrayBuffer.empty[CompiledItem]
     val it = statements.iterator
-    var mode: EngineMode = EngineMode.On
+    var mode: Option[EngineMode] = None
 
     while (it.hasNext) {
       it.next() match {
@@ -81,7 +81,7 @@ object Compiler {
         case EngineConfigDirective(_, DefaultAction(_)) => () // already handled
         case EngineConfigDirective(_, ComponentSignature(_)) => () // already handled
         case EngineConfigDirective(_, ConfigDirective.RuleEngine(expr)) => {
-          mode = EngineMode(expr)
+          mode = Some(EngineMode(expr))
         }
         case s: EngineConfigDirective => {
           // println(s.directive.getClass.getSimpleName)
@@ -116,6 +116,6 @@ object Compiler {
         // TODO: support all statements here
     }
 
-    CompiledProgram(byPhase.toMap, removed, mode, configuration.hash)
+    SimpleCompiledProgram(byPhase.toMap, removed, mode, configuration.hash)
   }
 }

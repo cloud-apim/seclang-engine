@@ -1,10 +1,10 @@
 package com.cloud.apim.seclang.test
 
 import akka.util.ByteString
-import com.cloud.apim.seclang.impl.engine.SecRulesEngine
+import com.cloud.apim.seclang.impl.engine.SecLangEngine
 import com.cloud.apim.seclang.impl.utils.StatusCodes
 import com.cloud.apim.seclang.model.Disposition.{Block, Continue}
-import com.cloud.apim.seclang.model.{RequestContext, RuleChain, SecRulesEngineConfig}
+import com.cloud.apim.seclang.model.{CompiledItem, RequestContext, RuleChain, SecLangEngineConfig}
 import com.cloud.apim.seclang.scaladsl.SecLang
 import play.api.libs.json._
 
@@ -41,7 +41,7 @@ object CRSTestUtils {
     Files.readString(file.toPath)
   }
 
-  def setupCRSEngine(debugRules: List[Int]): SecRulesEngine = {
+  def setupCRSEngine(debugRules: List[Int]): SecLangEngine = {
     val files: Map[String, String] = List(
       "asp-dotnet-errors.data",
       "iis-errors.data",
@@ -131,7 +131,7 @@ object CRSTestUtils {
         |""".stripMargin
     val config = SecLang.parse(finalRules).right.get
     val program = SecLang.compile(config)
-    SecLang.engine(program, SecRulesEngineConfig.default.copy(debugRules = debugRules), files = files)
+    SecLang.engine(program, SecLangEngineConfig.default.copy(debugRules = debugRules), files = files)
   }
 
   private def parseQueryString(qs: String): Map[String, List[String]] = {
@@ -611,7 +611,14 @@ class SecLangCRSTest extends munit.FunSuite {
   private val dev = true
   private var failingTests = List.empty[JsObject]
   private var times = List.empty[Long]
-  private val allRules = engine.program.itemsByPhase.toSeq.flatMap(_._2).collect {
+  private val items: Seq[CompiledItem] = (
+    engine.program.itemsForPhase(1) ++
+      engine.program.itemsForPhase(2) ++
+      engine.program.itemsForPhase(3) ++
+      engine.program.itemsForPhase(4) ++
+      engine.program.itemsForPhase(5)
+  )
+  private val allRules = items.collect {
     case RuleChain(rules) => rules
   }.flatten
 

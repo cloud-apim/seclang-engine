@@ -1,9 +1,7 @@
 
 package com.cloud.apim.seclang.impl.engine
 
-import akka.util.ByteString
 import com.cloud.apim.libinjection.LibInjection
-import com.cloud.apim.seclang.impl.compiler._
 import com.cloud.apim.seclang.impl.utils._
 import com.cloud.apim.seclang.model.Action.CtlAction
 import com.cloud.apim.seclang.model._
@@ -21,7 +19,7 @@ import scala.concurrent.duration.Duration
 import scala.util._
 import scala.util.matching.Regex
 
-final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineConfig, files: Map[String, String] = Map.empty, env: Map[String, String] = Map.empty) {
+final class SecLangEngine(val program: CompiledProgram, config: SecLangEngineConfig, files: Map[String, String] = Map.empty, env: Map[String, String] = Map.empty) {
 
   private def logDebug(msg: String): Unit = println(s"[Debug]: $msg")
   private def logInfo(msg: String): Unit = println(s"[Info]: $msg")
@@ -30,7 +28,8 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
 
   // runtime disables (ctl:ruleRemoveById)
   def evaluate(ctx: RequestContext, phases: List[Int] = List(1, 2)): EngineResult = {
-    if (program.mode.isOff) {
+    val pmode = program.mode.getOrElse(EngineMode.On)
+    if (pmode.isOff) {
       EngineResult(Disposition.Continue, List.empty)
     } else {
       val txMap = new TrieMap[String, String]()
@@ -41,7 +40,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
       }
       val uidRef = new AtomicReference[String](null)
       val init = RuntimeState(
-        mode = program.mode,
+        mode = pmode,
         disabledIds = Set.empty,
         events = Nil,
         txMap = txMap,
@@ -64,7 +63,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
   }
 
   private def runPhase(phase: Int, ctx: RequestContext, st0: RuntimeState): (Disposition, RuntimeState) = {
-    val items = program.itemsByPhase.getOrElse(phase, Vector.empty)
+    val items = program.itemsForPhase(phase)
 
     // build marker index for this phase stream
     val markerIndex: Map[String, Int] = items.zipWithIndex.collect {
@@ -94,7 +93,7 @@ final class SecRulesEngine(val program: CompiledProgram, config: SecRulesEngineC
         case RuleChain(rules) =>
           // if rule id disabled runtime, skip
           val chainId = rules.last.id.orElse(rules.head.id)
-          val ridDisabled = chainId.exists(st.disabledIds.contains) || chainId.exists(program.removedRuleIds.contains)
+          val ridDisabled = chainId.exists(st.disabledIds.contains) || chainId.exists(program.containsRemovedRuleId)
 
           if (ridDisabled) {
             i += 1

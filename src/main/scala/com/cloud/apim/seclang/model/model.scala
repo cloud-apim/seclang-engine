@@ -1,7 +1,7 @@
 package com.cloud.apim.seclang.model
 
 import akka.util.ByteString
-import com.cloud.apim.seclang.impl.utils.StatusCodes
+import com.cloud.apim.seclang.impl.utils.{HashUtilsFast, StatusCodes}
 import play.api.libs.json._
 
 import java.util.concurrent.atomic.AtomicReference
@@ -1340,10 +1340,10 @@ final case class EngineResult(
 }
 final case class RuntimeState(mode: EngineMode, disabledIds: Set[Int], events: List[MatchEvent], txMap: TrieMap[String, String], envMap: TrieMap[String, String], uidRef: AtomicReference[String])
 
-final case class SecRulesEngineConfig(debugRules: List[Int])
+final case class SecLangEngineConfig(debugRules: List[Int])
 
-object SecRulesEngineConfig {
-  val default = SecRulesEngineConfig(debugRules = List.empty)
+object SecLangEngineConfig {
+  val default = SecLangEngineConfig(debugRules = List.empty)
 }
 
 sealed trait CompiledItem
@@ -1377,9 +1377,52 @@ object EngineMode {
   }
 }
 
-final case class CompiledProgram(
-                                  itemsByPhase: Map[Int, Vector[CompiledItem]],
-                                  removedRuleIds: Set[Int],
-                                  mode: EngineMode,
-                                  hash: String,
-                                )
+sealed trait CompiledProgram {
+  def mode: Option[EngineMode]
+  def hash: String
+  def itemsForPhase(phase: Int): Vector[CompiledItem]
+  def containsRemovedRuleId(id: Int): Boolean
+}
+
+final case class SimpleCompiledProgram(
+  itemsByPhase: Map[Int, Vector[CompiledItem]],
+  removedRuleIds: Set[Int],
+  mode: Option[EngineMode],
+  hash: String,
+) extends CompiledProgram {
+  def itemsForPhase(phase: Int): Vector[CompiledItem] = {
+    itemsByPhase.getOrElse(phase, Vector.empty)
+  }
+  def containsRemovedRuleId(id: Int): Boolean = {
+    itemsByPhase.contains(id)
+  }
+}
+
+final case class ComposedCompiledProgram(programs: List[CompiledProgram]) extends CompiledProgram {
+  def mode: Option[EngineMode] = programs.flatMap(_.mode).lastOption
+  def hash: String = HashUtilsFast.sha512Hex(programs.map(_.hash).mkString("."))
+  def itemsForPhase(phase: Int): Vector[CompiledItem] = programs.flatMap(_.itemsForPhase(phase)).toVector
+  def containsRemovedRuleId(id: Int): Boolean = programs.exists(_.containsRemovedRuleId(id))
+}
+
+trait SecLangEngineFactoryIntegration {
+  def logDebug(msg: String): Unit
+  def logInfo(msg: String): Unit
+  def logAudit(msg: String): Unit
+  def logError(msg: String): Unit
+  def getEnv(): Map[String, String]
+}
+
+class DefaultSecLangEngineFactoryIntegration extends SecLangEngineFactoryIntegration {
+  def logDebug(msg: String): Unit = println(s"[Debug]: $msg")
+  def logInfo(msg: String): Unit = println(s"[Info]: $msg")
+  def logAudit(msg: String): Unit = println(s"[Audit]: $msg")
+  def logError(msg: String): Unit = println(s"[Error]: $msg")
+  def getEnv(): Map[String, String] = sys.env
+}
+
+object DefaultSecLangEngineFactoryIntegration {
+  def apply(): DefaultSecLangEngineFactoryIntegration = new DefaultSecLangEngineFactoryIntegration
+}
+
+final case class SecLangPreset(name: String, program: CompiledProgram, files: Map[String, String])

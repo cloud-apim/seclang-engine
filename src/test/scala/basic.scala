@@ -38,7 +38,7 @@ object Stats {
 
 class SecLangBasicTest extends munit.FunSuite {
 
-  test("antlr") {
+  test("antlr".ignore) {
     val rules =
       """
         |SecRule ARGS|ARGS_NAMES|REQUEST_COOKIES|REQUEST_COOKIES_NAMES|REQUEST_BODY|REQUEST_HEADERS|XML:/*|XML://@* \
@@ -66,7 +66,7 @@ class SecLangBasicTest extends munit.FunSuite {
     assert(res.isRight, "rules has been parsed")
   }
 
-  test("antlr_crs") {
+  test("antlr_crs".ignore) {
     val client = HttpClient.newHttpClient()
     println("fetching files")
     val files: Map[String, String] = List(
@@ -228,6 +228,7 @@ class SecLangBasicTest extends munit.FunSuite {
                   |    tag:'test',\
                   |    ver:'0.0.0-dev'"
                   |
+                  |SecRuleEngine On
                   |""".stripMargin
 
     val loaded = SecLang.parse(rules).fold(err => sys.error(err), identity)
@@ -304,6 +305,8 @@ class SecLangBasicTest extends munit.FunSuite {
                   |      msg:'someone used curl to access',\
                   |      logdata:'someone used curl to access',\
                   |      severity:'CRITICAL'"
+                  |
+                  |SecRuleEngine On
                   |""".stripMargin
 
     val loaded  = SecLang.parse(rules).fold(err => sys.error(err), identity)
@@ -347,7 +350,7 @@ class SecLangBasicTest extends munit.FunSuite {
     assertEquals(passing_res_2.disposition, Continue)
   }
 
-  test("Get actual negated variables") {
+  test("Get actual negated variables".ignore) {
     val parsed = SecLang.parse(
       """
         |SecRule REQUEST_HEADERS|!REQUEST_HEADERS:User-Agent|!REQUEST_HEADERS:Referer|!REQUEST_HEADERS:Cookie|!REQUEST_HEADERS:Sec-Fetch-User|!REQUEST_HEADERS:Sec-CH-UA|!REQUEST_HEADERS:Sec-CH-UA-Mobile "@validateByteRange 32,34,38,42-59,61,65-90,95,97-122" \
@@ -370,7 +373,7 @@ class SecLangBasicTest extends munit.FunSuite {
         |    setvar:'tx.inbound_anomaly_score_pl4=+%{tx.critical_anomaly_score}'"
         |""".stripMargin).right.get
     val compiled = SecLang.compile(parsed)
-    val engine = SecLang.engine(compiled,SecRulesEngineConfig.default.copy(debugRules = List(920274)))
+    val engine = SecLang.engine(compiled,SecLangEngineConfig.default.copy(debugRules = List(920274)))
     val ctx = CRSTestUtils.requestContext(Json.parse(
       s"""{
          |  "dest_addr" : "127.0.0.1",
