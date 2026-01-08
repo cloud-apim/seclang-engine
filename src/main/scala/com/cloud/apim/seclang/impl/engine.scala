@@ -342,7 +342,7 @@ final class SecLangEngine(val program: CompiledProgram, config: SecLangEngineCon
       println("---------------------------------------------------------")
       println(s"debug for rule: ${lastRuleId.getOrElse(0)}")
       println("---------------------------------------------------------")
-      println(s"ctx: \n${Json.prettyPrint(ctx.json)}\n")
+      //println(s"ctx: \n${Json.prettyPrint(ctx.json)}\n")
       println(s"variables: \n${rule.variables.variables.map {
         case Variable.Simple(name) if rule.variables.count => s"&${name}"
         case Variable.Simple(name) => name

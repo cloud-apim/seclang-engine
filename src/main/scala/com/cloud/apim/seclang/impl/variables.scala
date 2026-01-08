@@ -225,11 +225,10 @@ object EngineVariables {
         ctx.contentType
           .map(_.toLowerCase)
           .collect {
-            case ct if ct.startsWith("application/x-www-form-urlencoded") => "URLENCODED"
-            case ct if ct.startsWith("multipart/form-data")               => "MULTIPART"
-            case ct if ct.startsWith("application/xml") ||
-              ct.startsWith("text/xml")                           => "XML"
-            case ct if ct.startsWith("application/json")                   => "JSON"
+            case ct if ct.startsWith("application/x-www-form-urlencoded")            => "URLENCODED"
+            case ct if ct.startsWith("multipart/form-data")                          => "MULTIPART"
+            case ct if ct.startsWith("application/xml") || ct.startsWith("text/xml") => "XML"
+            case ct if ct.startsWith("application/json")                             => "JSON"
           }.toList
       }
       case "MULTIPART_PART_HEADERS" => {

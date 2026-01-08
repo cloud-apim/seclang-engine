@@ -27,7 +27,10 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
       val variables = visitVariables(ctx.variables())
       val operator = visitOperator(ctx.operator())
       val actions = Option(ctx.actions()).map(visitActions)
-      SecRule(commentBlock, variables, operator, actions)
+      val actionRaw = Option(ctx.actions()).map(_.getText).getOrElse("--").split(",").mkString(",\\\n  ")
+      val operatorRaw = s"${Option(ctx.operator().operator_not()).map(_.getText).getOrElse("")}@${ctx.operator().operator_name().getText} ${Option(ctx.operator().operator_value()).map(_.getText).getOrElse("")}"
+      val raw = s"""SecRule ${ctx.variables().getText} \"${operatorRaw}\" ${actionRaw}"""
+      SecRule(commentBlock, variables, operator, actions, raw)
 
     } else if (ctx.rule_script_directive() != null && ctx.file_path() != null) {
       val filePath = ctx.file_path().getText
@@ -81,7 +84,7 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
       val stmt = ctxDir.getText.split("\"").headOption.getOrElse("--")
       if (stmt == "SecAction") {
         val actions = visitActions(ctxDir.actions())
-        SecAction(commentBlock, actions)
+        SecAction(commentBlock, actions, s"SecAction ${Option(ctx.actions()).map(_.getText).getOrElse("--")}")
       } else {
         val directive = visitEngineConfigDirective(ctx.engine_config_directive())
         EngineConfigDirective(commentBlock, directive)

@@ -599,7 +599,7 @@ object CRSTestUtils {
 
 class SecLangCRSTest extends munit.FunSuite {
 
-  //private val testOnly: List[(String, Int)] = List(("932140", 10))
+  //private val testOnly: List[(String, Int)] = List(("920540", 1))
   private val testOnly: List[(String, Int)] = List.empty
   private val ignoreTests: List[(String, Int)] = List( // TODO: fix later
     ("920160", 5),
@@ -619,11 +619,18 @@ class SecLangCRSTest extends munit.FunSuite {
       engine.program.itemsForPhase(5)
   )
   private val allRules = items.collect {
-    case RuleChain(rules) => rules
-  }.flatten
+    case rc @ RuleChain(rules) => rc
+  }
 
   def writeStats(): Unit = {
     if (testOnly.isEmpty) {
+
+      val rounds = counter.get()
+      val total = times.sum
+      val min = times.min
+      val max = times.max
+      val avg = total / rounds
+
       val document = Json.obj(
         "global_stats" -> Json.obj(
           "failure_percentage" -> ((failures.get() * 100.0) / counter.get()),
@@ -632,24 +639,19 @@ class SecLangCRSTest extends munit.FunSuite {
           "success_tests" -> (counter.get() - failures.get()),
           "failure_tests" -> failures.get(),
         ),
+        "time_stats" -> Json.obj(
+          "calls" -> rounds,
+          "total_time_ms" -> Duration.fromNanos(total).toMillis,
+          "min_time_ms" -> Duration.fromNanos(min).toMillis,
+          "max_time_ms" -> Duration.fromNanos(max).toMillis,
+          "avg_time_ms" -> Duration.fromNanos(avg).toMillis,
+        ),
         "test_failures" -> JsArray(failingTests)
       )
       println(Json.prettyPrint((document \ "global_stats").as[JsObject]))
+      println(Json.prettyPrint((document \ "time_stats").as[JsObject]))
       Files.writeString(new File("crs-tests-status.json").toPath, Json.prettyPrint(document))
     }
-    def fmt(ns: Long): String =
-      Duration.fromNanos(ns).toMillis + " ms"
-
-    val rounds = counter.get()
-    val total = times.sum
-    val min = times.min
-    val max = times.max
-    val avg = total / rounds
-    println(s"Runs        : $rounds")
-    println(s"Total time  : ${fmt(total)}")
-    println(s"Min         : ${fmt(min)}")
-    println(s"Max         : ${fmt(max)}")
-    println(s"Average     : ${fmt(avg)}")
   }
 
   def execTest(rule: String, path: String): Unit = {
@@ -736,6 +738,9 @@ class SecLangCRSTest extends munit.FunSuite {
               println(s"      nothing checked for test ${testId} ")
               cause = s"nothing checked for test ${testId}"
             }
+            val testedRule = allRules.find(_.id.contains(rule.toInt)).map { rc =>
+              JsArray(rc.rules.map(s => JsString(s.raw)))
+            }.getOrElse(JsNull).as[JsValue]
             if (!ok) {
               val descr = desc.getOrElse("--")
               failingTests = failingTests :+ Json.obj(
@@ -746,13 +751,20 @@ class SecLangCRSTest extends munit.FunSuite {
                 "cause" -> cause,
                 "result" -> result.json,
                 "test" -> test,
-                "tested_rule" -> allRules.find(_.id.contains(rule.toInt)).map(_.json).getOrElse(JsNull).as[JsValue]
+                "tested_rule" -> testedRule
               )
             }
             if (!ok && testOnly.nonEmpty && testOnly.contains((rule, testId))) {
               result.displayPrintln()
               println(Json.prettyPrint(test))
-              println(Json.prettyPrint(Json.parse(result.events.filter(_.msg.isDefined).lastOption.map(_.raw).getOrElse("{}"))))
+              //println(Json.prettyPrint(Json.parse(result.events.filter(_.msg.isDefined).lastOption.map(_.raw).getOrElse("{}"))))
+              testedRule.asOpt[Seq[String]].foreach { seq =>
+                seq.zipWithIndex.foreach {
+                  case (rule, i) =>
+                    val tab = (0 until i).map(_ => "    ").mkString("")
+                    println(s"${tab}${rule.split("\n").mkString(s"\n${tab}")}")
+                }
+              }
             }
             if (!dev) assert(checked, s"nothing checked for test ${testId}")
           }

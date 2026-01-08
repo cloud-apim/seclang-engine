@@ -205,31 +205,32 @@ class SecLangBasicTest extends munit.FunSuite {
 
   test("simple rules") {
 
-    val rules = """
-                  |SecRule REQUEST_HEADERS:User-Agent "@pm firefox" \
-                  |    "id:00001,\
-                  |    phase:1,\
-                  |    block,\
-                  |    t:none,t:lowercase,\
-                  |    msg:'someone used firefox to access',\
-                  |    logdata:'someone used firefox to access',\
-                  |    tag:'test',\
-                  |    ver:'0.0.0-dev',\
-                  |    status:403,\
-                  |    severity:'CRITICAL'"
-                  |
-                  |SecRule REQUEST_URI "@contains /health" \
-                  |    "id:00002,\
-                  |    phase:1,\
-                  |    pass,\
-                  |    t:none,t:lowercase,\
-                  |    msg:'someone called /health',\
-                  |    logdata:'someone called /health',\
-                  |    tag:'test',\
-                  |    ver:'0.0.0-dev'"
-                  |
-                  |SecRuleEngine On
-                  |""".stripMargin
+    val rules =
+      """
+        |SecRule REQUEST_HEADERS:User-Agent "@pm firefox" \
+        |    "id:00001,\
+        |    phase:1,\
+        |    block,\
+        |    t:none,t:lowercase,\
+        |    msg:'someone used firefox to access',\
+        |    logdata:'someone used firefox to access',\
+        |    tag:'test',\
+        |    ver:'0.0.0-dev',\
+        |    status:403,\
+        |    severity:'CRITICAL'"
+        |
+        |SecRule REQUEST_URI "@contains /health" \
+        |    "id:00002,\
+        |    phase:1,\
+        |    pass,\
+        |    t:none,t:lowercase,\
+        |    msg:'someone called /health',\
+        |    logdata:'someone called /health',\
+        |    tag:'test',\
+        |    ver:'0.0.0-dev'"
+        |
+        |SecRuleEngine On
+        |""".stripMargin
 
     val loaded = SecLang.parse(rules).fold(err => sys.error(err), identity)
     val program = SecLang.compile(loaded)
@@ -267,51 +268,52 @@ class SecLangBasicTest extends munit.FunSuite {
   }
 
   test("chain of rules") {
-    val rules = """
-                  |SecRule REQUEST_HEADERS:User-Agent "@pm firefox" \
-                  |    "id:00001,\
-                  |    phase:1,\
-                  |    block,\
-                  |    t:none,t:lowercase,\
-                  |    msg:'someone used firefox to access',\
-                  |    logdata:'someone used firefox to access',\
-                  |    tag:'test',\
-                  |    ver:'0.0.0-dev',\
-                  |    severity:'CRITICAL'"
-                  |
-                  |SecRule REQUEST_URI "@contains /health" \
-                  |    "id:00002,\
-                  |    phase:1,\
-                  |    pass,\
-                  |    t:none,t:lowercase,\
-                  |    msg:'someone called /health',\
-                  |    logdata:'someone called /health',\
-                  |    tag:'test',\
-                  |    ver:'0.0.0-dev'"
-                  |
-                  |SecRule REQUEST_URI "@rx ^/admin" \
-                  |    "id:00003,\
-                  |    phase:1,\
-                  |    pass,\
-                  |    t:none,t:lowercase,\
-                  |    msg:'request on /admin',\
-                  |    nolog,\
-                  |    tag:'test',\
-                  |    ver:'0.0.0-dev',\
-                  |    chain"
-                  |    SecRule REQUEST_HEADERS:User-Agent "@rx curl" \
-                  |      "block,\
-                  |      t:none,t:lowercase,\
-                  |      msg:'someone used curl to access',\
-                  |      logdata:'someone used curl to access',\
-                  |      severity:'CRITICAL'"
-                  |
-                  |SecRuleEngine On
-                  |""".stripMargin
+    val rules =
+      """
+        |SecRule REQUEST_HEADERS:User-Agent "@pm firefox" \
+        |    "id:00001,\
+        |    phase:1,\
+        |    block,\
+        |    t:none,t:lowercase,\
+        |    msg:'someone used firefox to access',\
+        |    logdata:'someone used firefox to access',\
+        |    tag:'test',\
+        |    ver:'0.0.0-dev',\
+        |    severity:'CRITICAL'"
+        |
+        |SecRule REQUEST_URI "@contains /health" \
+        |    "id:00002,\
+        |    phase:1,\
+        |    pass,\
+        |    t:none,t:lowercase,\
+        |    msg:'someone called /health',\
+        |    logdata:'someone called /health',\
+        |    tag:'test',\
+        |    ver:'0.0.0-dev'"
+        |
+        |SecRule REQUEST_URI "@rx ^/admin" \
+        |    "id:00003,\
+        |    phase:1,\
+        |    pass,\
+        |    t:none,t:lowercase,\
+        |    msg:'request on /admin',\
+        |    nolog,\
+        |    tag:'test',\
+        |    ver:'0.0.0-dev',\
+        |    chain"
+        |    SecRule REQUEST_HEADERS:User-Agent "@rx curl" \
+        |      "block,\
+        |      t:none,t:lowercase,\
+        |      msg:'someone used curl to access',\
+        |      logdata:'someone used curl to access',\
+        |      severity:'CRITICAL'"
+        |
+        |SecRuleEngine On
+        |""".stripMargin
 
-    val loaded  = SecLang.parse(rules).fold(err => sys.error(err), identity)
+    val loaded = SecLang.parse(rules).fold(err => sys.error(err), identity)
     val program = SecLang.compile(loaded)
-    val engine  = SecLang.engine(program)
+    val engine = SecLang.engine(program)
     val failing_ctx_1 = RequestContext(
       method = "GET",
       uri = "/admin",
@@ -373,7 +375,7 @@ class SecLangBasicTest extends munit.FunSuite {
         |    setvar:'tx.inbound_anomaly_score_pl4=+%{tx.critical_anomaly_score}'"
         |""".stripMargin).right.get
     val compiled = SecLang.compile(parsed)
-    val engine = SecLang.engine(compiled,SecLangEngineConfig.default.copy(debugRules = List(920274)))
+    val engine = SecLang.engine(compiled, SecLangEngineConfig.default.copy(debugRules = List(920274)))
     val ctx = CRSTestUtils.requestContext(Json.parse(
       s"""{
          |  "dest_addr" : "127.0.0.1",
@@ -389,5 +391,51 @@ class SecLangBasicTest extends munit.FunSuite {
          |}""".stripMargin))
     val res = engine.evaluate(ctx, List(1, 2, 3, 4))
     res.displayPrintln()
+  }
+}
+class SecRuleRawParsing extends munit.FunSuite {
+  test("rule raw") {
+
+    val rules =
+      """
+        |#
+        |# -=[ Rule Logic ]=-
+        |#
+        |# Check the number of range fields in the Range request header.
+        |#
+        |# An excessive number of Range request headers can be used to DoS a server.
+        |# The original CVE proposed an arbitrary upper limit of 5 range fields.
+        |#
+        |# Several clients are known to request PDF fields with up to 62 range
+        |# fields. Therefore the standard rule does not cover PDF files. This is
+        |# performed in two separate (stricter) siblings of this rule.
+        |#
+        |# 920200: PL2: Limit of 5 range header fields for all filenames outside of PDFs
+        |# 920201: PL2: Limit of 62 range header fields for PDFs
+        |# 920202: PL4: Limit of 5 range header fields for PDFs
+        |#
+        |# -=[ References ]=-
+        |# https://httpd.apache.org/security/CVE-2011-3192.txt
+        |
+        |
+        |SecRule REQUEST_HEADERS:User-Agent "@pm firefox" \
+        |    "id:00001,\
+        |    phase:1,\
+        |    block,\
+        |    t:none,t:lowercase,\
+        |    msg:'someone used firefox to access',\
+        |    logdata:'someone used firefox to access',\
+        |    tag:'test',\
+        |    ver:'0.0.0-dev',\
+        |    status:403,\
+        |    severity:'CRITICAL'"
+        |""".stripMargin
+
+    val loaded = SecLang.parse(rules).fold(err => sys.error(err), identity)
+    println("\n\n")
+    loaded.statements.collect {
+      case rule: SecRule => println(rule.raw)
+    }
+    println("\n\n")
   }
 }

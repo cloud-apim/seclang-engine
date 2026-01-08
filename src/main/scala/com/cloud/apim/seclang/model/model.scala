@@ -229,7 +229,8 @@ object SecRule {
       val variables = Variables.format.reads((json \ "variables").as[JsObject]).get
       val operator = Operator.format.reads((json \ "operator").as[JsObject]).get
       val actions = (json \ "actions").asOpt[JsObject].flatMap(Actions.format.reads(_).asOpt)
-      SecRule(commentBlock, variables, operator, actions)
+      val raw = (json \ "raw").asOpt[String].getOrElse("")
+      SecRule(commentBlock, variables, operator, actions, raw)
     } match {
       case Failure(ex) => 
         ex.printStackTrace()
@@ -244,8 +245,12 @@ final case class SecRule(
     commentBlock: Option[CommentBlock],
     variables: Variables,
     operator: Operator,
-    actions: Option[Actions]
+    actions: Option[Actions],
+    raw: String,
 ) extends Statement {
+
+  def noComments(): SecRule = copy(commentBlock = None)
+
   lazy val id: Option[Int] = actions.flatMap(_.actions.collectFirst {
     case Action.Id(v) => v
   })
@@ -273,6 +278,7 @@ final case class SecRule(
     "variables" -> variables.json,
     "operator" -> operator.json,
     "actions" -> actions.map(_.json).getOrElse(JsNull).as[JsValue],
+    "raw" -> raw,
   )
 }
 
@@ -311,7 +317,8 @@ object SecAction {
     def reads(json: JsValue): JsResult[SecAction] = Try {
       val commentBlock = (json \ "comment_block").asOpt[JsObject].flatMap(CommentBlock.format.reads(_).asOpt)
       val actions = Actions.format.reads((json \ "actions").as[JsObject]).get
-      SecAction(commentBlock, actions)
+      val raw = (json \ "raw").asOpt[String].getOrElse("")
+      SecAction(commentBlock, actions, raw)
     } match {
       case Failure(ex) => 
         ex.printStackTrace()
@@ -324,7 +331,8 @@ object SecAction {
 
 final case class SecAction(
     commentBlock: Option[CommentBlock],
-    actions: Actions
+    actions: Actions,
+    raw: String,
 ) extends Statement {
   lazy val id: Option[Int] = actions.actions.collectFirst {
     case Action.Id(v) => v
@@ -344,6 +352,7 @@ final case class SecAction(
     "phase" -> phase,
     "actions" -> actions.json,
     "comment_block" -> commentBlock.map(_.json).getOrElse(JsNull).as[JsValue],
+    "raw" -> raw,
   )
 }
 
@@ -1412,10 +1421,10 @@ final case class RequestContext(
     headers.get("Content-Length").orElse(headers.get("content-length")).flatMap(_.lastOption)
   }
   def isXwwwFormUrlEncoded: Boolean = {
-    contentType.contains("application/www-form-urlencoded") || contentType.contains("application/x-www-form-urlencoded")
+    contentType.exists(_.contains("application/www-form-urlencoded")) || contentType.exists(_.contains("application/x-www-form-urlencoded"))
   }
   def isWwwFormUrlEncoded: Boolean = {
-    contentType.contains("application/www-form-urlencoded") || contentType.contains("application/x-www-form-urlencoded")
+    contentType.exists(_.contains("application/www-form-urlencoded")) || contentType.exists(_.contains("application/x-www-form-urlencoded"))
   }
   def json: JsValue = Json.obj(
     "requestId" -> requestId,
