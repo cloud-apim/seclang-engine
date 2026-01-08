@@ -208,7 +208,9 @@ class SecLangFactoryTest extends munit.FunSuite {
 }
 ```
 
-## Missing transformation
+## Missing stuff
+
+### Missing transformations
 
 * `replaceNulls`
 * `parityEven7bit`
@@ -216,7 +218,7 @@ class SecLangFactoryTest extends munit.FunSuite {
 * `parityZero7bit`
 * `sqlHexDecode`
 
-## Missing variables
+### Missing variables
 
 * `AUTH_TYPE`
 * `FULL_REQUEST`
@@ -240,7 +242,7 @@ class SecLangFactoryTest extends munit.FunSuite {
 * `URLENCODED_ERROR`
 * `WEBAPPID`
 
-## Missing operators
+### Missing operators
 
 * `verifyCC`
 * `verifyCPF`
@@ -248,15 +250,3 @@ class SecLangFactoryTest extends munit.FunSuite {
 * `rbl`
 * `rxGlobal`
 * `fuzzyHash`
-
-## Missing actions
-
-## TODO
-
-- [-] Integration mechanism (logger, http fetch, fs read/write, env, etc)
-- [ ] Implement configuration options 
-  - [ ] Support json
-  - [ ] Support local fs
-  - [ ] Support remote fs (HTTP/HTTPS)
-  - [ ] Support lists of locations
-  - [ ] Support splitted definitions with cache (cached CRS + cached Global + cached user specific config)

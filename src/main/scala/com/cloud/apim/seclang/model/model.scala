@@ -7,7 +7,12 @@ import com.cloud.apim.seclang.impl.utils.{HashUtilsFast, StatusCodes}
 import com.github.blemale.scaffeine.Scaffeine
 import play.api.libs.json._
 
+import java.io.File
+import java.net.URI
+import java.net.http.{HttpClient, HttpRequest, HttpResponse}
+import java.nio.file.{Files, Path, Paths}
 import java.util.concurrent.atomic.AtomicReference
+import scala.collection.JavaConverters.asScalaIteratorConverter
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.FiniteDuration
 import scala.util.matching.Regex
@@ -48,7 +53,145 @@ object Configuration {
     
     def writes(config: Configuration): JsValue = config.json
   }
+
+  def fromSource(source: ConfigurationSource): Configuration = {
+    AntlrParser.parse(source.getRules()).right.get
+  }
+
+  def fromList(source: ConfigurationSourceList): Configuration = {
+    val src = source.sources.map(_.getRules()).mkString("\n")
+    AntlrParser.parse(src).right.get
+  }
 }
+
+trait FilesSource {
+  def getFiles(): Map[String, String]
+}
+case class FilesSourceList(sources: List[FilesSource])
+
+case class FsFilesSource(virtPath: String, path: String) extends FilesSource {
+  override def getFiles(): Map[String, String] = {
+    Map(virtPath -> Files.readString(new File(path).toPath))
+  }
+}
+
+case class FsScanFilesSource(dirPath: String, pattern: String) extends FilesSource {
+  private val regex: Regex = pattern.r
+  override def getFiles(): Map[String, String] = {
+    val root = Paths.get(dirPath)
+
+    if (!Files.exists(root) || !Files.isDirectory(root)) {
+      return Map.empty
+    }
+
+    val files: Seq[Path] =
+      Files.walk(root)
+        .iterator()
+        .asScala
+        .filter(p => Files.isRegularFile(p))
+        .filter(p => regex.findFirstIn(p.getFileName.toString).isDefined)
+        .toSeq
+        .sortBy(_.toString)
+
+    files
+      .map { path =>
+        (path.toAbsolutePath.toString.replaceFirst(dirPath, ""), Files.readString(path))
+      }.toMap
+  }
+}
+
+object HttpFilesSource {
+  val client = HttpClient.newHttpClient()
+}
+
+case class HttpFilesSource(virtPath: String, url: String) extends FilesSource {
+  override def getFiles(): Map[String, String] = {
+    val request = HttpRequest.newBuilder()
+      .uri(URI.create(url))
+      .GET()
+      .build()
+    val response = HttpConfigurationSource.client.send(
+      request,
+      HttpResponse.BodyHandlers.ofString()
+    )
+    Map(virtPath -> response.body())
+  }
+}
+
+case class RawFilesSource(virtPath: String, content: String) extends FilesSource {
+  override def getFiles(): Map[String, String] = Map(virtPath -> content)
+}
+
+case class RawFsFilesSource(files: Map[String, String]) extends FilesSource {
+  override def getFiles(): Map[String, String] = files
+}
+
+
+object ConfigurationSourceList {
+  val empty: ConfigurationSourceList = ConfigurationSourceList(List.empty)
+}
+
+case class ConfigurationSourceList(sources: List[ConfigurationSource])
+
+trait ConfigurationSource {
+  def getRules(): String
+  def asList(): ConfigurationSourceList = ConfigurationSourceList(List(this))
+}
+
+case class FileConfigurationSource(path: String) extends ConfigurationSource {
+  def getRules(): String = {
+    Files.readString(new File(path).toPath)
+  }
+}
+
+case class FileScanConfigurationSource(dirPath: String, pattern: String) extends ConfigurationSource {
+  private val regex: Regex = pattern.r
+  def getRules(): String = {
+    val root = Paths.get(dirPath)
+
+    if (!Files.exists(root) || !Files.isDirectory(root)) {
+      return ""
+    }
+
+    val files: Seq[Path] =
+      Files.walk(root)
+        .iterator()
+        .asScala
+        .filter(p => Files.isRegularFile(p))
+        .filter(p => regex.findFirstIn(p.getFileName.toString).isDefined)
+        .toSeq
+        .sortBy(_.toString)
+
+    files
+      .map { path =>
+        Files.readString(path)
+      }
+      .mkString("\n")
+  }
+}
+
+object HttpConfigurationSource {
+  val client = HttpClient.newHttpClient()
+}
+
+case class HttpConfigurationSource(url: String) extends ConfigurationSource {
+  override def getRules(): String = {
+    val request = HttpRequest.newBuilder()
+      .uri(URI.create(url))
+      .GET()
+      .build()
+    val response = HttpConfigurationSource.client.send(
+      request,
+      HttpResponse.BodyHandlers.ofString()
+    )
+    response.body()
+  }
+}
+
+case class RawConfigurationSource(rules: String) extends ConfigurationSource {
+  override def getRules(): String = rules
+}
+
 
 sealed trait Statement extends AstNode
 
@@ -1491,5 +1634,13 @@ object SecLangPreset {
     val parsed = AntlrParser.parse(rules).right.get
     val program = Compiler.compile(parsed)
     SecLangPreset(name, program, files)
+  }
+
+  def fromSource(name: String, rulesSource: ConfigurationSourceList = ConfigurationSourceList.empty, filesSource: FilesSourceList): SecLangPreset = {
+    SecLangPreset(
+      name = name,
+      program = Compiler.compile(Configuration.fromList(rulesSource)),
+      files = filesSource.sources.map(_.getFiles()).reduce((a, b) => a ++ b)
+    )
   }
 }
