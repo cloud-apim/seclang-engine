@@ -42,6 +42,8 @@ lazy val root = (project in file("."))
       "org.antlr" % "antlr4" % "4.13.2",
       "com.typesafe.play" %% "play-json" % "2.9.3",
       "com.cloud-apim" % "libinjection-jvm" % "1.0.0",
+      "com.github.blemale" %% "scaffeine" % "4.0.2",
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % "2.13.4" % Test,
       "com.typesafe.akka" %% "akka-actor" % "2.6.20" % Test,
       munit % Test

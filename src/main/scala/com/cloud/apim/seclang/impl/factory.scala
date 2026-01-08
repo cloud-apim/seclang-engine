@@ -6,15 +6,14 @@ import com.cloud.apim.seclang.impl.parser.AntlrParser
 import com.cloud.apim.seclang.impl.utils.HashUtilsFast
 import com.cloud.apim.seclang.model._
 
-import scala.collection.concurrent.TrieMap
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 class SecLangEngineFactory(
   presets: Map[String, SecLangPreset],
   config: SecLangEngineConfig = SecLangEngineConfig.default,
-  integration: SecLangEngineFactoryIntegration
+  integration: SecLangIntegration = DefaultSecLangIntegration.default,
+  cacheTtl: FiniteDuration = 10.minutes,
 ) {
-
-  private val cache = new TrieMap[String, CompiledProgram]()
 
   def evaluate(configs: List[String], ctx: RequestContext, phases: List[Int] = List(1, 2)): EngineResult = {
     val programsAndFiles: List[(CompiledProgram, Map[String, String])] = configs.map {
@@ -25,16 +24,20 @@ class SecLangEngineFactory(
       }
       case line => {
         val hash = HashUtilsFast.sha512Hex(line)
-        (cache.getOrElseUpdate(hash, {
-          val parsed = AntlrParser.parse(line).right.get
-          Compiler.compile(parsed)
-        }), Map.empty[String, String])
+        integration.getCachedProgram(hash) match {
+          case Some(p) => (p, Map.empty[String, String])
+          case None => {
+            val parsed = AntlrParser.parse(line).right.get
+            val compiled = Compiler.compile(parsed)
+            integration.putCachedProgram(hash, compiled, cacheTtl)
+            (compiled, Map.empty[String, String])
+          }
+        }
       }
     }
     val programs = programsAndFiles.map(_._1)
     val files = programsAndFiles.map(_._2).flatMap(_.toList).toMap
     val program = ComposedCompiledProgram(programs)
-    val env = integration.getEnv
-    new SecLangEngine(program, config: SecLangEngineConfig, files, env).evaluate(ctx, phases)
+    new SecLangEngine(program, config: SecLangEngineConfig, files, integration).evaluate(ctx, phases)
   }
 }

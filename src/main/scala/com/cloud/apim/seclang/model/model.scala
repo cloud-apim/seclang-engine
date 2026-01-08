@@ -1,11 +1,16 @@
 package com.cloud.apim.seclang.model
 
 import akka.util.ByteString
+import com.cloud.apim.seclang.impl.compiler.Compiler
+import com.cloud.apim.seclang.impl.parser.AntlrParser
 import com.cloud.apim.seclang.impl.utils.{HashUtilsFast, StatusCodes}
+import com.github.blemale.scaffeine.Scaffeine
 import play.api.libs.json._
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.collection.concurrent.TrieMap
+import scala.concurrent.duration.FiniteDuration
+import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
 
 sealed trait AstNode {
@@ -1338,7 +1343,39 @@ final case class EngineResult(
     "events" -> JsArray(events.filter(_.msg.isDefined).map(_.simpleJson))
   )
 }
-final case class RuntimeState(mode: EngineMode, disabledIds: Set[Int], events: List[MatchEvent], txMap: TrieMap[String, String], envMap: TrieMap[String, String], uidRef: AtomicReference[String])
+
+object RuntimeState {
+  // (?i) => case-insensitive
+  private val TxExpr: Regex = """(?i)%\{tx\.([a-z0-9_.-]+)\}""".r
+}
+final case class RuntimeState(mode: EngineMode, disabledIds: Set[Int], events: List[MatchEvent], txMap: TrieMap[String, String], envMap: TrieMap[String, String], uidRef: AtomicReference[String]) {
+
+  def evalTxExpressions(input: String, state: RuntimeState): String = {
+    if (input.contains("%{")) {
+      val finalInput: String = if (input.contains("%{MATCHED_VAR}") || input.contains("%{MATCHED_VAR_NAME}")) {
+        try {
+          input
+            .replaceAll("%\\{MATCHED_VAR\\}", state.txMap.getOrElse("matched_var", "--"))
+            .replaceAll("%\\{MATCHED_VAR_NAME\\}", state.txMap.getOrElse("matched_var_name", "--"))
+        } catch {
+          case t: Throwable => input
+        }
+      } else {
+        input
+      }
+      try {
+        RuntimeState.TxExpr.replaceAllIn(finalInput, m => {
+          val key = m.group(1).toLowerCase
+          state.txMap.getOrElse(key, m.matched)
+        })
+      } catch {
+        case t: Throwable => finalInput
+      }
+    } else {
+      input
+    }
+  }
+}
 
 final case class SecLangEngineConfig(debugRules: List[Int])
 
@@ -1401,24 +1438,58 @@ final case class ComposedCompiledProgram(programs: List[CompiledProgram]) extend
   def containsRemovedRuleId(id: Int): Boolean = programs.exists(_.containsRemovedRuleId(id))
 }
 
-trait SecLangEngineFactoryIntegration {
+trait SecLangIntegration {
   def logDebug(msg: String): Unit
   def logInfo(msg: String): Unit
   def logAudit(msg: String): Unit
   def logError(msg: String): Unit
   def getEnv: Map[String, String]
+  def getCachedProgram(key: String): Option[CompiledProgram]
+  def putCachedProgram(key: String, program: CompiledProgram, ttl: FiniteDuration): Unit
+  def removeCachedProgram(key: String): Unit
+  def audit(ruleId: Int, context: RequestContext, state: RuntimeState, phase: Int, msg: String, logdata: List[String]): Unit
 }
 
-class DefaultSecLangEngineFactoryIntegration extends SecLangEngineFactoryIntegration {
+class DefaultSecLangIntegration(maxCacheItems: Int = 1000) extends SecLangIntegration {
+
+  private val cache = Scaffeine()
+    .expireAfter[String, (CompiledProgram, FiniteDuration)](
+      create = (key, value) => value._2,
+      update = (key, value, currentDuration) => currentDuration,
+      read = (key, value, currentDuration) => currentDuration
+    )
+    .maximumSize(maxCacheItems)
+    .build[String, (CompiledProgram, FiniteDuration)]()
+
   def logDebug(msg: String): Unit = println(s"[Debug]: $msg")
   def logInfo(msg: String): Unit = println(s"[Info]: $msg")
   def logAudit(msg: String): Unit = println(s"[Audit]: $msg")
   def logError(msg: String): Unit = println(s"[Error]: $msg")
   def getEnv(): Map[String, String] = sys.env
+
+  def getCachedProgram(key: String): Option[CompiledProgram] = cache.getIfPresent(key).map(_._1)
+  def putCachedProgram(key: String, program: CompiledProgram, ttl: FiniteDuration): Unit = cache.put(key, (program, ttl))
+  def removeCachedProgram(key: String): Unit = cache.invalidate(key)
+  def audit(ruleId: Int, context: RequestContext, state: RuntimeState, phase: Int, msg: String, logdata: List[String]): Unit = {
+  }
 }
 
-object DefaultSecLangEngineFactoryIntegration {
-  def apply(): DefaultSecLangEngineFactoryIntegration = new DefaultSecLangEngineFactoryIntegration
+object DefaultSecLangIntegration {
+  val default = new DefaultSecLangIntegration()
+  def apply(maxCacheItems: Int = 1000): DefaultSecLangIntegration = new DefaultSecLangIntegration(maxCacheItems)
 }
 
 final case class SecLangPreset(name: String, program: CompiledProgram, files: Map[String, String])
+
+object SecLangPreset {
+  def withNoFiles(name: String, rules: String): SecLangPreset = {
+    val parsed = AntlrParser.parse(rules).right.get
+    val program = Compiler.compile(parsed)
+    SecLangPreset(name, program, Map.empty)
+  }
+  def withFiles(name: String, rules: String, files: Map[String, String]): SecLangPreset = {
+    val parsed = AntlrParser.parse(rules).right.get
+    val program = Compiler.compile(parsed)
+    SecLangPreset(name, program, files)
+  }
+}

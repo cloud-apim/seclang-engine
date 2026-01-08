@@ -13,11 +13,11 @@ object SecLang {
     program: CompiledProgram,
     config: SecLangEngineConfig = SecLangEngineConfig.default,
     files: Map[String, String] = Map.empty,
-    env: Map[String, String] = Map.empty,
+    integration: SecLangIntegration = DefaultSecLangIntegration.default,
   ): SecLangEngine = {
-    new SecLangEngine(program, config, files, env)
+    new SecLangEngine(program, config, files, integration)
   }
-  def factory(presets: Map[String, SecLangPreset], config: SecLangEngineConfig = SecLangEngineConfig.default, integration: SecLangEngineFactoryIntegration): SecLangEngineFactory = {
+  def factory(presets: Map[String, SecLangPreset], config: SecLangEngineConfig = SecLangEngineConfig.default, integration: SecLangIntegration = DefaultSecLangIntegration.default): SecLangEngineFactory = {
     new SecLangEngineFactory(
       presets = presets,
       config = config,
