@@ -145,9 +145,13 @@ object CRSTestUtils {
         else
           URLDecoder.decode(pair, StandardCharsets.UTF_8)
       val value =
-        if (idx > 0 && pair.length > idx + 1)
-          pair.substring(idx + 1)
-          //URLDecoder.decode(pair.substring(idx + 1), StandardCharsets.UTF_8)
+        if (idx > 0 && pair.length > idx + 1) {
+          try {
+            URLDecoder.decode(pair.substring(idx + 1), StandardCharsets.UTF_8)
+          } catch {
+            case e: Throwable => pair.substring(idx + 1)
+          }
+        }
         else
           ""
       params.put(key, params.get(key).getOrElse(List.empty) :+ value)
@@ -257,7 +261,13 @@ object CRSTestUtils {
     val query: Map[String, List[String]] = try {
       parseQueryString(new URI(uri).getQuery)
     } catch {
-      case e: Throwable => Map.empty
+      case e: Throwable => {
+        try {
+          parseQueryString(uri.split("\\?").tail.mkString("?"))
+        } catch {
+          case ex: Throwable => Map.empty
+        }
+      }
     }
     val cookies: Map[String, List[String]] = try {
       val rawCookie: List[String] = finalHeaders.get("Cookie").orElse(finalHeaders.get("cookie")).getOrElse(List.empty)
@@ -599,7 +609,7 @@ object CRSTestUtils {
 
 class SecLangCRSTest extends munit.FunSuite {
 
-  //private val testOnly: List[(String, Int)] = List(("920540", 1))
+  //private val testOnly: List[(String, Int)] = List(("921120", 1))
   private val testOnly: List[(String, Int)] = List.empty
   private val ignoreTests: List[(String, Int)] = List( // TODO: fix later
     ("920160", 5),
