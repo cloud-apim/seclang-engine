@@ -1,16 +1,16 @@
 {
   "global_stats" : {
-    "failure_percentage" : 6.622839055271488,
-    "passing_percentage" : 93.37716094472852,
+    "failure_percentage" : 6.281957633308985,
+    "passing_percentage" : 93.71804236669101,
     "total_tests" : 4107,
-    "success_tests" : 3835,
-    "failure_tests" : 272
+    "success_tests" : 3849,
+    "failure_tests" : 258
   },
   "time_stats" : {
     "calls" : 4107,
-    "total_time_ms" : 45875,
+    "total_time_ms" : 48963,
     "min_time_ms" : 0,
-    "max_time_ms" : 3399,
+    "max_time_ms" : 3693,
     "avg_time_ms" : 11
   },
   "test_failures" : [ {
@@ -1178,7 +1178,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=932240 - Remote Command Execution: Unix Command Injection evasion attempt detected", "phase=2 rule_id=942120 - SQL Injection Attack: SQL Operator Detected", "phase=2 rule_id=942150 - SQL Injection Attack: SQL function name detected", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942410 - SQL Injection Attack", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
+      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=932240 - Remote Command Execution: Unix Command Injection evasion attempt detected", "phase=2 rule_id=942100 - SQL Injection Attack Detected via libinjection", "phase=2 rule_id=942120 - SQL Injection Attack: SQL Operator Detected", "phase=2 rule_id=942150 - SQL Injection Attack: SQL function name detected", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942410 - SQL Injection Attack", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
     },
     "test" : {
       "test_id" : 15,
@@ -1363,7 +1363,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=932240 - Remote Command Execution: Unix Command Injection evasion attempt detected", "phase=2 rule_id=942120 - SQL Injection Attack: SQL Operator Detected", "phase=2 rule_id=942150 - SQL Injection Attack: SQL function name detected", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942410 - SQL Injection Attack", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
+      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=932240 - Remote Command Execution: Unix Command Injection evasion attempt detected", "phase=2 rule_id=942100 - SQL Injection Attack Detected via libinjection", "phase=2 rule_id=942120 - SQL Injection Attack: SQL Operator Detected", "phase=2 rule_id=942150 - SQL Injection Attack: SQL function name detected", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942410 - SQL Injection Attack", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
     },
     "test" : {
       "test_id" : 30,
@@ -1437,7 +1437,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942150 - SQL Injection Attack: SQL function name detected", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942410 - SQL Injection Attack", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942511 - SQLi bypass attempt by ticks detected", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
+      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942100 - SQL Injection Attack Detected via libinjection", "phase=2 rule_id=942150 - SQL Injection Attack: SQL function name detected", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942410 - SQL Injection Attack", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942511 - SQLi bypass attempt by ticks detected", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
     },
     "test" : {
       "test_id" : 32,
@@ -1474,7 +1474,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942150 - SQL Injection Attack: SQL function name detected", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942410 - SQL Injection Attack", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942511 - SQLi bypass attempt by ticks detected", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
+      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942100 - SQL Injection Attack Detected via libinjection", "phase=2 rule_id=942150 - SQL Injection Attack: SQL function name detected", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942410 - SQL Injection Attack", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942511 - SQLi bypass attempt by ticks detected", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
     },
     "test" : {
       "test_id" : 33,
@@ -1585,7 +1585,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942150 - SQL Injection Attack: SQL function name detected", "phase=2 rule_id=942340 - Detects basic SQL authentication bypass attempts 3/3", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942410 - SQL Injection Attack", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
+      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942100 - SQL Injection Attack Detected via libinjection", "phase=2 rule_id=942150 - SQL Injection Attack: SQL function name detected", "phase=2 rule_id=942340 - Detects basic SQL authentication bypass attempts 3/3", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942410 - SQL Injection Attack", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
     },
     "test" : {
       "test_id" : 36,
@@ -1659,7 +1659,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=932240 - Remote Command Execution: Unix Command Injection evasion attempt detected", "phase=2 rule_id=942120 - SQL Injection Attack: SQL Operator Detected", "phase=2 rule_id=942150 - SQL Injection Attack: SQL function name detected", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942410 - SQL Injection Attack", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
+      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=932240 - Remote Command Execution: Unix Command Injection evasion attempt detected", "phase=2 rule_id=942100 - SQL Injection Attack Detected via libinjection", "phase=2 rule_id=942120 - SQL Injection Attack: SQL Operator Detected", "phase=2 rule_id=942150 - SQL Injection Attack: SQL function name detected", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942410 - SQL Injection Attack", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
     },
     "test" : {
       "test_id" : 38,
@@ -1955,7 +1955,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920460 - Abnormal character escapes in request", "phase=2 rule_id=932240 - Remote Command Execution: Unix Command Injection evasion attempt detected", "phase=2 rule_id=942150 - SQL Injection Attack: SQL function name detected", "phase=2 rule_id=942340 - Detects basic SQL authentication bypass attempts 3/3", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942410 - SQL Injection Attack", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
+      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920460 - Abnormal character escapes in request", "phase=2 rule_id=932240 - Remote Command Execution: Unix Command Injection evasion attempt detected", "phase=2 rule_id=942100 - SQL Injection Attack Detected via libinjection", "phase=2 rule_id=942150 - SQL Injection Attack: SQL function name detected", "phase=2 rule_id=942340 - Detects basic SQL authentication bypass attempts 3/3", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942410 - SQL Injection Attack", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
     },
     "test" : {
       "test_id" : 46,
@@ -2140,7 +2140,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920460 - Abnormal character escapes in request", "phase=2 rule_id=932240 - Remote Command Execution: Unix Command Injection evasion attempt detected", "phase=2 rule_id=942150 - SQL Injection Attack: SQL function name detected", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942410 - SQL Injection Attack", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
+      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920460 - Abnormal character escapes in request", "phase=2 rule_id=932240 - Remote Command Execution: Unix Command Injection evasion attempt detected", "phase=2 rule_id=942100 - SQL Injection Attack Detected via libinjection", "phase=2 rule_id=942150 - SQL Injection Attack: SQL function name detected", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942410 - SQL Injection Attack", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
     },
     "test" : {
       "test_id" : 51,
@@ -2288,7 +2288,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920460 - Abnormal character escapes in request", "phase=2 rule_id=932240 - Remote Command Execution: Unix Command Injection evasion attempt detected", "phase=2 rule_id=942120 - SQL Injection Attack: SQL Operator Detected", "phase=2 rule_id=942150 - SQL Injection Attack: SQL function name detected", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942410 - SQL Injection Attack", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
+      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920460 - Abnormal character escapes in request", "phase=2 rule_id=932240 - Remote Command Execution: Unix Command Injection evasion attempt detected", "phase=2 rule_id=942100 - SQL Injection Attack Detected via libinjection", "phase=2 rule_id=942120 - SQL Injection Attack: SQL Operator Detected", "phase=2 rule_id=942150 - SQL Injection Attack: SQL function name detected", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942410 - SQL Injection Attack", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
     },
     "test" : {
       "test_id" : 55,
@@ -3102,7 +3102,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942120 - SQL Injection Attack: SQL Operator Detected", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
+      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942100 - SQL Injection Attack Detected via libinjection", "phase=2 rule_id=942120 - SQL Injection Attack: SQL Operator Detected", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
     },
     "test" : {
       "test_id" : 105,
@@ -3287,7 +3287,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
+      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942100 - SQL Injection Attack Detected via libinjection", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
     },
     "test" : {
       "test_id" : 110,
@@ -3324,7 +3324,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
+      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942100 - SQL Injection Attack Detected via libinjection", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
     },
     "test" : {
       "test_id" : 111,
@@ -3361,7 +3361,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
+      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942100 - SQL Injection Attack Detected via libinjection", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
     },
     "test" : {
       "test_id" : 112,
@@ -3546,7 +3546,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942120 - SQL Injection Attack: SQL Operator Detected", "phase=2 rule_id=942180 - Detects basic SQL authentication bypass attempts 1/3", "phase=2 rule_id=942310 - Detects chained SQL injection attempts 2/2", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
+      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942100 - SQL Injection Attack Detected via libinjection", "phase=2 rule_id=942120 - SQL Injection Attack: SQL Operator Detected", "phase=2 rule_id=942180 - Detects basic SQL authentication bypass attempts 1/3", "phase=2 rule_id=942310 - Detects chained SQL injection attempts 2/2", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
     },
     "test" : {
       "test_id" : 120,
@@ -3731,7 +3731,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942120 - SQL Injection Attack: SQL Operator Detected", "phase=2 rule_id=942180 - Detects basic SQL authentication bypass attempts 1/3", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
+      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942100 - SQL Injection Attack Detected via libinjection", "phase=2 rule_id=942120 - SQL Injection Attack: SQL Operator Detected", "phase=2 rule_id=942180 - Detects basic SQL authentication bypass attempts 1/3", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
     },
     "test" : {
       "test_id" : 132,
@@ -3842,7 +3842,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
+      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942100 - SQL Injection Attack Detected via libinjection", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
     },
     "test" : {
       "test_id" : 136,
@@ -3879,7 +3879,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
+      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942100 - SQL Injection Attack Detected via libinjection", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
     },
     "test" : {
       "test_id" : 137,
@@ -3916,7 +3916,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
+      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942100 - SQL Injection Attack Detected via libinjection", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
     },
     "test" : {
       "test_id" : 138,
@@ -3953,7 +3953,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
+      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942100 - SQL Injection Attack Detected via libinjection", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
     },
     "test" : {
       "test_id" : 139,
@@ -3990,7 +3990,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942310 - Detects chained SQL injection attempts 2/2", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
+      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942100 - SQL Injection Attack Detected via libinjection", "phase=2 rule_id=942310 - Detects chained SQL injection attempts 2/2", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
     },
     "test" : {
       "test_id" : 140,
@@ -6146,532 +6146,6 @@
     },
     "tested_rule" : [ "SecRule REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|REQUEST_FILENAME|XML:/* \"@rx \\+ADw-.*(?:\\+AD4-|>)|<.*\\+AD4-\" \"id:941350,\\\n  phase:2,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:urlDecodeUni,\\\n  t:htmlEntityDecode,\\\n  t:jsDecode,\\\n  msg:'UTF-7 Encoding IE XSS - Attack Detected',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-internet-explorer',\\\n  tag:'attack-xss',\\\n  tag:'xss-perf-disable',\\\n  tag:'paranoia-level/1',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/ATTACK-XSS',\\\n  tag:'capec/1000/152/242',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  setvar:'tx.xss_score=+%{tx.critical_anomaly_score}',\\\n  setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}'\"" ]
   }, {
-    "test_rule" : "942100",
-    "test_id" : 1,
-    "test_path" : "REQUEST-942-APPLICATION-ATTACK-SQLI/942100.yaml",
-    "description" : "Simple SQL Injection",
-    "cause" : "failed expect_id check: 942100 not found",
-    "result" : {
-      "disposition" : {
-        "type" : "Disposition",
-        "action_type" : "continue"
-      },
-      "events" : [ "phase=1 rule_id=920420 - Request content type is not allowed by policy", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942130 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942390 - SQL Injection Attack" ]
-    },
-    "test" : {
-      "test_id" : 1,
-      "desc" : "Simple SQL Injection",
-      "stages" : [ {
-        "input" : {
-          "dest_addr" : "127.0.0.1",
-          "headers" : {
-            "Host" : "localhost",
-            "User-Agent" : "OWASP CRS test agent",
-            "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
-          },
-          "method" : "POST",
-          "port" : 80,
-          "uri" : "/post",
-          "data" : "var=1234 OR 1=1",
-          "version" : "HTTP/1.1"
-        },
-        "output" : {
-          "log" : {
-            "expect_ids" : [ 942100 ]
-          }
-        }
-      } ]
-    },
-    "tested_rule" : [ "SecRule REQUEST_COOKIES|REQUEST_COOKIES_NAMES|REQUEST_HEADERS:User-Agent|REQUEST_HEADERS:Referer|ARGS_NAMES|ARGS|XML:/* \"@detectSQLi \" \"id:942100,\\\n  phase:2,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:utf8toUnicode,\\\n  t:urlDecodeUni,\\\n  t:removeNulls,\\\n  msg:'SQL Injection Attack Detected via libinjection',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-sqli',\\\n  tag:'paranoia-level/1',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/ATTACK-SQLI',\\\n  tag:'capec/1000/152/248/66',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  multiMatch,\\\n  setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}',\\\n  setvar:'tx.sql_injection_score=+%{tx.critical_anomaly_score}'\"" ]
-  }, {
-    "test_rule" : "942100",
-    "test_id" : 5,
-    "test_path" : "REQUEST-942-APPLICATION-ATTACK-SQLI/942100.yaml",
-    "description" : "Simple SQL injection",
-    "cause" : "failed expect_id check: 942100 not found",
-    "result" : {
-      "disposition" : {
-        "type" : "Disposition",
-        "action_type" : "continue"
-      },
-      "events" : [ "phase=1 rule_id=920420 - Request content type is not allowed by policy", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942180 - Detects basic SQL authentication bypass attempts 1/3", "phase=2 rule_id=942330 - Detects classic SQL injection probings 1/3", "phase=2 rule_id=942400 - SQL Injection Attack", "phase=2 rule_id=942521 - Detects basic SQL authentication bypass attempts 4.1/4", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
-    },
-    "test" : {
-      "test_id" : 5,
-      "desc" : "Simple SQL injection",
-      "stages" : [ {
-        "input" : {
-          "dest_addr" : "127.0.0.1",
-          "headers" : {
-            "Host" : "localhost",
-            "User-Agent" : "OWASP CRS test agent",
-            "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
-          },
-          "method" : "POST",
-          "port" : 80,
-          "uri" : "/post",
-          "data" : "var=EmptyValue' and 526=527",
-          "version" : "HTTP/1.1"
-        },
-        "output" : {
-          "log" : {
-            "expect_ids" : [ 942100 ]
-          }
-        }
-      } ]
-    },
-    "tested_rule" : [ "SecRule REQUEST_COOKIES|REQUEST_COOKIES_NAMES|REQUEST_HEADERS:User-Agent|REQUEST_HEADERS:Referer|ARGS_NAMES|ARGS|XML:/* \"@detectSQLi \" \"id:942100,\\\n  phase:2,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:utf8toUnicode,\\\n  t:urlDecodeUni,\\\n  t:removeNulls,\\\n  msg:'SQL Injection Attack Detected via libinjection',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-sqli',\\\n  tag:'paranoia-level/1',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/ATTACK-SQLI',\\\n  tag:'capec/1000/152/248/66',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  multiMatch,\\\n  setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}',\\\n  setvar:'tx.sql_injection_score=+%{tx.critical_anomaly_score}'\"" ]
-  }, {
-    "test_rule" : "942100",
-    "test_id" : 6,
-    "test_path" : "REQUEST-942-APPLICATION-ATTACK-SQLI/942100.yaml",
-    "description" : "Simple SQL injection",
-    "cause" : "failed expect_id check: 942100 not found",
-    "result" : {
-      "disposition" : {
-        "type" : "Disposition",
-        "action_type" : "continue"
-      },
-      "events" : [ "phase=1 rule_id=920420 - Request content type is not allowed by policy", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942190 - Detects MSSQL code execution and information gathering attempts", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942480 - SQL Injection Attack", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
-    },
-    "test" : {
-      "test_id" : 6,
-      "desc" : "Simple SQL injection",
-      "stages" : [ {
-        "input" : {
-          "dest_addr" : "127.0.0.1",
-          "headers" : {
-            "Host" : "localhost",
-            "User-Agent" : "OWASP CRS test agent",
-            "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
-          },
-          "method" : "POST",
-          "port" : 80,
-          "uri" : "/post",
-          "data" : "var=foo') UNION ALL select NULL --",
-          "version" : "HTTP/1.1"
-        },
-        "output" : {
-          "log" : {
-            "expect_ids" : [ 942100 ]
-          }
-        }
-      } ]
-    },
-    "tested_rule" : [ "SecRule REQUEST_COOKIES|REQUEST_COOKIES_NAMES|REQUEST_HEADERS:User-Agent|REQUEST_HEADERS:Referer|ARGS_NAMES|ARGS|XML:/* \"@detectSQLi \" \"id:942100,\\\n  phase:2,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:utf8toUnicode,\\\n  t:urlDecodeUni,\\\n  t:removeNulls,\\\n  msg:'SQL Injection Attack Detected via libinjection',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-sqli',\\\n  tag:'paranoia-level/1',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/ATTACK-SQLI',\\\n  tag:'capec/1000/152/248/66',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  multiMatch,\\\n  setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}',\\\n  setvar:'tx.sql_injection_score=+%{tx.critical_anomaly_score}'\"" ]
-  }, {
-    "test_rule" : "942100",
-    "test_id" : 7,
-    "test_path" : "REQUEST-942-APPLICATION-ATTACK-SQLI/942100.yaml",
-    "description" : "Advanced SQL injection",
-    "cause" : "failed expect_id check: 942100 not found",
-    "result" : {
-      "disposition" : {
-        "type" : "Disposition",
-        "action_type" : "continue"
-      },
-      "events" : [ "phase=1 rule_id=920420 - Request content type is not allowed by policy", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942280 - Detects Postgres pg_sleep injection, waitfor delay attacks and database shutdown attempts", "phase=2 rule_id=942300 - Detects MySQL comments, conditions and ch(a)r injections", "phase=2 rule_id=942440 - SQL Comment Sequence Detected", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942490 - Detects classic SQL injection probings 3/3", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942511 - SQLi bypass attempt by ticks detected", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
-    },
-    "test" : {
-      "test_id" : 7,
-      "desc" : "Advanced SQL injection",
-      "stages" : [ {
-        "input" : {
-          "dest_addr" : "127.0.0.1",
-          "headers" : {
-            "Host" : "localhost",
-            "User-Agent" : "OWASP CRS test agent",
-            "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
-          },
-          "method" : "POST",
-          "port" : 80,
-          "uri" : "/post",
-          "data" : "var=foo')waitfor%20delay'5%3a0%3a20'--",
-          "version" : "HTTP/1.1"
-        },
-        "output" : {
-          "log" : {
-            "expect_ids" : [ 942100 ]
-          }
-        }
-      } ]
-    },
-    "tested_rule" : [ "SecRule REQUEST_COOKIES|REQUEST_COOKIES_NAMES|REQUEST_HEADERS:User-Agent|REQUEST_HEADERS:Referer|ARGS_NAMES|ARGS|XML:/* \"@detectSQLi \" \"id:942100,\\\n  phase:2,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:utf8toUnicode,\\\n  t:urlDecodeUni,\\\n  t:removeNulls,\\\n  msg:'SQL Injection Attack Detected via libinjection',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-sqli',\\\n  tag:'paranoia-level/1',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/ATTACK-SQLI',\\\n  tag:'capec/1000/152/248/66',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  multiMatch,\\\n  setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}',\\\n  setvar:'tx.sql_injection_score=+%{tx.critical_anomaly_score}'\"" ]
-  }, {
-    "test_rule" : "942100",
-    "test_id" : 9,
-    "test_path" : "REQUEST-942-APPLICATION-ATTACK-SQLI/942100.yaml",
-    "description" : "Simple SQL injection",
-    "cause" : "failed expect_id check: 942100 not found",
-    "result" : {
-      "disposition" : {
-        "type" : "Disposition",
-        "action_type" : "continue"
-      },
-      "events" : [ "phase=1 rule_id=920420 - Request content type is not allowed by policy", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=932200 - RCE Bypass Technique", "phase=2 rule_id=942190 - Detects MSSQL code execution and information gathering attempts", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942480 - SQL Injection Attack", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
-    },
-    "test" : {
-      "test_id" : 9,
-      "desc" : "Simple SQL injection",
-      "stages" : [ {
-        "input" : {
-          "dest_addr" : "127.0.0.1",
-          "headers" : {
-            "Host" : "localhost",
-            "User-Agent" : "OWASP CRS test agent",
-            "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
-          },
-          "method" : "POST",
-          "port" : 80,
-          "uri" : "/post",
-          "data" : "var=/path/to/file/unitests.txt') UNION ALL select NULL --",
-          "version" : "HTTP/1.1"
-        },
-        "output" : {
-          "log" : {
-            "expect_ids" : [ 942100 ]
-          }
-        }
-      } ]
-    },
-    "tested_rule" : [ "SecRule REQUEST_COOKIES|REQUEST_COOKIES_NAMES|REQUEST_HEADERS:User-Agent|REQUEST_HEADERS:Referer|ARGS_NAMES|ARGS|XML:/* \"@detectSQLi \" \"id:942100,\\\n  phase:2,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:utf8toUnicode,\\\n  t:urlDecodeUni,\\\n  t:removeNulls,\\\n  msg:'SQL Injection Attack Detected via libinjection',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-sqli',\\\n  tag:'paranoia-level/1',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/ATTACK-SQLI',\\\n  tag:'capec/1000/152/248/66',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  multiMatch,\\\n  setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}',\\\n  setvar:'tx.sql_injection_score=+%{tx.critical_anomaly_score}'\"" ]
-  }, {
-    "test_rule" : "942100",
-    "test_id" : 10,
-    "test_path" : "REQUEST-942-APPLICATION-ATTACK-SQLI/942100.yaml",
-    "description" : "Advanced SQL Injection",
-    "cause" : "failed expect_id check: 942100 not found",
-    "result" : {
-      "disposition" : {
-        "type" : "Disposition",
-        "action_type" : "continue"
-      },
-      "events" : [ "phase=1 rule_id=920420 - Request content type is not allowed by policy", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link", "phase=2 rule_id=932200 - RCE Bypass Technique", "phase=2 rule_id=933190 - PHP Injection Attack: PHP Closing Tag Found", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941130 - XSS Filter - Category 3: Attribute Vector", "phase=2 rule_id=942151 - SQL Injection Attack: SQL function name detected", "phase=2 rule_id=942360 - Detects concatenated basic SQL injection and SQLLFI attempts", "phase=2 rule_id=942120 - SQL Injection Attack: SQL Operator Detected", "phase=2 rule_id=942310 - Detects chained SQL injection attempts 2/2", "phase=2 rule_id=942362 - Detects concatenated basic SQL injection and SQLLFI attempts", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942410 - SQL Injection Attack", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942490 - Detects classic SQL injection probings 3/3", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
-    },
-    "test" : {
-      "test_id" : 10,
-      "desc" : "Advanced SQL Injection",
-      "stages" : [ {
-        "input" : {
-          "dest_addr" : "127.0.0.1",
-          "headers" : {
-            "Host" : "localhost",
-            "User-Agent" : "OWASP CRS test agent",
-            "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
-          },
-          "method" : "POST",
-          "port" : 80,
-          "uri" : "/post",
-          "data" : "1'||(select extractvalue(xmltype('<?xml version=\"1.1\" encoding=\"UTF-8\"?><!DOCTYPE root [ <!ENTITY % toyop SYSTEM \"https://coreruleset.org/\">%toyop;",
-          "version" : "HTTP/1.1"
-        },
-        "output" : {
-          "log" : {
-            "expect_ids" : [ 942100 ]
-          }
-        }
-      } ]
-    },
-    "tested_rule" : [ "SecRule REQUEST_COOKIES|REQUEST_COOKIES_NAMES|REQUEST_HEADERS:User-Agent|REQUEST_HEADERS:Referer|ARGS_NAMES|ARGS|XML:/* \"@detectSQLi \" \"id:942100,\\\n  phase:2,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:utf8toUnicode,\\\n  t:urlDecodeUni,\\\n  t:removeNulls,\\\n  msg:'SQL Injection Attack Detected via libinjection',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-sqli',\\\n  tag:'paranoia-level/1',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/ATTACK-SQLI',\\\n  tag:'capec/1000/152/248/66',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  multiMatch,\\\n  setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}',\\\n  setvar:'tx.sql_injection_score=+%{tx.critical_anomaly_score}'\"" ]
-  }, {
-    "test_rule" : "942100",
-    "test_id" : 13,
-    "test_path" : "REQUEST-942-APPLICATION-ATTACK-SQLI/942100.yaml",
-    "description" : "Advanced injection",
-    "cause" : "failed expect_id check: 942100 not found",
-    "result" : {
-      "disposition" : {
-        "type" : "Disposition",
-        "action_type" : "continue"
-      },
-      "events" : [ "phase=1 rule_id=920420 - Request content type is not allowed by policy", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=930120 - OS File Access Attempt", "phase=2 rule_id=942180 - Detects basic SQL authentication bypass attempts 1/3", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
-    },
-    "test" : {
-      "test_id" : 13,
-      "desc" : "Advanced injection",
-      "stages" : [ {
-        "input" : {
-          "dest_addr" : "127.0.0.1",
-          "headers" : {
-            "Host" : "localhost",
-            "User-Agent" : "OWASP CRS test agent",
-            "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
-          },
-          "method" : "POST",
-          "port" : 80,
-          "uri" : "/post",
-          "data" : "var=\" | type %SystemDrive%\\\\config.ini | \"",
-          "version" : "HTTP/1.1"
-        },
-        "output" : {
-          "log" : {
-            "expect_ids" : [ 942100 ]
-          }
-        }
-      } ]
-    },
-    "tested_rule" : [ "SecRule REQUEST_COOKIES|REQUEST_COOKIES_NAMES|REQUEST_HEADERS:User-Agent|REQUEST_HEADERS:Referer|ARGS_NAMES|ARGS|XML:/* \"@detectSQLi \" \"id:942100,\\\n  phase:2,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:utf8toUnicode,\\\n  t:urlDecodeUni,\\\n  t:removeNulls,\\\n  msg:'SQL Injection Attack Detected via libinjection',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-sqli',\\\n  tag:'paranoia-level/1',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/ATTACK-SQLI',\\\n  tag:'capec/1000/152/248/66',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  multiMatch,\\\n  setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}',\\\n  setvar:'tx.sql_injection_score=+%{tx.critical_anomaly_score}'\"" ]
-  }, {
-    "test_rule" : "942100",
-    "test_id" : 14,
-    "test_path" : "REQUEST-942-APPLICATION-ATTACK-SQLI/942100.yaml",
-    "description" : "Advanced SQL injection",
-    "cause" : "failed expect_id check: 942100 not found",
-    "result" : {
-      "disposition" : {
-        "type" : "Disposition",
-        "action_type" : "continue"
-      },
-      "events" : [ "phase=1 rule_id=920420 - Request content type is not allowed by policy", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=933161 - PHP Injection Attack: Low-Value PHP Function Call Found", "phase=2 rule_id=942160 - Detects blind sqli tests using sleep() or benchmark()", "phase=2 rule_id=942150 - SQL Injection Attack: SQL function name detected", "phase=2 rule_id=942200 - Detects MySQL comment-/space-obfuscated injections and backtick termination", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942410 - SQL Injection Attack", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
-    },
-    "test" : {
-      "test_id" : 14,
-      "desc" : "Advanced SQL injection",
-      "stages" : [ {
-        "input" : {
-          "dest_addr" : "127.0.0.1",
-          "headers" : {
-            "Host" : "localhost",
-            "User-Agent" : "OWASP CRS test agent",
-            "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
-          },
-          "method" : "POST",
-          "port" : 80,
-          "uri" : "/post",
-          "data" : "var=\"unittests@coreruleset.org\"')) and (select*from(select(sleep(5)))x) --",
-          "version" : "HTTP/1.1"
-        },
-        "output" : {
-          "log" : {
-            "expect_ids" : [ 942100 ]
-          }
-        }
-      } ]
-    },
-    "tested_rule" : [ "SecRule REQUEST_COOKIES|REQUEST_COOKIES_NAMES|REQUEST_HEADERS:User-Agent|REQUEST_HEADERS:Referer|ARGS_NAMES|ARGS|XML:/* \"@detectSQLi \" \"id:942100,\\\n  phase:2,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:utf8toUnicode,\\\n  t:urlDecodeUni,\\\n  t:removeNulls,\\\n  msg:'SQL Injection Attack Detected via libinjection',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-sqli',\\\n  tag:'paranoia-level/1',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/ATTACK-SQLI',\\\n  tag:'capec/1000/152/248/66',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  multiMatch,\\\n  setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}',\\\n  setvar:'tx.sql_injection_score=+%{tx.critical_anomaly_score}'\"" ]
-  }, {
-    "test_rule" : "942101",
-    "test_id" : 1,
-    "test_path" : "REQUEST-942-APPLICATION-ATTACK-SQLI/942101.yaml",
-    "description" : "Simple SQL Injection",
-    "cause" : "failed expect_id check: 942101 not found",
-    "result" : {
-      "disposition" : {
-        "type" : "Disposition",
-        "action_type" : "continue"
-      },
-      "events" : [ "phase=1 rule_id=920180 - POST without Content-Length and Transfer-Encoding headers" ]
-    },
-    "test" : {
-      "test_id" : 1,
-      "desc" : "Simple SQL Injection",
-      "stages" : [ {
-        "input" : {
-          "dest_addr" : "127.0.0.1",
-          "headers" : {
-            "Host" : "localhost",
-            "User-Agent" : "OWASP CRS test agent",
-            "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
-          },
-          "method" : "POST",
-          "port" : 80,
-          "uri" : "/post/1234%20OR%201=1",
-          "version" : "HTTP/1.1"
-        },
-        "output" : {
-          "log" : {
-            "expect_ids" : [ 942101 ]
-          }
-        }
-      } ]
-    },
-    "tested_rule" : [ "SecRule REQUEST_BASENAME|REQUEST_FILENAME \"@detectSQLi \" \"id:942101,\\\n  phase:1,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:utf8toUnicode,\\\n  t:urlDecodeUni,\\\n  t:removeNulls,\\\n  msg:'SQL Injection Attack Detected via libinjection',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-sqli',\\\n  tag:'paranoia-level/2',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/ATTACK-SQLI',\\\n  tag:'capec/1000/152/248/66',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  setvar:'tx.sql_injection_score=+%{tx.critical_anomaly_score}',\\\n  setvar:'tx.inbound_anomaly_score_pl2=+%{tx.critical_anomaly_score}'\"" ]
-  }, {
-    "test_rule" : "942101",
-    "test_id" : 3,
-    "test_path" : "REQUEST-942-APPLICATION-ATTACK-SQLI/942101.yaml",
-    "description" : "Simple SQL injection",
-    "cause" : "failed expect_id check: 942101 not found",
-    "result" : {
-      "disposition" : {
-        "type" : "Disposition",
-        "action_type" : "continue"
-      },
-      "events" : [ "phase=1 rule_id=920180 - POST without Content-Length and Transfer-Encoding headers" ]
-    },
-    "test" : {
-      "test_id" : 3,
-      "desc" : "Simple SQL injection",
-      "stages" : [ {
-        "input" : {
-          "dest_addr" : "127.0.0.1",
-          "headers" : {
-            "Host" : "localhost",
-            "User-Agent" : "OWASP CRS test agent",
-            "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
-          },
-          "method" : "POST",
-          "port" : 80,
-          "uri" : "/post/EmptyValue'%20and%20526=527",
-          "version" : "HTTP/1.1"
-        },
-        "output" : {
-          "log" : {
-            "expect_ids" : [ 942101 ]
-          }
-        }
-      } ]
-    },
-    "tested_rule" : [ "SecRule REQUEST_BASENAME|REQUEST_FILENAME \"@detectSQLi \" \"id:942101,\\\n  phase:1,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:utf8toUnicode,\\\n  t:urlDecodeUni,\\\n  t:removeNulls,\\\n  msg:'SQL Injection Attack Detected via libinjection',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-sqli',\\\n  tag:'paranoia-level/2',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/ATTACK-SQLI',\\\n  tag:'capec/1000/152/248/66',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  setvar:'tx.sql_injection_score=+%{tx.critical_anomaly_score}',\\\n  setvar:'tx.inbound_anomaly_score_pl2=+%{tx.critical_anomaly_score}'\"" ]
-  }, {
-    "test_rule" : "942101",
-    "test_id" : 4,
-    "test_path" : "REQUEST-942-APPLICATION-ATTACK-SQLI/942101.yaml",
-    "description" : "Advanced SQL injection",
-    "cause" : "failed expect_id check: 942101 not found",
-    "result" : {
-      "disposition" : {
-        "type" : "Disposition",
-        "action_type" : "continue"
-      },
-      "events" : [ "phase=1 rule_id=920180 - POST without Content-Length and Transfer-Encoding headers" ]
-    },
-    "test" : {
-      "test_id" : 4,
-      "desc" : "Advanced SQL injection",
-      "stages" : [ {
-        "input" : {
-          "dest_addr" : "127.0.0.1",
-          "headers" : {
-            "Host" : "localhost",
-            "User-Agent" : "OWASP CRS test agent",
-            "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
-          },
-          "method" : "POST",
-          "port" : 80,
-          "uri" : "/post/foo')waitfor%20delay'5%3a0%3a20'--",
-          "version" : "HTTP/1.1"
-        },
-        "output" : {
-          "log" : {
-            "expect_ids" : [ 942101 ]
-          }
-        }
-      } ]
-    },
-    "tested_rule" : [ "SecRule REQUEST_BASENAME|REQUEST_FILENAME \"@detectSQLi \" \"id:942101,\\\n  phase:1,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:utf8toUnicode,\\\n  t:urlDecodeUni,\\\n  t:removeNulls,\\\n  msg:'SQL Injection Attack Detected via libinjection',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-sqli',\\\n  tag:'paranoia-level/2',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/ATTACK-SQLI',\\\n  tag:'capec/1000/152/248/66',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  setvar:'tx.sql_injection_score=+%{tx.critical_anomaly_score}',\\\n  setvar:'tx.inbound_anomaly_score_pl2=+%{tx.critical_anomaly_score}'\"" ]
-  }, {
-    "test_rule" : "942101",
-    "test_id" : 7,
-    "test_path" : "REQUEST-942-APPLICATION-ATTACK-SQLI/942101.yaml",
-    "description" : "SQL Injection at the last segment of the path (request_basename detection)",
-    "cause" : "failed expect_id check: 942101 not found",
-    "result" : {
-      "disposition" : {
-        "type" : "Disposition",
-        "action_type" : "continue"
-      },
-      "events" : [ "phase=1 rule_id=920180 - POST without Content-Length and Transfer-Encoding headers" ]
-    },
-    "test" : {
-      "test_id" : 7,
-      "desc" : "SQL Injection at the last segment of the path (request_basename detection)",
-      "stages" : [ {
-        "input" : {
-          "dest_addr" : "127.0.0.1",
-          "headers" : {
-            "Host" : "localhost",
-            "User-Agent" : "OWASP CRS test agent",
-            "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
-          },
-          "method" : "POST",
-          "port" : 80,
-          "uri" : "/post/foo/24'union+all+select+1,2,3+from+aa",
-          "version" : "HTTP/1.1"
-        },
-        "output" : {
-          "log" : {
-            "expect_ids" : [ 942101 ]
-          }
-        }
-      } ]
-    },
-    "tested_rule" : [ "SecRule REQUEST_BASENAME|REQUEST_FILENAME \"@detectSQLi \" \"id:942101,\\\n  phase:1,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:utf8toUnicode,\\\n  t:urlDecodeUni,\\\n  t:removeNulls,\\\n  msg:'SQL Injection Attack Detected via libinjection',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-sqli',\\\n  tag:'paranoia-level/2',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/ATTACK-SQLI',\\\n  tag:'capec/1000/152/248/66',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  setvar:'tx.sql_injection_score=+%{tx.critical_anomaly_score}',\\\n  setvar:'tx.inbound_anomaly_score_pl2=+%{tx.critical_anomaly_score}'\"" ]
-  }, {
-    "test_rule" : "942101",
-    "test_id" : 8,
-    "test_path" : "REQUEST-942-APPLICATION-ATTACK-SQLI/942101.yaml",
-    "description" : "SQL Injection inside the path (request_filename detection)",
-    "cause" : "failed expect_id check: 942101 not found",
-    "result" : {
-      "disposition" : {
-        "type" : "Disposition",
-        "action_type" : "continue"
-      },
-      "events" : [ "phase=1 rule_id=920180 - POST without Content-Length and Transfer-Encoding headers" ]
-    },
-    "test" : {
-      "test_id" : 8,
-      "desc" : "SQL Injection inside the path (request_filename detection)",
-      "stages" : [ {
-        "input" : {
-          "dest_addr" : "127.0.0.1",
-          "headers" : {
-            "Host" : "localhost",
-            "User-Agent" : "OWASP CRS test agent",
-            "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
-          },
-          "method" : "POST",
-          "port" : 80,
-          "uri" : "/post/foo/24'union+all+select+1,2,3+from+aa/bar",
-          "version" : "HTTP/1.1"
-        },
-        "output" : {
-          "log" : {
-            "expect_ids" : [ 942101 ]
-          }
-        }
-      } ]
-    },
-    "tested_rule" : [ "SecRule REQUEST_BASENAME|REQUEST_FILENAME \"@detectSQLi \" \"id:942101,\\\n  phase:1,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:utf8toUnicode,\\\n  t:urlDecodeUni,\\\n  t:removeNulls,\\\n  msg:'SQL Injection Attack Detected via libinjection',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-sqli',\\\n  tag:'paranoia-level/2',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/ATTACK-SQLI',\\\n  tag:'capec/1000/152/248/66',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  setvar:'tx.sql_injection_score=+%{tx.critical_anomaly_score}',\\\n  setvar:'tx.inbound_anomaly_score_pl2=+%{tx.critical_anomaly_score}'\"" ]
-  }, {
-    "test_rule" : "942101",
-    "test_id" : 9,
-    "test_path" : "REQUEST-942-APPLICATION-ATTACK-SQLI/942101.yaml",
-    "description" : "SQL Injection inside the path with comment block (request_filename detection)",
-    "cause" : "failed expect_id check: 942101 not found",
-    "result" : {
-      "disposition" : {
-        "type" : "Disposition",
-        "action_type" : "continue"
-      },
-      "events" : [ "phase=1 rule_id=920180 - POST without Content-Length and Transfer-Encoding headers" ]
-    },
-    "test" : {
-      "test_id" : 9,
-      "desc" : "SQL Injection inside the path with comment block (request_filename detection)",
-      "stages" : [ {
-        "input" : {
-          "dest_addr" : "127.0.0.1",
-          "headers" : {
-            "Host" : "localhost",
-            "User-Agent" : "OWASP CRS test agent",
-            "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
-          },
-          "method" : "POST",
-          "port" : 80,
-          "uri" : "/post/%2A/%2A/2+union+all/bar",
-          "version" : "HTTP/1.1"
-        },
-        "output" : {
-          "log" : {
-            "expect_ids" : [ 942101 ]
-          }
-        }
-      } ]
-    },
-    "tested_rule" : [ "SecRule REQUEST_BASENAME|REQUEST_FILENAME \"@detectSQLi \" \"id:942101,\\\n  phase:1,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:utf8toUnicode,\\\n  t:urlDecodeUni,\\\n  t:removeNulls,\\\n  msg:'SQL Injection Attack Detected via libinjection',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-sqli',\\\n  tag:'paranoia-level/2',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/ATTACK-SQLI',\\\n  tag:'capec/1000/152/248/66',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  setvar:'tx.sql_injection_score=+%{tx.critical_anomaly_score}',\\\n  setvar:'tx.inbound_anomaly_score_pl2=+%{tx.critical_anomaly_score}'\"" ]
-  }, {
     "test_rule" : "942290",
     "test_id" : 5,
     "test_path" : "REQUEST-942-APPLICATION-ATTACK-SQLI/942290.yaml",
@@ -6915,7 +6389,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=1 rule_id=920420 - Request content type is not allowed by policy", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942130 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942180 - Detects basic SQL authentication bypass attempts 1/3", "phase=2 rule_id=942330 - Detects classic SQL injection probings 1/3", "phase=2 rule_id=942390 - SQL Injection Attack", "phase=2 rule_id=942521 - Detects basic SQL authentication bypass attempts 4.1/4", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
+      "events" : [ "phase=1 rule_id=920420 - Request content type is not allowed by policy", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942100 - SQL Injection Attack Detected via libinjection", "phase=2 rule_id=942130 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942180 - Detects basic SQL authentication bypass attempts 1/3", "phase=2 rule_id=942330 - Detects classic SQL injection probings 1/3", "phase=2 rule_id=942390 - SQL Injection Attack", "phase=2 rule_id=942521 - Detects basic SQL authentication bypass attempts 4.1/4", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
     },
     "test" : {
       "test_id" : 9,
