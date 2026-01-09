@@ -1,6 +1,6 @@
 package com.cloud.apim.seclang.impl.engine
 
-import com.cloud.apim.seclang.impl.utils.{FormUrlEncoded, MultipartVars, XmlXPathParser}
+import com.cloud.apim.seclang.impl.utils.{FormUrlEncoded, MultipartVars, SimpleXmlSelector, XmlXPathParser}
 import com.cloud.apim.seclang.model.{RequestContext, RuntimeState, SecLangIntegration, Variable}
 import play.api.libs.json.{JsArray, JsBoolean, JsNull, JsNumber, JsObject, JsString, JsValue, Json}
 
@@ -337,7 +337,8 @@ object EngineVariables {
       case "XML" => {
         ctx.body match {
           case Some(body) if key.isDefined && (ctx.contentType.exists(_.contains("application/xml")) || ctx.contentType.exists(_.contains("text/xml"))) => {
-            XmlXPathParser.evalXPath(body.utf8String, key.get)
+            //XmlXPathParser.evalXPath(body.utf8String, key.get)
+            SimpleXmlSelector.select(body.utf8String, key.get)
           }
           case _ => List.empty
         }

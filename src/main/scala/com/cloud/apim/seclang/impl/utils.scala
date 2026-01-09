@@ -15,9 +15,10 @@ import javax.xml.transform.stream.StreamResult
 import javax.xml.xpath.{XPath, XPathConstants, XPathFactory}
 import scala.util.Try
 import scala.util.matching.Regex
-
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
+import javax.xml.stream.{XMLInputFactory, XMLStreamConstants, XMLStreamReader}
+import scala.collection.mutable.ArrayBuffer
 
 object HashUtilsFast {
   private val HEX = "0123456789abcdef".toCharArray
@@ -235,6 +236,69 @@ object XmlXPathParser {
   //  val xpath: XPath = XPathFactory.newInstance().newXPath()
   //  xpath.evaluate(expr, doc)
   //}
+}
+
+object SimpleXmlSelector {
+
+  def select(xml: String, path: String): List[String] = {
+    path match {
+      case "//@*" => selectAllAttributes(xml)
+      case "/*"   => selectAllText(xml)
+      case _      => Nil
+    }
+  }
+
+  private def selectAllAttributes(xml: String): List[String] = {
+    val attrs = ArrayBuffer.empty[String]
+    val xsr = createReader(xml)
+
+    try {
+      while (xsr.hasNext) {
+        xsr.next() match {
+          case XMLStreamConstants.START_ELEMENT =>
+            val n = xsr.getAttributeCount
+            var i = 0
+            while (i < n) {
+              val v = xsr.getAttributeValue(i)
+              if (v != null) attrs += v
+              i += 1
+            }
+          case _ => ()
+        }
+      }
+      attrs.toList
+    } finally {
+      try xsr.close() catch { case _: Throwable => () }
+    }
+  }
+
+  private def selectAllText(xml: String): List[String] = {
+    val texts = ArrayBuffer.empty[String]
+    val xsr = createReader(xml)
+
+    try {
+      while (xsr.hasNext) {
+        xsr.next() match {
+          case XMLStreamConstants.CHARACTERS | XMLStreamConstants.CDATA =>
+            val t = xsr.getText.trim
+            if (t.nonEmpty) texts += t
+          case _ => ()
+        }
+      }
+      texts.toList
+    } finally {
+      try xsr.close() catch { case _: Throwable => () }
+    }
+  }
+
+  private def createReader(xml: String): XMLStreamReader = {
+    val f = XMLInputFactory.newInstance()
+    try f.setProperty(XMLInputFactory.SUPPORT_DTD, false) catch { case _: Throwable => () }
+    try f.setProperty("javax.xml.stream.isSupportingExternalEntities", false) catch { case _: Throwable => () }
+    try f.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, true) catch { case _: Throwable => () }
+    try f.setProperty(XMLInputFactory.IS_COALESCING, true) catch { case _: Throwable => () }
+    f.createXMLStreamReader(new StringReader(xml))
+  }
 }
 
 object StatusCodes {
