@@ -10,19 +10,20 @@ this project is a work in progress, right now we are passing **more than 93%** o
 ```json
 {
   "global_stats" : {
-    "failure_percentage" : 6.695885074263453,
-    "passing_percentage" : 93.30411492573654,
+    "failure_percentage" : 2.410518626734843,
+    "passing_percentage" : 97.58948137326516,
     "total_tests" : 4107,
-    "success_tests" : 3832,
-    "failure_tests" : 275
+    "success_tests" : 4008,
+    "failure_tests" : 99
   },
   "time_stats" : {
     "calls" : 4107,
-    "total_time_ms" : 64803,
+    "total_time_ms" : 62749,
+    "min_time_ns" : 669625,
     "min_time_ms" : 0,
-    "max_time_ms" : 4727,
+    "max_time_ms" : 4576,
     "avg_time_ms" : 15
-  },
+  }
 }
 ```
 
