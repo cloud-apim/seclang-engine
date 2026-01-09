@@ -2,7 +2,7 @@ package com.cloud.apim.seclang.impl.engine
 
 import com.cloud.apim.seclang.impl.utils.{FormUrlEncoded, MultipartVars, XmlXPathParser}
 import com.cloud.apim.seclang.model.{RequestContext, RuntimeState, SecLangIntegration, Variable}
-import play.api.libs.json.Json
+import play.api.libs.json.{JsArray, JsBoolean, JsNull, JsNumber, JsObject, JsString, JsValue, Json}
 
 import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
@@ -33,6 +33,15 @@ object EngineVariables {
     (m1.keySet ++ m2.keySet).iterator.map { k =>
       k -> (m1.getOrElse(k, Nil) ++ m2.getOrElse(k, Nil))
     }.toMap
+  }
+
+  private def jsToStr(js: JsValue): List[String] = js match {
+    case JsString(s) => List(s)
+    case JsNull => List("null")
+    case JsNumber(s) => List(s.toString())
+    case JsBoolean(s) => List(s.toString)
+    case o @ JsObject(_) => List(Json.stringify(o))
+    case a @ JsArray(_) => List(Json.stringify(a))
   }
 
   def resolveVariable(sel: Variable, count: Boolean, negated: Boolean, ctx: RequestContext, debug: Boolean, state: RuntimeState, integration: SecLangIntegration): List[String] = {
@@ -85,13 +94,20 @@ object EngineVariables {
         }
       }
       case "ARGS" => {
-        val headers = ctx.body match {
+        val headers: Map[String, List[String]] = (ctx.body match {
           case Some(body) if ctx.isXwwwFormUrlEncoded=> {
             val bodyArgs = FormUrlEncoded.parse(body.utf8String)
             deepMerge(ctx.query, bodyArgs)
           }
           case _ => ctx.query
-        }
+        }) ++ (if (ctx.body.isDefined && ctx.contentType.exists(_.contains("application/json"))) {
+          try {
+            val map: Map[String, JsValue] = Json.parse(ctx.body.map(_.utf8String).getOrElse("{}")).asOpt[Map[String, JsValue]].getOrElse(Map.empty)
+            map.mapValues(jsToStr)
+          } catch {
+            case t: Throwable => Map.empty
+          }
+        } else Map.empty)
         key match {
           case None =>
             // headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }

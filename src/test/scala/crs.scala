@@ -609,8 +609,8 @@ object CRSTestUtils {
 
 class SecLangCRSTest extends munit.FunSuite {
 
-  //private val testOnly: List[(String, Int)] = List(("942100", 1))
-  private val testOnly: List[(String, Int)] = List.empty
+  private val testOnly: List[(String, Int)] = List(("942500", 3))
+  //private val testOnly: List[(String, Int)] = List.empty
   private val ignoreTests: List[(String, Int)] = List( // TODO: fix later
     ("920160", 5),
     ("920250", 1),
@@ -652,6 +652,7 @@ class SecLangCRSTest extends munit.FunSuite {
         "time_stats" -> Json.obj(
           "calls" -> rounds,
           "total_time_ms" -> Duration.fromNanos(total).toMillis,
+          "min_time_ns" -> min,
           "min_time_ms" -> Duration.fromNanos(min).toMillis,
           "max_time_ms" -> Duration.fromNanos(max).toMillis,
           "avg_time_ms" -> Duration.fromNanos(avg).toMillis,
