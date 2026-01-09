@@ -5,23 +5,23 @@ Built to efficiently execute the [OWASP Core Rule Set (CRS)](https://coreruleset
 
 ## Status
 
-this project is a work in progress, right now we are passing **more than 97%** of the [CRS test suite](https://github.com/coreruleset/coreruleset/tree/main/tests/regression/tests)
+this project is a work in progress, right now we are passing **more than 98%** of the [CRS test suite](https://github.com/coreruleset/coreruleset/tree/main/tests/regression/tests)
 
 ```json
 {
   "global_stats" : {
-    "failure_percentage" : 2.410518626734843,
-    "passing_percentage" : 97.58948137326516,
-    "total_tests" : 4107,
-    "success_tests" : 4008,
-    "failure_tests" : 99
+    "failure_percentage" : 1.6321559074299634,
+    "passing_percentage" : 98.36784409257004,
+    "total_tests" : 4105,
+    "success_tests" : 4038,
+    "failure_tests" : 67
   },
   "time_stats" : {
-    "calls" : 4107,
-    "total_time_ms" : 62749,
-    "min_time_ns" : 669625,
+    "calls" : 4105,
+    "total_time_ms" : 64070,
+    "min_time_ns" : 656958,
     "min_time_ms" : 0,
-    "max_time_ms" : 4576,
+    "max_time_ms" : 4719,
     "avg_time_ms" : 15
   }
 }
