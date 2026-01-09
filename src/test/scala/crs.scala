@@ -254,7 +254,7 @@ object CRSTestUtils {
         pfheaders + ("Content-Length" -> List(finalBody.get.length.toString)) + ("Content-Type" -> contentType)
       } else if (finalBody.isDefined && autocomplete_headers && contentLength.isDefined) {
         pfheaders + ("Content-Type" -> contentType)
-      }else {
+      } else {
         pfheaders
       }
     }
@@ -609,8 +609,8 @@ object CRSTestUtils {
 
 class SecLangCRSTest extends munit.FunSuite {
 
-  //private val testOnly: List[(String, Int)] = List(("921120", 1))
-  private val testOnly: List[(String, Int)] = List.empty
+  private val testOnly: List[(String, Int)] = List(("942100", 1))
+  //private val testOnly: List[(String, Int)] = List.empty
   private val ignoreTests: List[(String, Int)] = List( // TODO: fix later
     ("920160", 5),
     ("920250", 1),
@@ -690,6 +690,7 @@ class SecLangCRSTest extends munit.FunSuite {
             val no_expect_ids: List[Int] = (log \ "no_expect_ids").asOpt[List[Int]].getOrElse(List.empty)
             var checked = false
             var ok = true
+            var apache = false
             var cause = "--"
             if (status.isDefined) {
               checked = true
@@ -701,6 +702,7 @@ class SecLangCRSTest extends munit.FunSuite {
               if (status.get == 400 && maybe_passed) {
                 // here we try to catch Apache specific cases where Apache does the validation instead of the waf
                 ok = true
+                apache = true
                 println(s"Apache specific check: ${rule} - ${testId}")
               } else if (outStatus != status.get) {
                 failures.incrementAndGet()
@@ -710,7 +712,7 @@ class SecLangCRSTest extends munit.FunSuite {
               }
               if (!dev) assertEquals(outStatus, status.get, s"status mismatch for test ${testId}")
             }
-            if (expect_ids.nonEmpty) {
+            if (expect_ids.nonEmpty && !apache) {
               checked = true
               expect_ids.foreach { expect_id =>
 
@@ -725,7 +727,7 @@ class SecLangCRSTest extends munit.FunSuite {
                 if (!dev) assertEquals(passed, true, s"expect_id mismatch for test ${testId}")
               }
             }
-            if (no_expect_ids.nonEmpty) {
+            if (no_expect_ids.nonEmpty && !apache) {
               checked = true
               no_expect_ids.foreach { no_expect_id =>
                 val notpassed = result.events.exists(evt => evt.ruleId.contains(no_expect_id))

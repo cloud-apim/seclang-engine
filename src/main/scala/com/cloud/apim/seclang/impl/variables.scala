@@ -39,7 +39,10 @@ object EngineVariables {
     // https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29#user-content-Variables
     val (col, key) = sel match {
       case Variable.Simple(name) => (name, None)
-      case Variable.Collection(collection, key) => (collection, key.map(_.toLowerCase()))
+      case Variable.Collection(collection, key) => (collection, key.map {
+        case k if k.startsWith("/") && k.endsWith("/") => k
+        case k => k.toLowerCase()
+      })
     }
     val (rawPath, path, rawQuery) = {
       if (ctx.method.toLowerCase == "connect") {
@@ -155,6 +158,9 @@ object EngineVariables {
         case None =>
           ctx.cookies.toList.flatMap { case (k, vs) => vs }//.map(v => s"$k: $v") }
         case Some(h) if h.startsWith("/") && h.endsWith("/") =>
+          if (debug) {
+            println(s"REQUEST_COOKIES - key: ${key}")
+          }
           val r = h.substring(1, h.length - 1).r
           ctx.cookies.collect {
             case (k, vs) if r.findFirstIn(k).isDefined => vs

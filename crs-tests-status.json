@@ -1,17 +1,17 @@
 {
   "global_stats" : {
-    "failure_percentage" : 6.695885074263453,
-    "passing_percentage" : 93.30411492573654,
+    "failure_percentage" : 6.622839055271488,
+    "passing_percentage" : 93.37716094472852,
     "total_tests" : 4107,
-    "success_tests" : 3832,
-    "failure_tests" : 275
+    "success_tests" : 3835,
+    "failure_tests" : 272
   },
   "time_stats" : {
     "calls" : 4107,
-    "total_time_ms" : 64803,
+    "total_time_ms" : 45875,
     "min_time_ms" : 0,
-    "max_time_ms" : 4727,
-    "avg_time_ms" : 15
+    "max_time_ms" : 3399,
+    "avg_time_ms" : 11
   },
   "test_failures" : [ {
     "test_rule" : "920230",
@@ -89,45 +89,6 @@
       } ]
     },
     "tested_rule" : [ "SecRule ARGS \"@rx %[0-9a-fA-F]{2}\" \"id:920230,\\\n  phase:2,\\\n  block,\\\n  t:none,\\\n  msg:'Multiple URL Encoding Detected',\\\n  logdata:'%{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-protocol',\\\n  tag:'paranoia-level/2',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/PROTOCOL-ENFORCEMENT',\\\n  tag:'capec/1000/255/153/267/120',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'WARNING',\\\n  setvar:'tx.inbound_anomaly_score_pl2=+%{tx.warning_anomaly_score}'\"" ]
-  }, {
-    "test_rule" : "921140",
-    "test_id" : 1,
-    "test_path" : "REQUEST-921-PROTOCOL-ATTACK/921140.yaml",
-    "description" : "HTTP Header Injection Attack via headers",
-    "cause" : "failed no_expect_ids check: 921140 was found",
-    "result" : {
-      "disposition" : {
-        "type" : "Disposition",
-        "action_type" : "continue"
-      },
-      "events" : [ "phase=1 rule_id=920274 - Invalid character in request headers (outside of very strict set)", "phase=1 rule_id=921140 - HTTP Header Injection Attack via headers", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)" ]
-    },
-    "test" : {
-      "test_id" : 1,
-      "desc" : "HTTP Header Injection Attack via headers",
-      "stages" : [ {
-        "input" : {
-          "dest_addr" : "127.0.0.1",
-          "method" : "GET",
-          "port" : 80,
-          "headers" : {
-            "Host" : "localhost",
-            "SomeHeader" : "Headerdata\rInjectedHeader: response_splitting_code",
-            "User-Agent" : "OWASP CRS test agent",
-            "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
-          },
-          "uri" : "/",
-          "version" : "HTTP/1.1"
-        },
-        "output" : {
-          "status" : 400,
-          "log" : {
-            "no_expect_ids" : [ 921140 ]
-          }
-        }
-      } ]
-    },
-    "tested_rule" : [ "SecRule REQUEST_HEADERS_NAMES|REQUEST_HEADERS \"@rx [\\n\\r]\" \"id:921140,\\\n  phase:1,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:urlDecodeUni,\\\n  msg:'HTTP Header Injection Attack via headers',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-protocol',\\\n  tag:'paranoia-level/1',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/PROTOCOL-ATTACK',\\\n  tag:'capec/1000/210/272/220/273',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  setvar:'tx.http_violation_score=+%{tx.critical_anomaly_score}',\\\n  setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}'\"" ]
   }, {
     "test_rule" : "921150",
     "test_id" : 1,
@@ -275,84 +236,6 @@
       } ]
     },
     "tested_rule" : [ "SecRule TX:/paramcounter_.*/ \"@gt 1\" \"id:921180,\\\n  phase:2,\\\n  block,\\\n  msg:'HTTP Parameter Pollution (%{MATCHED_VAR_NAME})',\\\n  logdata:'Matched Data: %{MATCHED_VAR} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-protocol',\\\n  tag:'paranoia-level/3',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/PROTOCOL-ATTACK',\\\n  tag:'capec/1000/152/137/15/460',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  setvar:'tx.http_violation_score=+%{tx.critical_anomaly_score}',\\\n  setvar:'tx.inbound_anomaly_score_pl3=+%{tx.critical_anomaly_score}'\"" ]
-  }, {
-    "test_rule" : "921250",
-    "test_id" : 1,
-    "test_path" : "REQUEST-921-PROTOCOL-ATTACK/921250.yaml",
-    "description" : "Positive test: Detect if the cookie V1 is present in the request headers",
-    "cause" : "failed expect_id check: 921250 not found",
-    "result" : {
-      "disposition" : {
-        "type" : "Disposition",
-        "action_type" : "continue"
-      },
-      "events" : [ ]
-    },
-    "test" : {
-      "test_id" : 1,
-      "desc" : "Positive test: Detect if the cookie V1 is present in the request headers",
-      "stages" : [ {
-        "input" : {
-          "dest_addr" : "127.0.0.1",
-          "headers" : {
-            "Host" : "localhost",
-            "User-Agent" : "OWASP CRS test agent",
-            "Accept" : "*/*",
-            "Origin" : "https://www.example.com",
-            "Referer" : "https://www.example.com/",
-            "Cookie" : "$Version=1; session=\\\"deadbeef; PHPSESSID=secret; dummy=qaz\\\""
-          },
-          "port" : 80,
-          "uri" : "/",
-          "version" : "HTTP/1.1"
-        },
-        "output" : {
-          "log" : {
-            "expect_ids" : [ 921250 ]
-          }
-        }
-      } ]
-    },
-    "tested_rule" : [ "SecRule REQUEST_COOKIES:/\\x22?\\x24Version/ \"@streq 1\" \"id:921250,\\\n  phase:1,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:lowercase,\\\n  msg:'Old Cookies V1 usage attempt detected',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'attack-protocol',\\\n  tag:'paranoia-level/1',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/PROTOCOL-ATTACK',\\\n  tag:'capec/1000/210/272/220/33',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}'\"" ]
-  }, {
-    "test_rule" : "921250",
-    "test_id" : 2,
-    "test_path" : "REQUEST-921-PROTOCOL-ATTACK/921250.yaml",
-    "description" : "Positive test: Detect if cookie V1 and also quoting is trying to be abused in the request headers",
-    "cause" : "failed expect_id check: 921250 not found",
-    "result" : {
-      "disposition" : {
-        "type" : "Disposition",
-        "action_type" : "continue"
-      },
-      "events" : [ ]
-    },
-    "test" : {
-      "test_id" : 2,
-      "desc" : "Positive test: Detect if cookie V1 and also quoting is trying to be abused in the request headers",
-      "stages" : [ {
-        "input" : {
-          "dest_addr" : "127.0.0.1",
-          "headers" : {
-            "Host" : "localhost",
-            "User-Agent" : "OWASP CRS test agent",
-            "Accept" : "*/*",
-            "Origin" : "https://www.example.com",
-            "Referer" : "https://www.example.com/",
-            "Cookie" : "$Version=1; session=\"deadbeef; PHPSESSID=secret; dummy=qaz\""
-          },
-          "port" : 80,
-          "uri" : "/",
-          "version" : "HTTP/1.1"
-        },
-        "output" : {
-          "log" : {
-            "expect_ids" : [ 921250 ]
-          }
-        }
-      } ]
-    },
-    "tested_rule" : [ "SecRule REQUEST_COOKIES:/\\x22?\\x24Version/ \"@streq 1\" \"id:921250,\\\n  phase:1,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:lowercase,\\\n  msg:'Old Cookies V1 usage attempt detected',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'attack-protocol',\\\n  tag:'paranoia-level/1',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/PROTOCOL-ATTACK',\\\n  tag:'capec/1000/210/272/220/33',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}'\"" ]
   }, {
     "test_rule" : "922100",
     "test_id" : 1,
