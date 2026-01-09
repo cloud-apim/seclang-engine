@@ -124,13 +124,20 @@ object EngineVariables {
         }
       }
       case "ARGS_NAMES" => {
-        val headers = ctx.body match {
+        val headers = (ctx.body match {
           case Some(body) if ctx.isWwwFormUrlEncoded => {
             val bodyArgs = FormUrlEncoded.parse(body.utf8String)
             deepMerge(ctx.query, bodyArgs)
           }
           case _ => ctx.query
-        }
+        }) ++ (if (ctx.body.isDefined && ctx.contentType.exists(_.contains("application/json"))) {
+          try {
+            val map: Map[String, JsValue] = Json.parse(ctx.body.map(_.utf8String).getOrElse("{}")).asOpt[Map[String, JsValue]].getOrElse(Map.empty)
+            map.mapValues(jsToStr)
+          } catch {
+            case t: Throwable => Map.empty
+          }
+        } else Map.empty)
         headers.keySet.toList
       }
       case "ARGS_COMBINED_SIZE" => {

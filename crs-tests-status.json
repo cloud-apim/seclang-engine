@@ -1,18 +1,18 @@
 {
   "global_stats" : {
-    "failure_percentage" : 5.186267348429511,
-    "passing_percentage" : 94.81373265157049,
+    "failure_percentage" : 5.0645239834429026,
+    "passing_percentage" : 94.9354760165571,
     "total_tests" : 4107,
-    "success_tests" : 3894,
-    "failure_tests" : 213
+    "success_tests" : 3899,
+    "failure_tests" : 208
   },
   "time_stats" : {
     "calls" : 4107,
-    "total_time_ms" : 43536,
-    "min_time_ns" : 522833,
+    "total_time_ms" : 65224,
+    "min_time_ns" : 621667,
     "min_time_ms" : 0,
-    "max_time_ms" : 3191,
-    "avg_time_ms" : 10
+    "max_time_ms" : 4550,
+    "avg_time_ms" : 15
   },
   "test_failures" : [ {
     "test_rule" : "920230",
@@ -5910,201 +5910,6 @@
       } ]
     },
     "tested_rule" : [ "SecRule REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|REQUEST_FILENAME|XML:/* \"@rx \\+ADw-.*(?:\\+AD4-|>)|<.*\\+AD4-\" \"id:941350,\\\n  phase:2,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:urlDecodeUni,\\\n  t:htmlEntityDecode,\\\n  t:jsDecode,\\\n  msg:'UTF-7 Encoding IE XSS - Attack Detected',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-internet-explorer',\\\n  tag:'attack-xss',\\\n  tag:'xss-perf-disable',\\\n  tag:'paranoia-level/1',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/ATTACK-XSS',\\\n  tag:'capec/1000/152/242',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  setvar:'tx.xss_score=+%{tx.critical_anomaly_score}',\\\n  setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}'\"" ]
-  }, {
-    "test_rule" : "942290",
-    "test_id" : 5,
-    "test_path" : "REQUEST-942-APPLICATION-ATTACK-SQLI/942290.yaml",
-    "description" : "basic MongoDB NOSQL injection attempts 4",
-    "cause" : "failed expect_id check: 942290 not found",
-    "result" : {
-      "disposition" : {
-        "type" : "Disposition",
-        "action_type" : "continue"
-      },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)" ]
-    },
-    "test" : {
-      "test_id" : 5,
-      "desc" : "basic MongoDB NOSQL injection attempts 4",
-      "stages" : [ {
-        "input" : {
-          "dest_addr" : "127.0.0.1",
-          "headers" : {
-            "Accept" : "*/*",
-            "Host" : "localhost",
-            "User-Agent" : "OWASP CRS test agent",
-            "Content-Type" : "application/json"
-          },
-          "method" : "POST",
-          "port" : 80,
-          "uri" : "/post",
-          "data" : "{\"$not\": \"foo\"}",
-          "version" : "HTTP/1.1"
-        },
-        "output" : {
-          "log" : {
-            "expect_ids" : [ 942290 ]
-          }
-        }
-      } ]
-    },
-    "tested_rule" : [ "SecRule REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/* \"@rx (?i)\\[?\\$(?:a(?:bs|c(?:cumulator|osh?)|dd(?:ToSet)?|ll(?:ElementsTrue)?|n(?:d|yElementTrue)|rray(?:ElemA|ToObjec)t|sinh?|tan[2h]?|vg)|b(?:etween|i(?:narySize|t(?:And|Not|(?:O|Xo)r)?)|ottomN?|sonSize|ucket(?:Auto)?)|c(?:eil|mp|o(?:n(?:cat(?:Arrays)?|d|vert)|sh?|unt|variance(?:Po|Sam)p)|urrentDate)|d(?:a(?:te(?:Add|Diff|From(?:Parts|String)|Subtract|T(?:o(?:Parts|String)|runc))|yOf(?:Month|Week|Year))|e(?:greesToRadians|nseRank|rivative)|iv(?:ide)?|ocumentNumber)|e(?:(?:a|lemMat)ch|q|x(?:ists|p(?:MovingAvg|r)?))|f(?:i(?:lter|rstN?)|loor|unction)|g(?:etField|roup|te?)|(?:hou|xo|yea)r|i(?:fNull|n(?:c|dexOf(?:Array|Bytes|CP)|tegral)?|s(?:Array|Number|o(?:DayOfWeek|Week(?:Year)?)))|jsonSchema|l(?:astN?|et|i(?:ke|(?:nearFil|tera)l)|n|o(?:cf|g(?:10)?)|t(?:e|rim)?)|m(?:a(?:p|xN?)|e(?:dian|rgeObjects|ta)|i(?:llisecond|n(?:N|ute)?)|o(?:d|nth)|ul(?:tiply)?)|n(?:atural|e|in|o[rt])|o(?:bjectToArray|r)|p(?:ercentile|o(?:[pw]|sition)|roject|u(?:ll(?:All)?|sh))|r(?:a(?:diansToDegrees|n(?:[dk]|ge))|e(?:(?:duc|nam)e|gex(?:Find(?:All)?|Match)?|place(?:All|One)|verseArray)|ound|trim)|s(?:(?:ampleRat|lic)e|e(?:cond|t(?:Difference|(?:Equal|WindowField)s|Field|I(?:ntersection|sSubset)|OnInsert|Union)?)|(?:hif|pli|qr)t|i(?:nh?|ze)|ort(?:Array)?|t(?:dDev(?:Po|Sam)p|r(?:Len(?:Bytes|CP)|casecmp))|u(?:b(?:str(?:Bytes|CP)?|tract)|m)|witch)|t(?:anh?|ext|o(?:Bool|D(?:(?:at|oubl)e|ecimal)|HashedIndexKey|Int|Lo(?:ng|wer)|ObjectId|String|U(?:UID|pper)|pN?)|r(?:im|unc)|s(?:Increment|Second)|ype)|unset|w(?:eek|here)|zip)\\]?\" \"id:942290,\\\n  phase:2,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:urlDecodeUni,\\\n  msg:'Finds basic MongoDB SQL injection attempts',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-sqli',\\\n  tag:'paranoia-level/1',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/ATTACK-SQLI',\\\n  tag:'capec/1000/152/248/66',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  setvar:'tx.sql_injection_score=+%{tx.critical_anomaly_score}',\\\n  setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}'\"" ]
-  }, {
-    "test_rule" : "942290",
-    "test_id" : 6,
-    "test_path" : "REQUEST-942-APPLICATION-ATTACK-SQLI/942290.yaml",
-    "description" : "basic MongoDB NOSQL injection attempts 5",
-    "cause" : "failed expect_id check: 942290 not found",
-    "result" : {
-      "disposition" : {
-        "type" : "Disposition",
-        "action_type" : "continue"
-      },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)" ]
-    },
-    "test" : {
-      "test_id" : 6,
-      "desc" : "basic MongoDB NOSQL injection attempts 5",
-      "stages" : [ {
-        "input" : {
-          "dest_addr" : "127.0.0.1",
-          "headers" : {
-            "Accept" : "*/*",
-            "Host" : "localhost",
-            "User-Agent" : "OWASP CRS test agent",
-            "Content-Type" : "application/json"
-          },
-          "method" : "POST",
-          "port" : 80,
-          "uri" : "/post",
-          "data" : "{\"$nor\": \"foo\"}",
-          "version" : "HTTP/1.1"
-        },
-        "output" : {
-          "log" : {
-            "expect_ids" : [ 942290 ]
-          }
-        }
-      } ]
-    },
-    "tested_rule" : [ "SecRule REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/* \"@rx (?i)\\[?\\$(?:a(?:bs|c(?:cumulator|osh?)|dd(?:ToSet)?|ll(?:ElementsTrue)?|n(?:d|yElementTrue)|rray(?:ElemA|ToObjec)t|sinh?|tan[2h]?|vg)|b(?:etween|i(?:narySize|t(?:And|Not|(?:O|Xo)r)?)|ottomN?|sonSize|ucket(?:Auto)?)|c(?:eil|mp|o(?:n(?:cat(?:Arrays)?|d|vert)|sh?|unt|variance(?:Po|Sam)p)|urrentDate)|d(?:a(?:te(?:Add|Diff|From(?:Parts|String)|Subtract|T(?:o(?:Parts|String)|runc))|yOf(?:Month|Week|Year))|e(?:greesToRadians|nseRank|rivative)|iv(?:ide)?|ocumentNumber)|e(?:(?:a|lemMat)ch|q|x(?:ists|p(?:MovingAvg|r)?))|f(?:i(?:lter|rstN?)|loor|unction)|g(?:etField|roup|te?)|(?:hou|xo|yea)r|i(?:fNull|n(?:c|dexOf(?:Array|Bytes|CP)|tegral)?|s(?:Array|Number|o(?:DayOfWeek|Week(?:Year)?)))|jsonSchema|l(?:astN?|et|i(?:ke|(?:nearFil|tera)l)|n|o(?:cf|g(?:10)?)|t(?:e|rim)?)|m(?:a(?:p|xN?)|e(?:dian|rgeObjects|ta)|i(?:llisecond|n(?:N|ute)?)|o(?:d|nth)|ul(?:tiply)?)|n(?:atural|e|in|o[rt])|o(?:bjectToArray|r)|p(?:ercentile|o(?:[pw]|sition)|roject|u(?:ll(?:All)?|sh))|r(?:a(?:diansToDegrees|n(?:[dk]|ge))|e(?:(?:duc|nam)e|gex(?:Find(?:All)?|Match)?|place(?:All|One)|verseArray)|ound|trim)|s(?:(?:ampleRat|lic)e|e(?:cond|t(?:Difference|(?:Equal|WindowField)s|Field|I(?:ntersection|sSubset)|OnInsert|Union)?)|(?:hif|pli|qr)t|i(?:nh?|ze)|ort(?:Array)?|t(?:dDev(?:Po|Sam)p|r(?:Len(?:Bytes|CP)|casecmp))|u(?:b(?:str(?:Bytes|CP)?|tract)|m)|witch)|t(?:anh?|ext|o(?:Bool|D(?:(?:at|oubl)e|ecimal)|HashedIndexKey|Int|Lo(?:ng|wer)|ObjectId|String|U(?:UID|pper)|pN?)|r(?:im|unc)|s(?:Increment|Second)|ype)|unset|w(?:eek|here)|zip)\\]?\" \"id:942290,\\\n  phase:2,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:urlDecodeUni,\\\n  msg:'Finds basic MongoDB SQL injection attempts',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-sqli',\\\n  tag:'paranoia-level/1',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/ATTACK-SQLI',\\\n  tag:'capec/1000/152/248/66',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  setvar:'tx.sql_injection_score=+%{tx.critical_anomaly_score}',\\\n  setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}'\"" ]
-  }, {
-    "test_rule" : "942290",
-    "test_id" : 7,
-    "test_path" : "REQUEST-942-APPLICATION-ATTACK-SQLI/942290.yaml",
-    "description" : "basic MongoDB NOSQL injection attempts 6",
-    "cause" : "failed expect_id check: 942290 not found",
-    "result" : {
-      "disposition" : {
-        "type" : "Disposition",
-        "action_type" : "continue"
-      },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)" ]
-    },
-    "test" : {
-      "test_id" : 7,
-      "desc" : "basic MongoDB NOSQL injection attempts 6",
-      "stages" : [ {
-        "input" : {
-          "dest_addr" : "127.0.0.1",
-          "headers" : {
-            "Accept" : "*/*",
-            "Host" : "localhost",
-            "User-Agent" : "OWASP CRS test agent",
-            "Content-Type" : "application/json"
-          },
-          "method" : "POST",
-          "port" : 80,
-          "uri" : "/post",
-          "data" : "{\"$where\": \"foo\"}",
-          "version" : "HTTP/1.1"
-        },
-        "output" : {
-          "log" : {
-            "expect_ids" : [ 942290 ]
-          }
-        }
-      } ]
-    },
-    "tested_rule" : [ "SecRule REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/* \"@rx (?i)\\[?\\$(?:a(?:bs|c(?:cumulator|osh?)|dd(?:ToSet)?|ll(?:ElementsTrue)?|n(?:d|yElementTrue)|rray(?:ElemA|ToObjec)t|sinh?|tan[2h]?|vg)|b(?:etween|i(?:narySize|t(?:And|Not|(?:O|Xo)r)?)|ottomN?|sonSize|ucket(?:Auto)?)|c(?:eil|mp|o(?:n(?:cat(?:Arrays)?|d|vert)|sh?|unt|variance(?:Po|Sam)p)|urrentDate)|d(?:a(?:te(?:Add|Diff|From(?:Parts|String)|Subtract|T(?:o(?:Parts|String)|runc))|yOf(?:Month|Week|Year))|e(?:greesToRadians|nseRank|rivative)|iv(?:ide)?|ocumentNumber)|e(?:(?:a|lemMat)ch|q|x(?:ists|p(?:MovingAvg|r)?))|f(?:i(?:lter|rstN?)|loor|unction)|g(?:etField|roup|te?)|(?:hou|xo|yea)r|i(?:fNull|n(?:c|dexOf(?:Array|Bytes|CP)|tegral)?|s(?:Array|Number|o(?:DayOfWeek|Week(?:Year)?)))|jsonSchema|l(?:astN?|et|i(?:ke|(?:nearFil|tera)l)|n|o(?:cf|g(?:10)?)|t(?:e|rim)?)|m(?:a(?:p|xN?)|e(?:dian|rgeObjects|ta)|i(?:llisecond|n(?:N|ute)?)|o(?:d|nth)|ul(?:tiply)?)|n(?:atural|e|in|o[rt])|o(?:bjectToArray|r)|p(?:ercentile|o(?:[pw]|sition)|roject|u(?:ll(?:All)?|sh))|r(?:a(?:diansToDegrees|n(?:[dk]|ge))|e(?:(?:duc|nam)e|gex(?:Find(?:All)?|Match)?|place(?:All|One)|verseArray)|ound|trim)|s(?:(?:ampleRat|lic)e|e(?:cond|t(?:Difference|(?:Equal|WindowField)s|Field|I(?:ntersection|sSubset)|OnInsert|Union)?)|(?:hif|pli|qr)t|i(?:nh?|ze)|ort(?:Array)?|t(?:dDev(?:Po|Sam)p|r(?:Len(?:Bytes|CP)|casecmp))|u(?:b(?:str(?:Bytes|CP)?|tract)|m)|witch)|t(?:anh?|ext|o(?:Bool|D(?:(?:at|oubl)e|ecimal)|HashedIndexKey|Int|Lo(?:ng|wer)|ObjectId|String|U(?:UID|pper)|pN?)|r(?:im|unc)|s(?:Increment|Second)|ype)|unset|w(?:eek|here)|zip)\\]?\" \"id:942290,\\\n  phase:2,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:urlDecodeUni,\\\n  msg:'Finds basic MongoDB SQL injection attempts',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-sqli',\\\n  tag:'paranoia-level/1',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/ATTACK-SQLI',\\\n  tag:'capec/1000/152/248/66',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  setvar:'tx.sql_injection_score=+%{tx.critical_anomaly_score}',\\\n  setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}'\"" ]
-  }, {
-    "test_rule" : "942290",
-    "test_id" : 8,
-    "test_path" : "REQUEST-942-APPLICATION-ATTACK-SQLI/942290.yaml",
-    "description" : "basic MongoDB NOSQL injection attempts 7",
-    "cause" : "failed expect_id check: 942290 not found",
-    "result" : {
-      "disposition" : {
-        "type" : "Disposition",
-        "action_type" : "continue"
-      },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)" ]
-    },
-    "test" : {
-      "test_id" : 8,
-      "desc" : "basic MongoDB NOSQL injection attempts 7",
-      "stages" : [ {
-        "input" : {
-          "dest_addr" : "127.0.0.1",
-          "headers" : {
-            "Accept" : "*/*",
-            "Host" : "localhost",
-            "User-Agent" : "OWASP CRS test agent",
-            "Content-Type" : "application/json"
-          },
-          "method" : "POST",
-          "port" : 80,
-          "uri" : "/post",
-          "data" : "{\"$elemMatch\": \"foo\"}",
-          "version" : "HTTP/1.1"
-        },
-        "output" : {
-          "log" : {
-            "expect_ids" : [ 942290 ]
-          }
-        }
-      } ]
-    },
-    "tested_rule" : [ "SecRule REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/* \"@rx (?i)\\[?\\$(?:a(?:bs|c(?:cumulator|osh?)|dd(?:ToSet)?|ll(?:ElementsTrue)?|n(?:d|yElementTrue)|rray(?:ElemA|ToObjec)t|sinh?|tan[2h]?|vg)|b(?:etween|i(?:narySize|t(?:And|Not|(?:O|Xo)r)?)|ottomN?|sonSize|ucket(?:Auto)?)|c(?:eil|mp|o(?:n(?:cat(?:Arrays)?|d|vert)|sh?|unt|variance(?:Po|Sam)p)|urrentDate)|d(?:a(?:te(?:Add|Diff|From(?:Parts|String)|Subtract|T(?:o(?:Parts|String)|runc))|yOf(?:Month|Week|Year))|e(?:greesToRadians|nseRank|rivative)|iv(?:ide)?|ocumentNumber)|e(?:(?:a|lemMat)ch|q|x(?:ists|p(?:MovingAvg|r)?))|f(?:i(?:lter|rstN?)|loor|unction)|g(?:etField|roup|te?)|(?:hou|xo|yea)r|i(?:fNull|n(?:c|dexOf(?:Array|Bytes|CP)|tegral)?|s(?:Array|Number|o(?:DayOfWeek|Week(?:Year)?)))|jsonSchema|l(?:astN?|et|i(?:ke|(?:nearFil|tera)l)|n|o(?:cf|g(?:10)?)|t(?:e|rim)?)|m(?:a(?:p|xN?)|e(?:dian|rgeObjects|ta)|i(?:llisecond|n(?:N|ute)?)|o(?:d|nth)|ul(?:tiply)?)|n(?:atural|e|in|o[rt])|o(?:bjectToArray|r)|p(?:ercentile|o(?:[pw]|sition)|roject|u(?:ll(?:All)?|sh))|r(?:a(?:diansToDegrees|n(?:[dk]|ge))|e(?:(?:duc|nam)e|gex(?:Find(?:All)?|Match)?|place(?:All|One)|verseArray)|ound|trim)|s(?:(?:ampleRat|lic)e|e(?:cond|t(?:Difference|(?:Equal|WindowField)s|Field|I(?:ntersection|sSubset)|OnInsert|Union)?)|(?:hif|pli|qr)t|i(?:nh?|ze)|ort(?:Array)?|t(?:dDev(?:Po|Sam)p|r(?:Len(?:Bytes|CP)|casecmp))|u(?:b(?:str(?:Bytes|CP)?|tract)|m)|witch)|t(?:anh?|ext|o(?:Bool|D(?:(?:at|oubl)e|ecimal)|HashedIndexKey|Int|Lo(?:ng|wer)|ObjectId|String|U(?:UID|pper)|pN?)|r(?:im|unc)|s(?:Increment|Second)|ype)|unset|w(?:eek|here)|zip)\\]?\" \"id:942290,\\\n  phase:2,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:urlDecodeUni,\\\n  msg:'Finds basic MongoDB SQL injection attempts',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-sqli',\\\n  tag:'paranoia-level/1',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/ATTACK-SQLI',\\\n  tag:'capec/1000/152/248/66',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  setvar:'tx.sql_injection_score=+%{tx.critical_anomaly_score}',\\\n  setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}'\"" ]
-  }, {
-    "test_rule" : "942290",
-    "test_id" : 9,
-    "test_path" : "REQUEST-942-APPLICATION-ATTACK-SQLI/942290.yaml",
-    "description" : "basic MongoDB NOSQL injection attempts 8",
-    "cause" : "failed expect_id check: 942290 not found",
-    "result" : {
-      "disposition" : {
-        "type" : "Disposition",
-        "action_type" : "continue"
-      },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)" ]
-    },
-    "test" : {
-      "test_id" : 9,
-      "desc" : "basic MongoDB NOSQL injection attempts 8",
-      "stages" : [ {
-        "input" : {
-          "dest_addr" : "127.0.0.1",
-          "headers" : {
-            "Accept" : "*/*",
-            "Host" : "localhost",
-            "User-Agent" : "OWASP CRS test agent",
-            "Content-Type" : "application/json"
-          },
-          "method" : "POST",
-          "port" : 80,
-          "uri" : "/post",
-          "data" : "{\"$text\": \"foo\"}",
-          "version" : "HTTP/1.1"
-        },
-        "output" : {
-          "log" : {
-            "expect_ids" : [ 942290 ]
-          }
-        }
-      } ]
-    },
-    "tested_rule" : [ "SecRule REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/* \"@rx (?i)\\[?\\$(?:a(?:bs|c(?:cumulator|osh?)|dd(?:ToSet)?|ll(?:ElementsTrue)?|n(?:d|yElementTrue)|rray(?:ElemA|ToObjec)t|sinh?|tan[2h]?|vg)|b(?:etween|i(?:narySize|t(?:And|Not|(?:O|Xo)r)?)|ottomN?|sonSize|ucket(?:Auto)?)|c(?:eil|mp|o(?:n(?:cat(?:Arrays)?|d|vert)|sh?|unt|variance(?:Po|Sam)p)|urrentDate)|d(?:a(?:te(?:Add|Diff|From(?:Parts|String)|Subtract|T(?:o(?:Parts|String)|runc))|yOf(?:Month|Week|Year))|e(?:greesToRadians|nseRank|rivative)|iv(?:ide)?|ocumentNumber)|e(?:(?:a|lemMat)ch|q|x(?:ists|p(?:MovingAvg|r)?))|f(?:i(?:lter|rstN?)|loor|unction)|g(?:etField|roup|te?)|(?:hou|xo|yea)r|i(?:fNull|n(?:c|dexOf(?:Array|Bytes|CP)|tegral)?|s(?:Array|Number|o(?:DayOfWeek|Week(?:Year)?)))|jsonSchema|l(?:astN?|et|i(?:ke|(?:nearFil|tera)l)|n|o(?:cf|g(?:10)?)|t(?:e|rim)?)|m(?:a(?:p|xN?)|e(?:dian|rgeObjects|ta)|i(?:llisecond|n(?:N|ute)?)|o(?:d|nth)|ul(?:tiply)?)|n(?:atural|e|in|o[rt])|o(?:bjectToArray|r)|p(?:ercentile|o(?:[pw]|sition)|roject|u(?:ll(?:All)?|sh))|r(?:a(?:diansToDegrees|n(?:[dk]|ge))|e(?:(?:duc|nam)e|gex(?:Find(?:All)?|Match)?|place(?:All|One)|verseArray)|ound|trim)|s(?:(?:ampleRat|lic)e|e(?:cond|t(?:Difference|(?:Equal|WindowField)s|Field|I(?:ntersection|sSubset)|OnInsert|Union)?)|(?:hif|pli|qr)t|i(?:nh?|ze)|ort(?:Array)?|t(?:dDev(?:Po|Sam)p|r(?:Len(?:Bytes|CP)|casecmp))|u(?:b(?:str(?:Bytes|CP)?|tract)|m)|witch)|t(?:anh?|ext|o(?:Bool|D(?:(?:at|oubl)e|ecimal)|HashedIndexKey|Int|Lo(?:ng|wer)|ObjectId|String|U(?:UID|pper)|pN?)|r(?:im|unc)|s(?:Increment|Second)|ype)|unset|w(?:eek|here)|zip)\\]?\" \"id:942290,\\\n  phase:2,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:urlDecodeUni,\\\n  msg:'Finds basic MongoDB SQL injection attempts',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-sqli',\\\n  tag:'paranoia-level/1',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/ATTACK-SQLI',\\\n  tag:'capec/1000/152/248/66',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  setvar:'tx.sql_injection_score=+%{tx.critical_anomaly_score}',\\\n  setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}'\"" ]
   }, {
     "test_rule" : "942440",
     "test_id" : 3,

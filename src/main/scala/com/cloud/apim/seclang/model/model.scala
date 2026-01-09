@@ -1626,6 +1626,13 @@ class DefaultSecLangIntegration(maxCacheItems: Int = 1000) extends SecLangIntegr
   }
 }
 
+class NoLogSecLangIntegration(maxCacheItems: Int = 1000) extends DefaultSecLangIntegration(maxCacheItems) {
+  override def logDebug(msg: String): Unit = ()
+  override def logInfo(msg: String): Unit = ()
+  override def logAudit(msg: String): Unit = ()
+  override def logError(msg: String): Unit = ()
+}
+
 object DefaultSecLangIntegration {
   val default = new DefaultSecLangIntegration()
   def apply(maxCacheItems: Int = 1000): DefaultSecLangIntegration = new DefaultSecLangIntegration(maxCacheItems)

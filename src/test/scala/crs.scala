@@ -4,7 +4,7 @@ import akka.util.ByteString
 import com.cloud.apim.seclang.impl.engine.SecLangEngine
 import com.cloud.apim.seclang.impl.utils.StatusCodes
 import com.cloud.apim.seclang.model.Disposition.{Block, Continue}
-import com.cloud.apim.seclang.model.{CompiledItem, RequestContext, RuleChain, SecLangEngineConfig}
+import com.cloud.apim.seclang.model.{CompiledItem, NoLogSecLangIntegration, RequestContext, RuleChain, SecLangEngineConfig}
 import com.cloud.apim.seclang.scaladsl.SecLang
 import play.api.libs.json._
 
@@ -131,7 +131,7 @@ object CRSTestUtils {
         |""".stripMargin
     val config = SecLang.parse(finalRules).right.get
     val program = SecLang.compile(config)
-    SecLang.engine(program, SecLangEngineConfig.default.copy(debugRules = debugRules), files = files)
+    SecLang.engine(program, SecLangEngineConfig.default.copy(debugRules = debugRules), files = files, integration = new NoLogSecLangIntegration())
   }
 
   private def parseQueryString(qs: String): Map[String, List[String]] = {
