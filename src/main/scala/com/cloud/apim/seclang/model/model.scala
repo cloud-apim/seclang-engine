@@ -1426,6 +1426,9 @@ final case class RequestContext(
   def isWwwFormUrlEncoded: Boolean = {
     contentType.exists(_.contains("application/www-form-urlencoded")) || contentType.exists(_.contains("application/x-www-form-urlencoded"))
   }
+  def isXml: Boolean = {
+    contentType.exists(_.contains("application/xml")) || contentType.exists(_.contains("text/xml"))
+  }
   def json: JsValue = Json.obj(
     "requestId" -> requestId,
     "method" -> method,

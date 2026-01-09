@@ -165,7 +165,10 @@ object EngineVariables {
           }.toList
         case Some(key) => state.envMap.get(key).toList
       }
-      case "REQUEST_BODY" | "RESPONSE_BODY" => ctx.body.toList.map(_.utf8String)
+      case "REQUEST_BODY" =>
+        if (ctx.isXml) List.empty
+        else ctx.body.toList.map(_.utf8String)
+      case "RESPONSE_BODY" => ctx.body.toList.map(_.utf8String)
       case "REQUEST_HEADERS_NAMES" | "RESPONSE_HEADERS_NAMES" => ctx.headers.keySet.toList
       case "DURATION" => List((System.currentTimeMillis() - ctx.startTime).toString)
       case "PATH_INFO" => List(path)
