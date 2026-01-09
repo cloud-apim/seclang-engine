@@ -259,7 +259,7 @@ object CRSTestUtils {
       }
     }
     val query: Map[String, List[String]] = try {
-      parseQueryString(new URI(uri).getQuery)
+      parseQueryString(new URI(uri).getRawQuery)
     } catch {
       case e: Throwable => {
         try {

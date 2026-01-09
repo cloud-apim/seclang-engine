@@ -939,4 +939,114 @@ object EscapeSeq {
   }
 }
 
+import java.io.ByteArrayOutputStream
+import java.nio.charset.{Charset, StandardCharsets}
+
+object MsUrlDecode {
+
+  /**
+   * Like URL decode, but supports Microsoft-specific %uHHHH encoding.
+   *
+   * Rules for %uHHHH:
+   * - If code in 0xFF01..0xFF5E (full-width ASCII), adjust low byte using high byte:
+   *     resultByte = (low + 0x20)
+   * - Otherwise: keep only low byte and zero the high byte:
+   *     resultByte = low
+   *
+   * Invalid escapes are left verbatim in output.
+   */
+  def urlDecodeMs(
+                   input: String,
+                   charset: Charset = StandardCharsets.UTF_8,
+                   plusAsSpace: Boolean = true
+                 ): String = {
+    val out = new StringBuilder(input.length)
+    val bytes = new ByteArrayOutputStream(32)
+
+    def flushBytes(): Unit = {
+      if (bytes.size() > 0) {
+        out.append(new String(bytes.toByteArray, charset))
+        bytes.reset()
+      }
+    }
+
+    def hexVal(c: Char): Int = {
+      if (c >= '0' && c <= '9') c - '0'
+      else if (c >= 'a' && c <= 'f') c - 'a' + 10
+      else if (c >= 'A' && c <= 'F') c - 'A' + 10
+      else -1
+    }
+
+    def parseHex2(i: Int): Int = {
+      val h1 = hexVal(input.charAt(i))
+      val h2 = hexVal(input.charAt(i + 1))
+      if (h1 < 0 || h2 < 0) -1 else (h1 << 4) | h2
+    }
+
+    def parseHex4(i: Int): Int = {
+      val a = hexVal(input.charAt(i))
+      val b = hexVal(input.charAt(i + 1))
+      val c = hexVal(input.charAt(i + 2))
+      val d = hexVal(input.charAt(i + 3))
+      if (a < 0 || b < 0 || c < 0 || d < 0) -1
+      else (a << 12) | (b << 8) | (c << 4) | d
+    }
+
+    var i = 0
+    while (i < input.length) {
+      val ch = input.charAt(i)
+
+      if (plusAsSpace && ch == '+') {
+        flushBytes()
+        out.append(' ')
+        i += 1
+      } else if (ch == '%' && i + 2 < input.length) {
+        // Microsoft %uHHHH ?
+        if ((i + 5) < input.length && (input.charAt(i + 1) == 'u' || input.charAt(i + 1) == 'U')) {
+          val code = parseHex4(i + 2)
+          if (code >= 0) {
+            val high = (code >>> 8) & 0xff
+            val low  = code & 0xff
+
+            val decodedByte =
+              if (code >= 0xFF01 && code <= 0xFF5E && high == 0xFF) {
+                // full-width ASCII -> normalize
+                ((low + 0x20) & 0xff)
+              } else {
+                // keep only low byte, zero high byte
+                low & 0xff
+              }
+
+            bytes.write(decodedByte)
+            i += 6 // "%u" + 4 hex
+          } else {
+            // invalid %u escape -> keep verbatim
+            flushBytes()
+            out.append(ch)
+            i += 1
+          }
+        } else {
+          // Standard %HH
+          val b = parseHex2(i + 1)
+          if (b >= 0) {
+            bytes.write(b)
+            i += 3
+          } else {
+            // invalid %HH -> keep verbatim
+            flushBytes()
+            out.append(ch)
+            i += 1
+          }
+        }
+      } else {
+        flushBytes()
+        out.append(ch)
+        i += 1
+      }
+    }
+
+    flushBytes()
+    out.toString()
+  }
+}
 

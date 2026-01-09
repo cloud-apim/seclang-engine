@@ -1,6 +1,6 @@
 package com.cloud.apim.seclang.impl.engine
 
-import com.cloud.apim.seclang.impl.utils.{EscapeSeq, Transformations}
+import com.cloud.apim.seclang.impl.utils.{EscapeSeq, MsUrlDecode, Transformations}
 import com.cloud.apim.seclang.model.SecLangIntegration
 
 import java.net.{URLDecoder, URLEncoder}
@@ -26,7 +26,7 @@ object EngineTransformations {
       case (v, "lowercase") => v.toLowerCase
       case (v, "uppercase") => v.toUpperCase
       case (v, "trim")      => v.trim
-      case (v, "urlDecodeUni") => try URLDecoder.decode(v, StandardCharsets.UTF_8.name()) catch { case _: Throwable => v }
+      case (v, "urlDecodeUni") => try MsUrlDecode.urlDecodeMs(v, StandardCharsets.UTF_8, plusAsSpace = true) catch { case _: Throwable => v }
       case (v, "base64Decode") => Try(new String(Base64.getDecoder.decode(v))).getOrElse(v)
       case (v, "base64DecodeExt") => Try(new String(Base64.getDecoder.decode(v))).getOrElse(v)
       case (v, "base64Encode") => Base64.getEncoder.encodeToString(v.getBytes(StandardCharsets.UTF_8))
