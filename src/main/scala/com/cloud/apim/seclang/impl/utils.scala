@@ -240,12 +240,14 @@ object XmlXPathParser {
 
 object SimpleXmlSelector {
 
-  def select(xml: String, path: String): List[String] = {
+  def select(xml: String, path: String): List[String] = try {
     path match {
       case "//@*" => selectAllAttributes(xml)
       case "/*"   => selectAllText(xml)
       case _      => Nil
     }
+  } catch {
+    case _: Throwable => Nil
   }
 
   private def selectAllAttributes(xml: String): List[String] = {
