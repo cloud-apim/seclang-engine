@@ -20,7 +20,7 @@ object EngineTransformations {
     v
   }
 
-  def applyTransforms(value: String, transforms: List[String], integration: SecLangIntegration): String = {
+  def applyTransforms(value: String, name: String, transforms: List[String], integration: SecLangIntegration): String = {
     // https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29#transformation-functions
     transforms.foldLeft(value) {
       case (v, "lowercase") => v.toLowerCase

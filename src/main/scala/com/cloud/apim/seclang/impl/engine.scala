@@ -296,10 +296,10 @@ final class SecLangEngine(val program: CompiledProgram, config: SecLangEngineCon
     // 2) apply transformations
     val transforms = rule.actions.toList.flatMap(_.actions).toList.collect { case Action.Transform(name) => name }.filterNot(_ == "none")
     val transformed = extracted.map {
-      case (name, values) => (name, values.map(v => EngineTransformations.applyTransforms(v, transforms, integration)))
+      case (name, values) => (name, values.map(v => EngineTransformations.applyTransforms(v, name, transforms, integration)))
     }
     val negatedTransformed = negatedVariables.map {
-      case (name, values) => (name, values.map(v => EngineTransformations.applyTransforms(v, transforms, integration)))
+      case (name, values) => (name, values.map(v => EngineTransformations.applyTransforms(v, name, transforms, integration)))
     }
     // 3) operator match on ANY extracted value
     var matched_vars = List.empty[String]

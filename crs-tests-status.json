@@ -1,18 +1,18 @@
 {
   "global_stats" : {
-    "failure_percentage" : 2.410518626734843,
-    "passing_percentage" : 97.58948137326516,
+    "failure_percentage" : 2.3618212807401995,
+    "passing_percentage" : 97.6381787192598,
     "total_tests" : 4107,
-    "success_tests" : 4008,
-    "failure_tests" : 99
+    "success_tests" : 4010,
+    "failure_tests" : 97
   },
   "time_stats" : {
     "calls" : 4107,
-    "total_time_ms" : 62749,
-    "min_time_ns" : 669625,
+    "total_time_ms" : 67184,
+    "min_time_ns" : 520500,
     "min_time_ms" : 0,
-    "max_time_ms" : 4576,
-    "avg_time_ms" : 15
+    "max_time_ms" : 4720,
+    "avg_time_ms" : 16
   },
   "test_failures" : [ {
     "test_rule" : "920230",
@@ -611,7 +611,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920460 - Abnormal character escapes in request", "phase=2 rule_id=920460 - Abnormal character escapes in request" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920460 - Abnormal character escapes in request", "phase=2 rule_id=920460 - Abnormal character escapes in request", "phase=2 rule_id=920460 - Abnormal character escapes in request" ]
     },
     "test" : {
       "test_id" : 8,
@@ -726,7 +726,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
     },
     "test" : {
       "test_id" : 12,
@@ -806,7 +806,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link" ]
     },
     "test" : {
       "test_id" : 9,
@@ -843,7 +843,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link" ]
     },
     "test" : {
       "test_id" : 11,
@@ -880,7 +880,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
     },
     "test" : {
       "test_id" : 15,
@@ -957,7 +957,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=932200 - RCE Bypass Technique", "phase=2 rule_id=932190 - Remote Command Execution: Wildcard bypass technique attempt", "phase=2 rule_id=942440 - SQL Comment Sequence Detected", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=932235 - Remote Command Execution: Unix Command Injection (command without evasion)", "phase=2 rule_id=932200 - RCE Bypass Technique", "phase=2 rule_id=932200 - RCE Bypass Technique", "phase=2 rule_id=932200 - RCE Bypass Technique", "phase=2 rule_id=932200 - RCE Bypass Technique", "phase=2 rule_id=932236 - Remote Command Execution: Unix Command Injection (command without evasion)", "phase=2 rule_id=932190 - Remote Command Execution: Wildcard bypass technique attempt", "phase=2 rule_id=932190 - Remote Command Execution: Wildcard bypass technique attempt", "phase=2 rule_id=942440 - SQL Comment Sequence Detected", "phase=2 rule_id=942440 - SQL Comment Sequence Detected", "phase=2 rule_id=942440 - SQL Comment Sequence Detected", "phase=2 rule_id=942440 - SQL Comment Sequence Detected", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
     },
     "test" : {
       "test_id" : 13,
@@ -1264,7 +1264,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=1 rule_id=921151 - HTTP Header Injection Attack via payload (CR/LF detected)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=932200 - RCE Bypass Technique", "phase=2 rule_id=932236 - Remote Command Execution: Unix Command Injection (command without evasion)", "phase=2 rule_id=932190 - Remote Command Execution: Wildcard bypass technique attempt", "phase=2 rule_id=942440 - SQL Comment Sequence Detected", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
+      "events" : [ "phase=1 rule_id=921151 - HTTP Header Injection Attack via payload (CR/LF detected)", "phase=2 rule_id=920230 - Multiple URL Encoding Detected", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=932200 - RCE Bypass Technique", "phase=2 rule_id=932200 - RCE Bypass Technique", "phase=2 rule_id=932200 - RCE Bypass Technique", "phase=2 rule_id=932200 - RCE Bypass Technique", "phase=2 rule_id=932236 - Remote Command Execution: Unix Command Injection (command without evasion)", "phase=2 rule_id=932190 - Remote Command Execution: Wildcard bypass technique attempt", "phase=2 rule_id=942440 - SQL Comment Sequence Detected", "phase=2 rule_id=942440 - SQL Comment Sequence Detected", "phase=2 rule_id=942440 - SQL Comment Sequence Detected", "phase=2 rule_id=942440 - SQL Comment Sequence Detected", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
     },
     "test" : {
       "test_id" : 16,
@@ -1301,7 +1301,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941390 - Javascript method detected" ]
+      "events" : [ "phase=2 rule_id=920230 - Multiple URL Encoding Detected", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=941390 - Javascript method detected" ]
     },
     "test" : {
       "test_id" : 5,
@@ -1338,7 +1338,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920250 - UTF8 Encoding Abuse Attack Attempt", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters" ]
+      "events" : [ "phase=2 rule_id=920250 - UTF8 Encoding Abuse Attack Attempt", "phase=2 rule_id=920250 - UTF8 Encoding Abuse Attack Attempt", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters" ]
     },
     "test" : {
       "test_id" : 23,
@@ -1377,7 +1377,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters" ]
+      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters" ]
     },
     "test" : {
       "test_id" : 24,
@@ -1416,7 +1416,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920250 - UTF8 Encoding Abuse Attack Attempt", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters" ]
+      "events" : [ "phase=2 rule_id=920250 - UTF8 Encoding Abuse Attack Attempt", "phase=2 rule_id=920250 - UTF8 Encoding Abuse Attack Attempt", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters" ]
     },
     "test" : {
       "test_id" : 25,
@@ -1455,7 +1455,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920250 - UTF8 Encoding Abuse Attack Attempt", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters" ]
+      "events" : [ "phase=2 rule_id=920250 - UTF8 Encoding Abuse Attack Attempt", "phase=2 rule_id=920250 - UTF8 Encoding Abuse Attack Attempt", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters" ]
     },
     "test" : {
       "test_id" : 26,
@@ -1494,7 +1494,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link", "phase=2 rule_id=934110 - Possible Server Side Request Forgery (SSRF) Attack: Cloud provider metadata URL in Parameter" ]
+      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link", "phase=2 rule_id=934110 - Possible Server Side Request Forgery (SSRF) Attack: Cloud provider metadata URL in Parameter", "phase=2 rule_id=934110 - Possible Server Side Request Forgery (SSRF) Attack: Cloud provider metadata URL in Parameter" ]
     },
     "test" : {
       "test_id" : 39,
@@ -1682,7 +1682,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=932236 - Remote Command Execution: Unix Command Injection (command without evasion)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
+      "events" : [ "phase=2 rule_id=920230 - Multiple URL Encoding Detected", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=932236 - Remote Command Execution: Unix Command Injection (command without evasion)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
     },
     "test" : {
       "test_id" : 4,
@@ -1936,80 +1936,6 @@
       } ]
     },
     "tested_rule" : [ "SecRule REQUEST_COOKIES|!REQUEST_COOKIES:/_pk_ref/|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/* \"@rx /\\*!?|\\*/|[';]--|--(?:[\\s\\x0b]|[^\\-]*?-)|[^&\\-]#.*?[\\s\\x0b]|;?\\x00\" \"id:942440,\\\n  phase:2,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:urlDecodeUni,\\\n  msg:'SQL Comment Sequence Detected',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-sqli',\\\n  tag:'paranoia-level/2',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/ATTACK-SQLI',\\\n  tag:'capec/1000/152/248/66',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  chain\"", "SecRule MATCHED_VARS \"!@rx ^(?:ey[\\-0-9A-Z_a-z]+\\.ey[\\-0-9A-Z_a-z]+\\.)?[\\-0-9A-Z_a-z]+$\" \"t:none,\\\n  setvar:'tx.inbound_anomaly_score_pl2=+%{tx.critical_anomaly_score}',\\\n  setvar:'tx.sql_injection_score=+%{tx.critical_anomaly_score}'\"" ]
-  }, {
-    "test_rule" : "942500",
-    "test_id" : 3,
-    "test_path" : "REQUEST-942-APPLICATION-ATTACK-SQLI/942500.yaml",
-    "description" : "Use of optimizer hints (/*+...*/) as evasion technique",
-    "cause" : "failed expect_id check: 942500 not found",
-    "result" : {
-      "disposition" : {
-        "type" : "Disposition",
-        "action_type" : "continue"
-      },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=932200 - RCE Bypass Technique", "phase=2 rule_id=942100 - SQL Injection Attack Detected via libinjection", "phase=2 rule_id=942440 - SQL Comment Sequence Detected", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
-    },
-    "test" : {
-      "test_id" : 3,
-      "desc" : "Use of optimizer hints (/*+...*/) as evasion technique",
-      "stages" : [ {
-        "input" : {
-          "dest_addr" : "127.0.0.1",
-          "headers" : {
-            "Host" : "localhost",
-            "User-Agent" : "OWASP CRS test agent",
-            "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
-          },
-          "method" : "GET",
-          "port" : 80,
-          "uri" : "/get?test=9999+or+%2F*%2Boptimizer+hint+*%2F+true",
-          "version" : "HTTP/1.1"
-        },
-        "output" : {
-          "log" : {
-            "expect_ids" : [ 942500 ]
-          }
-        }
-      } ]
-    },
-    "tested_rule" : [ "SecRule REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/* \"@rx (?i)/\\*[\\s\\x0b]*?[!\\+](?:[\\s\\x0b\\(\\)\\-0-9=A-Z_a-z]+)?\\*/\" \"id:942500,\\\n  phase:2,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:urlDecodeUni,\\\n  msg:'MySQL in-line comment detected',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-sqli',\\\n  tag:'paranoia-level/1',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/ATTACK-SQLI',\\\n  tag:'capec/1000/152/248/66',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  multiMatch,\\\n  setvar:'tx.sql_injection_score=+%{tx.critical_anomaly_score}',\\\n  setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}'\"" ]
-  }, {
-    "test_rule" : "942500",
-    "test_id" : 4,
-    "test_path" : "REQUEST-942-APPLICATION-ATTACK-SQLI/942500.yaml",
-    "description" : "Use of optimizer hints (/*+...*/) as evasion technique with space before +",
-    "cause" : "failed expect_id check: 942500 not found",
-    "result" : {
-      "disposition" : {
-        "type" : "Disposition",
-        "action_type" : "continue"
-      },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=932200 - RCE Bypass Technique", "phase=2 rule_id=942100 - SQL Injection Attack Detected via libinjection", "phase=2 rule_id=942440 - SQL Comment Sequence Detected", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
-    },
-    "test" : {
-      "test_id" : 4,
-      "desc" : "Use of optimizer hints (/*+...*/) as evasion technique with space before +",
-      "stages" : [ {
-        "input" : {
-          "dest_addr" : "127.0.0.1",
-          "headers" : {
-            "Host" : "localhost",
-            "User-Agent" : "OWASP CRS test agent",
-            "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
-          },
-          "method" : "GET",
-          "port" : 80,
-          "uri" : "/get?test=9999+or+%2F*+%2Boptimizer+hint+*%2F+true",
-          "version" : "HTTP/1.1"
-        },
-        "output" : {
-          "log" : {
-            "expect_ids" : [ 942500 ]
-          }
-        }
-      } ]
-    },
-    "tested_rule" : [ "SecRule REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/* \"@rx (?i)/\\*[\\s\\x0b]*?[!\\+](?:[\\s\\x0b\\(\\)\\-0-9=A-Z_a-z]+)?\\*/\" \"id:942500,\\\n  phase:2,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:urlDecodeUni,\\\n  msg:'MySQL in-line comment detected',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-sqli',\\\n  tag:'paranoia-level/1',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/ATTACK-SQLI',\\\n  tag:'capec/1000/152/248/66',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  multiMatch,\\\n  setvar:'tx.sql_injection_score=+%{tx.critical_anomaly_score}',\\\n  setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}'\"" ]
   }, {
     "test_rule" : "942522",
     "test_id" : 7,
@@ -3710,7 +3636,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link", "phase=2 rule_id=932200 - RCE Bypass Technique", "phase=2 rule_id=932240 - Remote Command Execution: Unix Command Injection evasion attempt detected", "phase=2 rule_id=934100 - Node.js Injection Attack 1/2", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941110 - XSS Filter - Category 1: Script Tag Vector", "phase=2 rule_id=941130 - XSS Filter - Category 3: Attribute Vector", "phase=2 rule_id=941160 - NoScript XSS InjectionChecker: HTML Injection", "phase=2 rule_id=941170 - NoScript XSS InjectionChecker: Attribute Injection", "phase=2 rule_id=941210 - Javascript Word Detected", "phase=2 rule_id=941390 - Javascript method detected", "phase=2 rule_id=941150 - XSS Filter - Category 5: Disallowed HTML Attributes", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=941330 - IE XSS Filters - Attack Detected", "phase=2 rule_id=941340 - IE XSS Filters - Attack Detected", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942180 - Detects basic SQL authentication bypass attempts 1/3", "phase=2 rule_id=942340 - Detects basic SQL authentication bypass attempts 3/3", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942490 - Detects classic SQL injection probings 3/3", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link", "phase=2 rule_id=932200 - RCE Bypass Technique", "phase=2 rule_id=932200 - RCE Bypass Technique", "phase=2 rule_id=932200 - RCE Bypass Technique", "phase=2 rule_id=932200 - RCE Bypass Technique", "phase=2 rule_id=932240 - Remote Command Execution: Unix Command Injection evasion attempt detected", "phase=2 rule_id=932240 - Remote Command Execution: Unix Command Injection evasion attempt detected", "phase=2 rule_id=932240 - Remote Command Execution: Unix Command Injection evasion attempt detected", "phase=2 rule_id=932240 - Remote Command Execution: Unix Command Injection evasion attempt detected", "phase=2 rule_id=934100 - Node.js Injection Attack 1/2", "phase=2 rule_id=934100 - Node.js Injection Attack 1/2", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941110 - XSS Filter - Category 1: Script Tag Vector", "phase=2 rule_id=941110 - XSS Filter - Category 1: Script Tag Vector", "phase=2 rule_id=941130 - XSS Filter - Category 3: Attribute Vector", "phase=2 rule_id=941130 - XSS Filter - Category 3: Attribute Vector", "phase=2 rule_id=941160 - NoScript XSS InjectionChecker: HTML Injection", "phase=2 rule_id=941160 - NoScript XSS InjectionChecker: HTML Injection", "phase=2 rule_id=941170 - NoScript XSS InjectionChecker: Attribute Injection", "phase=2 rule_id=941170 - NoScript XSS InjectionChecker: Attribute Injection", "phase=2 rule_id=941210 - Javascript Word Detected", "phase=2 rule_id=941210 - Javascript Word Detected", "phase=2 rule_id=941390 - Javascript method detected", "phase=2 rule_id=941390 - Javascript method detected", "phase=2 rule_id=941150 - XSS Filter - Category 5: Disallowed HTML Attributes", "phase=2 rule_id=941150 - XSS Filter - Category 5: Disallowed HTML Attributes", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=941330 - IE XSS Filters - Attack Detected", "phase=2 rule_id=941330 - IE XSS Filters - Attack Detected", "phase=2 rule_id=941340 - IE XSS Filters - Attack Detected", "phase=2 rule_id=941340 - IE XSS Filters - Attack Detected", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942180 - Detects basic SQL authentication bypass attempts 1/3", "phase=2 rule_id=942180 - Detects basic SQL authentication bypass attempts 1/3", "phase=2 rule_id=942340 - Detects basic SQL authentication bypass attempts 3/3", "phase=2 rule_id=942340 - Detects basic SQL authentication bypass attempts 3/3", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942490 - Detects classic SQL injection probings 3/3", "phase=2 rule_id=942490 - Detects classic SQL injection probings 3/3", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
     },
     "test" : {
       "test_id" : 1,
@@ -3784,7 +3710,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link", "phase=2 rule_id=932200 - RCE Bypass Technique", "phase=2 rule_id=932240 - Remote Command Execution: Unix Command Injection evasion attempt detected", "phase=2 rule_id=934100 - Node.js Injection Attack 1/2", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941110 - XSS Filter - Category 1: Script Tag Vector", "phase=2 rule_id=941130 - XSS Filter - Category 3: Attribute Vector", "phase=2 rule_id=941160 - NoScript XSS InjectionChecker: HTML Injection", "phase=2 rule_id=941170 - NoScript XSS InjectionChecker: Attribute Injection", "phase=2 rule_id=941210 - Javascript Word Detected", "phase=2 rule_id=941390 - Javascript method detected", "phase=2 rule_id=941150 - XSS Filter - Category 5: Disallowed HTML Attributes", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=941330 - IE XSS Filters - Attack Detected", "phase=2 rule_id=941340 - IE XSS Filters - Attack Detected", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942180 - Detects basic SQL authentication bypass attempts 1/3", "phase=2 rule_id=942340 - Detects basic SQL authentication bypass attempts 3/3", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942490 - Detects classic SQL injection probings 3/3", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
+      "events" : [ "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link", "phase=2 rule_id=931130 - Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link", "phase=2 rule_id=932200 - RCE Bypass Technique", "phase=2 rule_id=932200 - RCE Bypass Technique", "phase=2 rule_id=932200 - RCE Bypass Technique", "phase=2 rule_id=932200 - RCE Bypass Technique", "phase=2 rule_id=932240 - Remote Command Execution: Unix Command Injection evasion attempt detected", "phase=2 rule_id=932240 - Remote Command Execution: Unix Command Injection evasion attempt detected", "phase=2 rule_id=932240 - Remote Command Execution: Unix Command Injection evasion attempt detected", "phase=2 rule_id=932240 - Remote Command Execution: Unix Command Injection evasion attempt detected", "phase=2 rule_id=934100 - Node.js Injection Attack 1/2", "phase=2 rule_id=934100 - Node.js Injection Attack 1/2", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941100 - XSS Attack Detected via libinjection", "phase=2 rule_id=941110 - XSS Filter - Category 1: Script Tag Vector", "phase=2 rule_id=941110 - XSS Filter - Category 1: Script Tag Vector", "phase=2 rule_id=941130 - XSS Filter - Category 3: Attribute Vector", "phase=2 rule_id=941130 - XSS Filter - Category 3: Attribute Vector", "phase=2 rule_id=941160 - NoScript XSS InjectionChecker: HTML Injection", "phase=2 rule_id=941160 - NoScript XSS InjectionChecker: HTML Injection", "phase=2 rule_id=941170 - NoScript XSS InjectionChecker: Attribute Injection", "phase=2 rule_id=941170 - NoScript XSS InjectionChecker: Attribute Injection", "phase=2 rule_id=941210 - Javascript Word Detected", "phase=2 rule_id=941210 - Javascript Word Detected", "phase=2 rule_id=941390 - Javascript method detected", "phase=2 rule_id=941390 - Javascript method detected", "phase=2 rule_id=941150 - XSS Filter - Category 5: Disallowed HTML Attributes", "phase=2 rule_id=941150 - XSS Filter - Category 5: Disallowed HTML Attributes", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=941320 - Possible XSS Attack Detected - HTML Tag Handler", "phase=2 rule_id=941330 - IE XSS Filters - Attack Detected", "phase=2 rule_id=941330 - IE XSS Filters - Attack Detected", "phase=2 rule_id=941340 - IE XSS Filters - Attack Detected", "phase=2 rule_id=941340 - IE XSS Filters - Attack Detected", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942131 - SQL Injection Attack: SQL Boolean-based attack detected", "phase=2 rule_id=942180 - Detects basic SQL authentication bypass attempts 1/3", "phase=2 rule_id=942180 - Detects basic SQL authentication bypass attempts 1/3", "phase=2 rule_id=942340 - Detects basic SQL authentication bypass attempts 3/3", "phase=2 rule_id=942340 - Detects basic SQL authentication bypass attempts 3/3", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942370 - Detects classic SQL injection probings 2/3", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942430 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942520 - Detects basic SQL authentication bypass attempts 4.0/4", "phase=2 rule_id=942490 - Detects classic SQL injection probings 3/3", "phase=2 rule_id=942490 - Detects classic SQL injection probings 3/3", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942431 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942460 - Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)", "phase=2 rule_id=942432 - Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)" ]
     },
     "test" : {
       "test_id" : 5,
@@ -3903,7 +3829,7 @@
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=1 rule_id=920350 - Host header is a numeric IP address", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=932160 - Remote Command Execution: Unix Shell Code Found", "phase=2 rule_id=932236 - Remote Command Execution: Unix Command Injection (command without evasion)" ]
+      "events" : [ "phase=1 rule_id=920350 - Host header is a numeric IP address", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=932160 - Remote Command Execution: Unix Shell Code Found", "phase=2 rule_id=932160 - Remote Command Execution: Unix Shell Code Found", "phase=2 rule_id=932236 - Remote Command Execution: Unix Command Injection (command without evasion)", "phase=2 rule_id=932236 - Remote Command Execution: Unix Command Injection (command without evasion)" ]
     },
     "test" : {
       "test_id" : 1,

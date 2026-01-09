@@ -5,7 +5,7 @@ Built to efficiently execute the [OWASP Core Rule Set (CRS)](https://coreruleset
 
 ## Status
 
-this project is a work in progress, right now we are passing **more than 93%** of the [CRS test suite](https://github.com/coreruleset/coreruleset/tree/main/tests/regression/tests)
+this project is a work in progress, right now we are passing **more than 97%** of the [CRS test suite](https://github.com/coreruleset/coreruleset/tree/main/tests/regression/tests)
 
 ```json
 {
