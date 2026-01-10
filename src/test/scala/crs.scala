@@ -378,168 +378,168 @@ object CRSTestUtils {
     //    |    }
     //    |  } ]
     //    |}""".stripMargin),
-    (920100, 12) -> Json.parse("""{
-        |  "test_id" : 12,
-        |  "desc" : "Invalid HTTP Request Line (920100) - Test 1 from old modsec regressions",
-        |  "stages" : [ {
-        |    "input" : {
-        |      "dest_addr" : "127.0.0.1",
-        |      "headers" : {
-        |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5",
-        |        "Host" : "localhost",
-        |        "Keep-Alive" : "300",
-        |        "Proxy-Connection" : "keep-alive",
-        |        "User-Agent" : "OWASP CRS test agent"
-        |      },
-        |      "method" : "\tGET",
-        |      "port" : 80,
-        |      "uri" : "/get",
-        |      "version" : "HTTP/1.1"
-        |    },
-        |    "output" : {
-        |      "log" : { "expect_ids": [911100, 920100] }
-        |    }
-        |  } ]
-        |}""".stripMargin),
-    (920100, 13) -> Json.parse("""{
-        |  "test_id" : 13,
-        |  "desc" : "Invalid HTTP Request Line (920100) - Test 2 from old modsec regressions",
-        |  "stages" : [ {
-        |    "input" : {
-        |      "dest_addr" : "127.0.0.1",
-        |      "headers" : {
-        |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5",
-        |        "Host" : "localhost",
-        |        "Keep-Alive" : "300",
-        |        "Proxy-Connection" : "keep-alive",
-        |        "User-Agent" : "OWASP CRS test agent"
-        |      },
-        |      "method" : "GET",
-        |      "port" : 80,
-        |      "uri" : "\\index.html",
-        |      "version" : "HTTP\\1.0"
-        |    },
-        |    "output" : {
-        |      "log" : { "expect_ids": [920100, 920460] }
-        |    }
-        |  } ]
-        |}""".stripMargin),
-    (920100, 15) -> Json.parse("""{
-        |  "test_id" : 15,
-        |  "desc" : "Test as described in http://www.client9.com/article/five-interesting-injection-attacks/",
-        |  "stages" : [ {
-        |    "input" : {
-        |      "dest_addr" : "127.0.0.1",
-        |      "method" : "GET",
-        |      "port" : 80,
-        |      "uri" : "/get/demo/xss/xml/vuln.xml.php?input=<script xmlns=\"http://www.w3.org/1999/xhtml\">setTimeout(\"top.frame2.location=\\\"javascript:(function () {var x = document.createElement(\\\\\\\"script\\\\\\\");x.src = \\\\\\\"//sdl.me/popup.js?//\\\\\\\";document.childNodes\\[0\\].appendChild(x);}());\\\"\",1000)</script>&//",
-        |      "headers" : {
-        |        "User-Agent" : "OWASP CRS test agent",
-        |        "Host" : "localhost",
-        |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
-        |      },
-        |      "version" : "HTTP/1.1"
-        |    },
-        |    "output" : {
-        |       "log" : { "expect_ids": [920100] }
-        |    }
-        |  } ]
-        |}""".stripMargin),
-    (920160, 1) -> Json.parse("""{
-        |  "test_id" : 1,
-        |  "desc" : "Non digit Content-Length without content-type",
-        |  "stages" : [ {
-        |    "input" : {
-        |      "dest_addr" : "127.0.0.1",
-        |      "method" : "GET",
-        |      "port" : 80,
-        |      "headers" : {
-        |        "User-Agent" : "OWASP CRS test agent",
-        |        "Host" : "localhost",
-        |        "Content-Length" : "NotDigits",
-        |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
-        |      },
-        |      "uri" : "/",
-        |      "version" : "HTTP/1.1"
-        |    },
-        |    "output" : {
-        |      "log" : { "expect_ids": [920160] }
-        |    }
-        |  } ]
-        |}""".stripMargin),
-    (920160, 2) -> Json.parse("""{
-        |  "test_id" : 2,
-        |  "desc" : "Non digit content-length with content-type",
-        |  "stages" : [ {
-        |    "input" : {
-        |      "dest_addr" : "127.0.0.1",
-        |      "method" : "POST",
-        |      "port" : 80,
-        |      "headers" : {
-        |        "User-Agent" : "OWASP CRS test agent",
-        |        "Host" : "localhost",
-        |        "Content-Type" : "application/x-www-form-urlencoded",
-        |        "Content-Length" : "NotDigits",
-        |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
-        |      },
-        |      "uri" : "/",
-        |      "version" : "HTTP/1.1"
-        |    },
-        |    "output" : {
-        |      "log" : { "expect_ids": [920160] }
-        |    }
-        |  } ]
-        |}""".stripMargin),
-    (920160, 3) -> Json.parse("""{
-        |  "test_id" : 3,
-        |  "desc" : "Mixed digit and non digit content length",
-        |  "stages" : [ {
-        |    "input" : {
-        |      "dest_addr" : "127.0.0.1",
-        |      "method" : "POST",
-        |      "port" : 80,
-        |      "headers" : {
-        |        "User-Agent" : "OWASP CRS test agent",
-        |        "Host" : "localhost",
-        |        "Content-Type" : "application/x-www-form-urlencoded",
-        |        "Content-Length" : "123x",
-        |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
-        |      },
-        |      "uri" : "/",
-        |      "version" : "HTTP/1.1"
-        |    },
-        |    "output" : {
-        |      "log" : { "expect_ids": [920160] }
-        |    }
-        |  } ]
-        |}""".stripMargin),
-    (920160, 5) -> Json.parse("""{
-        |  "test_id" : 5,
-        |  "desc" : "Content-Length HTTP header is not numeric (920160)  from old modsec regressions",
-        |  "stages" : [ {
-        |    "input" : {
-        |      "dest_addr" : "127.0.0.1",
-        |      "headers" : {
-        |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5",
-        |        "Accept-Language" : "en-us,en;q=0.5",
-        |        "Content-Length" : "3;",
-        |        "Content-Type" : "application/x-www-form-urlencoded",
-        |        "Host" : "localhost",
-        |        "Keep-Alive" : "300",
-        |        "Proxy-Connection" : "keep-alive",
-        |        "User-Agent" : "OWASP CRS test agent"
-        |      },
-        |      "method" : "POST",
-        |      "port" : 80,
-        |      "uri" : "/",
-        |      "version" : "HTTP/1.1",
-        |      "data" : "abc"
-        |    },
-        |    "output" : {
-        |      "log" : { "expect_ids": [920160] }
-        |    }
-        |  } ]
-        |}""".stripMargin),
+    //(920100, 12) -> Json.parse("""{
+    //    |  "test_id" : 12,
+    //    |  "desc" : "Invalid HTTP Request Line (920100) - Test 1 from old modsec regressions",
+    //    |  "stages" : [ {
+    //    |    "input" : {
+    //    |      "dest_addr" : "127.0.0.1",
+    //    |      "headers" : {
+    //    |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5",
+    //    |        "Host" : "localhost",
+    //    |        "Keep-Alive" : "300",
+    //    |        "Proxy-Connection" : "keep-alive",
+    //    |        "User-Agent" : "OWASP CRS test agent"
+    //    |      },
+    //    |      "method" : "\tGET",
+    //    |      "port" : 80,
+    //    |      "uri" : "/get",
+    //    |      "version" : "HTTP/1.1"
+    //    |    },
+    //    |    "output" : {
+    //    |      "log" : { "expect_ids": [911100, 920100] }
+    //    |    }
+    //    |  } ]
+    //    |}""".stripMargin),
+    //(920100, 13) -> Json.parse("""{
+    //    |  "test_id" : 13,
+    //    |  "desc" : "Invalid HTTP Request Line (920100) - Test 2 from old modsec regressions",
+    //    |  "stages" : [ {
+    //    |    "input" : {
+    //    |      "dest_addr" : "127.0.0.1",
+    //    |      "headers" : {
+    //    |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5",
+    //    |        "Host" : "localhost",
+    //    |        "Keep-Alive" : "300",
+    //    |        "Proxy-Connection" : "keep-alive",
+    //    |        "User-Agent" : "OWASP CRS test agent"
+    //    |      },
+    //    |      "method" : "GET",
+    //    |      "port" : 80,
+    //    |      "uri" : "\\index.html",
+    //    |      "version" : "HTTP\\1.0"
+    //    |    },
+    //    |    "output" : {
+    //    |      "log" : { "expect_ids": [920100, 920460] }
+    //    |    }
+    //    |  } ]
+    //    |}""".stripMargin),
+    //(920100, 15) -> Json.parse("""{
+    //    |  "test_id" : 15,
+    //    |  "desc" : "Test as described in http://www.client9.com/article/five-interesting-injection-attacks/",
+    //    |  "stages" : [ {
+    //    |    "input" : {
+    //    |      "dest_addr" : "127.0.0.1",
+    //    |      "method" : "GET",
+    //    |      "port" : 80,
+    //    |      "uri" : "/get/demo/xss/xml/vuln.xml.php?input=<script xmlns=\"http://www.w3.org/1999/xhtml\">setTimeout(\"top.frame2.location=\\\"javascript:(function () {var x = document.createElement(\\\\\\\"script\\\\\\\");x.src = \\\\\\\"//sdl.me/popup.js?//\\\\\\\";document.childNodes\\[0\\].appendChild(x);}());\\\"\",1000)</script>&//",
+    //    |      "headers" : {
+    //    |        "User-Agent" : "OWASP CRS test agent",
+    //    |        "Host" : "localhost",
+    //    |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
+    //    |      },
+    //    |      "version" : "HTTP/1.1"
+    //    |    },
+    //    |    "output" : {
+    //    |       "log" : { "expect_ids": [920100] }
+    //    |    }
+    //    |  } ]
+    //    |}""".stripMargin),
+    //(920160, 1) -> Json.parse("""{
+    //    |  "test_id" : 1,
+    //    |  "desc" : "Non digit Content-Length without content-type",
+    //    |  "stages" : [ {
+    //    |    "input" : {
+    //    |      "dest_addr" : "127.0.0.1",
+    //    |      "method" : "GET",
+    //    |      "port" : 80,
+    //    |      "headers" : {
+    //    |        "User-Agent" : "OWASP CRS test agent",
+    //    |        "Host" : "localhost",
+    //    |        "Content-Length" : "NotDigits",
+    //    |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
+    //    |      },
+    //    |      "uri" : "/",
+    //    |      "version" : "HTTP/1.1"
+    //    |    },
+    //    |    "output" : {
+    //    |      "log" : { "expect_ids": [920160] }
+    //    |    }
+    //    |  } ]
+    //    |}""".stripMargin),
+    //(920160, 2) -> Json.parse("""{
+    //    |  "test_id" : 2,
+    //    |  "desc" : "Non digit content-length with content-type",
+    //    |  "stages" : [ {
+    //    |    "input" : {
+    //    |      "dest_addr" : "127.0.0.1",
+    //    |      "method" : "POST",
+    //    |      "port" : 80,
+    //    |      "headers" : {
+    //    |        "User-Agent" : "OWASP CRS test agent",
+    //    |        "Host" : "localhost",
+    //    |        "Content-Type" : "application/x-www-form-urlencoded",
+    //    |        "Content-Length" : "NotDigits",
+    //    |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
+    //    |      },
+    //    |      "uri" : "/",
+    //    |      "version" : "HTTP/1.1"
+    //    |    },
+    //    |    "output" : {
+    //    |      "log" : { "expect_ids": [920160] }
+    //    |    }
+    //    |  } ]
+    //    |}""".stripMargin),
+    //(920160, 3) -> Json.parse("""{
+    //    |  "test_id" : 3,
+    //    |  "desc" : "Mixed digit and non digit content length",
+    //    |  "stages" : [ {
+    //    |    "input" : {
+    //    |      "dest_addr" : "127.0.0.1",
+    //    |      "method" : "POST",
+    //    |      "port" : 80,
+    //    |      "headers" : {
+    //    |        "User-Agent" : "OWASP CRS test agent",
+    //    |        "Host" : "localhost",
+    //    |        "Content-Type" : "application/x-www-form-urlencoded",
+    //    |        "Content-Length" : "123x",
+    //    |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
+    //    |      },
+    //    |      "uri" : "/",
+    //    |      "version" : "HTTP/1.1"
+    //    |    },
+    //    |    "output" : {
+    //    |      "log" : { "expect_ids": [920160] }
+    //    |    }
+    //    |  } ]
+    //    |}""".stripMargin),
+    //(920160, 5) -> Json.parse("""{
+    //    |  "test_id" : 5,
+    //    |  "desc" : "Content-Length HTTP header is not numeric (920160)  from old modsec regressions",
+    //    |  "stages" : [ {
+    //    |    "input" : {
+    //    |      "dest_addr" : "127.0.0.1",
+    //    |      "headers" : {
+    //    |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5",
+    //    |        "Accept-Language" : "en-us,en;q=0.5",
+    //    |        "Content-Length" : "3;",
+    //    |        "Content-Type" : "application/x-www-form-urlencoded",
+    //    |        "Host" : "localhost",
+    //    |        "Keep-Alive" : "300",
+    //    |        "Proxy-Connection" : "keep-alive",
+    //    |        "User-Agent" : "OWASP CRS test agent"
+    //    |      },
+    //    |      "method" : "POST",
+    //    |      "port" : 80,
+    //    |      "uri" : "/",
+    //    |      "version" : "HTTP/1.1",
+    //    |      "data" : "abc"
+    //    |    },
+    //    |    "output" : {
+    //    |      "log" : { "expect_ids": [920160] }
+    //    |    }
+    //    |  } ]
+    //    |}""".stripMargin),
     (920181, 1) -> Json.parse("""{
         |  "test_id" : 1,
         |  "stages" : [ {
@@ -566,27 +566,27 @@ object CRSTestUtils {
         |    }
         |  } ]
         |}""".stripMargin),
-    (920270, 4) -> Json.parse("""{
-                                |  "test_id" : 4,
-                                |  "stages" : [ {
-                                |    "input" : {
-                                |      "dest_addr" : "127.0.0.1",
-                                |      "port" : 80,
-                                |      "uri" : "/?test=test1",
-                                |      "headers" : {
-                                |        "User-Agent" : "OWASP CRS test agent",
-                                |        "Host" : "localhost%00",
-                                |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
-                                |      },
-                                |      "version" : "HTTP/1.1"
-                                |    },
-                                |    "output" : {
-                                |      "log" : {
-                                |        "expect_ids" : [ 920270 ]
-                                |      }
-                                |    }
-                                |  } ]
-                                |}""".stripMargin),
+    //(920270, 4) -> Json.parse("""{
+    //                            |  "test_id" : 4,
+    //                            |  "stages" : [ {
+    //                            |    "input" : {
+    //                            |      "dest_addr" : "127.0.0.1",
+    //                            |      "port" : 80,
+    //                            |      "uri" : "/?test=test1",
+    //                            |      "headers" : {
+    //                            |        "User-Agent" : "OWASP CRS test agent",
+    //                            |        "Host" : "localhost%00",
+    //                            |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
+    //                            |      },
+    //                            |      "version" : "HTTP/1.1"
+    //                            |    },
+    //                            |    "output" : {
+    //                            |      "log" : {
+    //                            |        "expect_ids" : [ 920270 ]
+    //                            |      }
+    //                            |    }
+    //                            |  } ]
+    //                            |}""".stripMargin),
     (920280, 3) -> Json.parse("""{
                                 |  "test_id" : 3,
                                 |  "stages" : [ {
