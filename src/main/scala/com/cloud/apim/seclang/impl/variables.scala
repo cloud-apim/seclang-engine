@@ -219,17 +219,11 @@ object EngineVariables {
       case "TIME_YEAR" => List(datetime.getYear.toString)
       case "UNIQUE_ID" => List(ctx.requestId)
       case "USERID" => Option(state.uidRef.get).toList
-      case "FILES" => ctx.contentType match {
-        case Some(ct) if ct.startsWith("multipart/form-data") && ctx.body.isDefined => {
-          ctx.body.get.utf8String.linesIterator
-            .collect {
-              case line if line.toLowerCase.startsWith("content-disposition:") && line.toLowerCase.contains("filename=") =>
-                """(?:^|[;\s])name="([^"]+)"""".r
-                  .findFirstMatchIn(line)
-                  .map(_.group(1))
-            }.flatten.toList
+      case "FILES" => {
+        ctx.body match {
+          case Some(_) if ctx.isMultipartFormData => ctx.files
+          case _ => List.empty
         }
-        case _ => List.empty
       }
       case "FILES_COMBINED_SIZE" => {
         if (ctx.isMultipartFormData && ctx.files.nonEmpty) {
