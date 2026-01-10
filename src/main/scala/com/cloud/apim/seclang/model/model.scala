@@ -3,7 +3,7 @@ package com.cloud.apim.seclang.model
 import akka.util.ByteString
 import com.cloud.apim.seclang.impl.compiler.Compiler
 import com.cloud.apim.seclang.impl.parser.AntlrParser
-import com.cloud.apim.seclang.impl.utils.{HashUtilsFast, SimpleXmlSelector, StatusCodes}
+import com.cloud.apim.seclang.impl.utils.{FormUrlEncoded, HashUtilsFast, SimpleXmlSelector, StatusCodes}
 import com.github.blemale.scaffeine.Scaffeine
 import play.api.libs.json._
 
@@ -1431,6 +1431,12 @@ final case class RequestContext(
   }
   lazy val isJson: Boolean = {
     contentType.exists(_.contains("application/json")) || contentType.exists(_.contains("text/json"))
+  }
+  lazy val wwwFormEncodedBody: Option[Map[String, List[String]]] = {
+    body match {
+      case Some(body) if isXwwwFormUrlEncoded => Some(FormUrlEncoded.parse(body.utf8String))
+      case _ => None
+    }
   }
   lazy val xmlBody: Option[Map[String, List[String]]] = {
     body match {

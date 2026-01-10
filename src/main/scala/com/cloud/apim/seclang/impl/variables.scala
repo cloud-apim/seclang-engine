@@ -305,11 +305,10 @@ object EngineVariables {
       case "ARGS_GET_NAMES" =>  ctx.query.keySet.toList
       case "ARGS_POST" => {
         ctx.body match {
-          case Some(body) if ctx.isWwwFormUrlEncoded => {
-            val headers = FormUrlEncoded.parse(body.utf8String)
+          case Some(_) if ctx.isXwwwFormUrlEncoded => {
+            val headers = ctx.wwwFormEncodedBody.getOrElse(Map.empty)
             key match {
               case None =>
-                //headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
                 headers.toList.flatMap(_._2)
               case Some(h) if h.startsWith("/") && h.endsWith("/") =>
                 val r = h.substring(1, h.length - 1).r
@@ -327,26 +326,13 @@ object EngineVariables {
       }
       case "ARGS_POST_NAMES" => {
         ctx.body match {
-          case Some(body) if ctx.isWwwFormUrlEncoded => {
-            val headers = FormUrlEncoded.parse(body.utf8String)
-            headers.keySet.toList
-          }
+          case Some(_) if ctx.isXwwwFormUrlEncoded => ctx.wwwFormEncodedBody.map(_.keySet.toList).getOrElse(List.empty)
           case _ => List.empty
         }
       }
-      //case "XML" => {
-      //  ctx.body match {
-      //    case Some(body) if key.isDefined && (ctx.contentType.exists(_.contains("application/xml")) || ctx.contentType.exists(_.contains("text/xml"))) => {
-      //      SimpleXmlSelector.select(body.utf8String, key.get)
-      //    }
-      //    case _ => List.empty
-      //  }
-      //}
       case "XML" => {
         ctx.body match {
-          case Some(_) if key.isDefined && ctx.isXml => {
-            ctx.xmlBody.flatMap(_.get(key.get)).getOrElse(List.empty)
-          }
+          case Some(_) if key.isDefined && ctx.isXml => ctx.xmlBody.flatMap(_.get(key.get)).getOrElse(List.empty)
           case _ => List.empty
         }
       }
