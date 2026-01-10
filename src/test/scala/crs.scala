@@ -293,50 +293,50 @@ object CRSTestUtils {
   }
 
   val testOverrides = Map(
-    (920100, 2) -> Json.parse("""{
-        |  "test_id" : 2,
-        |  "desc" : "Request has tab (\\t) before request method - Apache complains\nAH00126: Invalid URI in request      GET / HTTP/1.1\n",
-        |  "stages" : [ {
-        |    "input" : {
-        |      "dest_addr" : "127.0.0.1",
-        |      "method" : "     GET",
-        |      "port" : 80,
-        |      "headers" : {
-        |        "User-Agent" : "OWASP CRS test agent",
-        |        "Host" : "localhost",
-        |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
-        |      },
-        |      "uri" : "/get",
-        |      "version" : "HTTP/1.1"
-        |    },
-        |    "output" : {
-        |      "log" : {
-        |        "expect_ids": [911100]
-        |      }
-        |    }
-        |  } ]
-        |}""".stripMargin),
-    (920100, 5) -> Json.parse("""{
-        |  "test_id" : 5,
-        |  "desc" : "invalid Connect request, domains require ports",
-        |  "stages" : [ {
-        |    "input" : {
-        |      "dest_addr" : "127.0.0.1",
-        |      "method" : "CONNECT",
-        |      "port" : 80,
-        |      "headers" : {
-        |        "User-Agent" : "OWASP CRS test agent",
-        |        "Host" : "localhost",
-        |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
-        |      },
-        |      "uri" : "www.coreruleset.org",
-        |      "version" : "HTTP/1.1"
-        |    },
-        |    "output" : {
-        |      "status" : 200
-        |    }
-        |  } ]
-        |}""".stripMargin),
+    //(920100, 2) -> Json.parse("""{
+    //    |  "test_id" : 2,
+    //    |  "desc" : "Request has tab (\\t) before request method - Apache complains\nAH00126: Invalid URI in request      GET / HTTP/1.1\n",
+    //    |  "stages" : [ {
+    //    |    "input" : {
+    //    |      "dest_addr" : "127.0.0.1",
+    //    |      "method" : "     GET",
+    //    |      "port" : 80,
+    //    |      "headers" : {
+    //    |        "User-Agent" : "OWASP CRS test agent",
+    //    |        "Host" : "localhost",
+    //    |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
+    //    |      },
+    //    |      "uri" : "/get",
+    //    |      "version" : "HTTP/1.1"
+    //    |    },
+    //    |    "output" : {
+    //    |      "log" : {
+    //    |        "expect_ids": [911100]
+    //    |      }
+    //    |    }
+    //    |  } ]
+    //    |}""".stripMargin),
+    //(920100, 5) -> Json.parse("""{
+    //    |  "test_id" : 5,
+    //    |  "desc" : "invalid Connect request, domains require ports",
+    //    |  "stages" : [ {
+    //    |    "input" : {
+    //    |      "dest_addr" : "127.0.0.1",
+    //    |      "method" : "CONNECT",
+    //    |      "port" : 80,
+    //    |      "headers" : {
+    //    |        "User-Agent" : "OWASP CRS test agent",
+    //    |        "Host" : "localhost",
+    //    |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
+    //    |      },
+    //    |      "uri" : "www.coreruleset.org",
+    //    |      "version" : "HTTP/1.1"
+    //    |    },
+    //    |    "output" : {
+    //    |      "status" : 200
+    //    |    }
+    //    |  } ]
+    //    |}""".stripMargin),
     (920100, 8) -> Json.parse("""{
         |  "test_id" : 8,
         |  "desc" : "The colon in the path is not allowed. Apache will block by default:\n(20024)The given path is misformatted or contained invalid characters: [client 127.0.0.1:4142] AH00127: Cannot map GET /index.html:80?I=Like&Apples=Today#tag HTTP/1.1 to file\n",
@@ -358,26 +358,26 @@ object CRSTestUtils {
         |    }
         |  } ]
         |}""".stripMargin),
-    (920100, 11) -> Json.parse("""{
-        |  "test_id" : 11,
-        |  "desc" : "An invalid request because a backslash is used in URI.\nApache will end up blocking this before it gets to CRS.\nWe will need to support OR output tests to fix this.\n",
-        |  "stages" : [ {
-        |    "input" : {
-        |      "dest_addr" : "127.0.0.1",
-        |      "port" : 80,
-        |      "headers" : {
-        |        "User-Agent" : "OWASP CRS test agent",
-        |        "Host" : "localhost",
-        |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
-        |      },
-        |      "uri" : "\\",
-        |      "version" : "HTTP/1.1"
-        |    },
-        |    "output" : {
-        |      "status" : 200
-        |    }
-        |  } ]
-        |}""".stripMargin),
+    //(920100, 11) -> Json.parse("""{
+    //    |  "test_id" : 11,
+    //    |  "desc" : "An invalid request because a backslash is used in URI.\nApache will end up blocking this before it gets to CRS.\nWe will need to support OR output tests to fix this.\n",
+    //    |  "stages" : [ {
+    //    |    "input" : {
+    //    |      "dest_addr" : "127.0.0.1",
+    //    |      "port" : 80,
+    //    |      "headers" : {
+    //    |        "User-Agent" : "OWASP CRS test agent",
+    //    |        "Host" : "localhost",
+    //    |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5"
+    //    |      },
+    //    |      "uri" : "\\",
+    //    |      "version" : "HTTP/1.1"
+    //    |    },
+    //    |    "output" : {
+    //    |      "status" : 200
+    //    |    }
+    //    |  } ]
+    //    |}""".stripMargin),
     (920100, 12) -> Json.parse("""{
         |  "test_id" : 12,
         |  "desc" : "Invalid HTTP Request Line (920100) - Test 1 from old modsec regressions",
@@ -613,13 +613,9 @@ object CRSTestUtils {
 
 class SecLangCRSTest extends munit.FunSuite {
 
-  private val testOnly: List[(String, Int)] = List(("921150", 1))
   //private val testOnly: List[(String, Int)] = List(("944150", 23))
-  //private val testOnly: List[(String, Int)] = List.empty
-  private val ignoreTests: List[(String, Int)] = List( // TODO: fix later
-    ("920160", 5),
-    ("920250", 1),
-  )
+  private val testOnly: List[(String, Int)] = List.empty
+  private val ignoreTests: List[(String, Int)] = List.empty
   private val engine = CRSTestUtils.setupCRSEngine(testOnly.map(_._1.toInt))
   private val counter = new AtomicLong(0L)
   private val failures = new AtomicLong(0L)
