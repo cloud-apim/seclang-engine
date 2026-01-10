@@ -175,7 +175,7 @@ object EngineVariables {
       }
       case "FILES_COMBINED_SIZE" => {
         if (ctx.isMultipartFormData && ctx.files.nonEmpty) {
-          ctx.contentType.toList
+          ctx.contentLength.toList
         } else {
           List.empty
         }

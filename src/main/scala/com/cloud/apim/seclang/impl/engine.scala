@@ -42,7 +42,7 @@ final class SecLangEngine(val program: CompiledProgram, config: SecLangEngineCon
           (d2, st2)
         }
       }
-      EngineResult(disp, st.events.reverse)
+      EngineResult(disp, st.events.distinct.reverse)
     }
   }
 

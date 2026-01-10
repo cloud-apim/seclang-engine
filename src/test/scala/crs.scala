@@ -2,7 +2,7 @@ package com.cloud.apim.seclang.test
 
 import akka.util.ByteString
 import com.cloud.apim.seclang.impl.engine.SecLangEngine
-import com.cloud.apim.seclang.impl.utils.StatusCodes
+import com.cloud.apim.seclang.impl.utils.{MsUrlDecode, StatusCodes}
 import com.cloud.apim.seclang.model.Disposition.{Block, Continue}
 import com.cloud.apim.seclang.model.{CompiledItem, NoLogSecLangIntegration, RequestContext, RuleChain, SecLangEngineConfig}
 import com.cloud.apim.seclang.scaladsl.SecLang
@@ -149,6 +149,7 @@ object CRSTestUtils {
           try {
             List(
               URLDecoder.decode(pair.substring(idx + 1), StandardCharsets.UTF_8),
+              //MsUrlDecode.urlDecodeMs(pair.substring(idx + 1)),
               pair.substring(idx + 1)
             )
           } catch {
@@ -612,6 +613,7 @@ object CRSTestUtils {
 
 class SecLangCRSTest extends munit.FunSuite {
 
+  //private val testOnly: List[(String, Int)] = List(("920410", 1))
   //private val testOnly: List[(String, Int)] = List(("944150", 23))
   private val testOnly: List[(String, Int)] = List.empty
   private val ignoreTests: List[(String, Int)] = List( // TODO: fix later
