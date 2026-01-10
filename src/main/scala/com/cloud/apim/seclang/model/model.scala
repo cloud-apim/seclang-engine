@@ -3,7 +3,7 @@ package com.cloud.apim.seclang.model
 import akka.util.ByteString
 import com.cloud.apim.seclang.impl.compiler.Compiler
 import com.cloud.apim.seclang.impl.parser.AntlrParser
-import com.cloud.apim.seclang.impl.utils.{FormUrlEncoded, HashUtilsFast, SimpleXmlSelector, StatusCodes}
+import com.cloud.apim.seclang.impl.utils.{FormUrlEncoded, HashUtilsFast, MultipartVars, SimpleXmlSelector, StatusCodes}
 import com.github.blemale.scaffeine.Scaffeine
 import play.api.libs.json._
 
@@ -1414,23 +1414,19 @@ final case class RequestContext(
   lazy val statusLine: String = {
     s"${protocol} ${status.getOrElse("0")} ${statusTxt.orElse(StatusCodes.get(status.getOrElse(0))).getOrElse("--")}"
   }
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   lazy val contentType: Option[String] = {
     headers.get("Content-Type").orElse(headers.get("content-type")).flatMap(_.lastOption)
   }
   lazy val contentLength: Option[String] = {
     headers.get("Content-Length").orElse(headers.get("content-length")).flatMap(_.lastOption)
   }
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   lazy val isXwwwFormUrlEncoded: Boolean = {
     contentType.exists(_.contains("application/www-form-urlencoded")) || contentType.exists(_.contains("application/x-www-form-urlencoded"))
   }
   lazy val isWwwFormUrlEncoded: Boolean = {
     contentType.exists(_.contains("application/www-form-urlencoded")) || contentType.exists(_.contains("application/x-www-form-urlencoded"))
-  }
-  lazy val isXml: Boolean = {
-    contentType.exists(_.contains("application/xml")) || contentType.exists(_.contains("text/xml"))
-  }
-  lazy val isJson: Boolean = {
-    contentType.exists(_.contains("application/json")) || contentType.exists(_.contains("text/json"))
   }
   lazy val wwwFormEncodedBody: Option[Map[String, List[String]]] = {
     body match {
@@ -1438,13 +1434,46 @@ final case class RequestContext(
       case _ => None
     }
   }
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  lazy val isXml: Boolean = {
+    contentType.exists(_.contains("application/xml")) || contentType.exists(_.contains("text/xml"))
+  }
   lazy val xmlBody: Option[Map[String, List[String]]] = {
     body match {
       case Some(body) if isXml => Some(SimpleXmlSelector.selectAttributesAndText(body.utf8String))
       case _ => None
     }
   }
-  // TODO: same for ARGS, JSON, FOrmUrlEncoded, etc
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  lazy val isJson: Boolean = {
+    contentType.exists(_.contains("application/json")) || contentType.exists(_.contains("text/json"))
+  }
+  lazy val jsonBody: Option[JsValue] = {
+    body match {
+      case Some(body) if isJson => Try(Json.parse(body.utf8String)).toOption
+      case _ => None
+    }
+  }
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  lazy val isMultipartFormData: Boolean = {
+    contentType.exists(_.contains("multipart/form-data"))
+  }
+  lazy val multipartFormDataBody: Option[Map[String, List[String]]] = {
+    body match {
+      case Some(body) if isMultipartFormData => MultipartVars.multipartPartHeadersFromCtx(body.utf8String, contentType)
+      case _ => None
+    }
+  }
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  lazy val requestBodyProcessor: List[String] = contentType
+    .map(_.toLowerCase)
+    .collect {
+      case ct if ct.startsWith("application/x-www-form-urlencoded")            => "URLENCODED"
+      case ct if ct.startsWith("multipart/form-data")                          => "MULTIPART"
+      case ct if ct.startsWith("application/xml") || ct.startsWith("text/xml") => "XML"
+      case ct if ct.startsWith("application/json")                             => "JSON"
+    }.toList
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   def json: JsValue = Json.obj(
     "requestId" -> requestId,
     "method" -> method,

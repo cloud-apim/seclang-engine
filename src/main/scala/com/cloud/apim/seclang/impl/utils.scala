@@ -64,14 +64,14 @@ object MultipartVars {
     }
   }
 
-  def multipartPartHeaders(body: String, boundary: String): Map[String, Vector[String]] = {
+  def multipartPartHeaders(body: String, boundary: String): Map[String, List[String]] = {
     val startBoundary = s"--$boundary"
     val endBoundary   = s"--$boundary--"
 
     var inPart = false
     var inHeaders = false
     var currentPartName: Option[String] = None
-    val acc = scala.collection.mutable.HashMap.empty[String, Vector[String]].withDefaultValue(Vector.empty)
+    val acc = scala.collection.mutable.HashMap.empty[String, List[String]].withDefaultValue(List.empty)
 
     body.linesIterator.foreach { raw =>
       val line = raw.stripLineEnd
@@ -108,7 +108,7 @@ object MultipartVars {
     acc.toMap
   }
 
-  def multipartPartHeadersFromCtx(body: String, contentTypeOpt: Option[String]): Option[Map[String, Vector[String]]] =
+  def multipartPartHeadersFromCtx(body: String, contentTypeOpt: Option[String]): Option[Map[String, List[String]]] =
     boundaryFromContentType(contentTypeOpt).map(b => multipartPartHeaders(body, b))
 }
 

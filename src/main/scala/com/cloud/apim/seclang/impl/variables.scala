@@ -253,20 +253,11 @@ object EngineVariables {
       }
       case "FILES_TMPNAMES" => List.empty
       case "FILES_TMP_CONTENT" => List.empty
-      case "REQBODY_PROCESSOR" => {
-        ctx.contentType
-          .map(_.toLowerCase)
-          .collect {
-            case ct if ct.startsWith("application/x-www-form-urlencoded")            => "URLENCODED"
-            case ct if ct.startsWith("multipart/form-data")                          => "MULTIPART"
-            case ct if ct.startsWith("application/xml") || ct.startsWith("text/xml") => "XML"
-            case ct if ct.startsWith("application/json")                             => "JSON"
-          }.toList
-      }
+      case "REQBODY_PROCESSOR" => ctx.requestBodyProcessor
       case "MULTIPART_PART_HEADERS" => {
         ctx.body match {
-          case Some(body) if ctx.contentType.contains("multipart/form-data")=> {
-            val headers = MultipartVars.multipartPartHeadersFromCtx(body.utf8String, ctx.contentType).getOrElse(Map.empty)
+          case Some(_) if ctx.isMultipartFormData => {
+            val headers = ctx.multipartFormDataBody.getOrElse(Map.empty)
             key match {
               case None =>
                 //headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
@@ -289,7 +280,6 @@ object EngineVariables {
         val headers = ctx.query
         key match {
           case None =>
-            // headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
             headers.toList.flatMap(_._2)
           case Some(h) if h.startsWith("/") && h.endsWith("/") =>
             val r = h.substring(1, h.length - 1).r
@@ -337,9 +327,7 @@ object EngineVariables {
         }
       }
       case "MATCHED_VAR" => state.txMap.get("matched_var").toList
-      case "MATCHED_VARS" =>  state.txMap.get("matched_vars").flatMap(v => Json.parse(v).asOpt[List[String]]).getOrElse(List.empty) /*txMap.get("MATCHED_LIST").toList.flatMap { v =>
-          Json.parse(v).asOpt[List[String]].getOrElse(List.empty)
-        }*/
+      case "MATCHED_VARS" =>  state.txMap.get("matched_vars").flatMap(v => Json.parse(v).asOpt[List[String]]).getOrElse(List.empty)
       case "MATCHED_VAR_NAME" => state.txMap.get("matched_var_name").toList
       case "MATCHED_VARS_NAMES" => state.txMap.get("matched_var_names").flatMap(v => Json.parse(v).asOpt[List[String]]).getOrElse(List.empty)
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

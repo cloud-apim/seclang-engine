@@ -1,18 +1,18 @@
 {
   "global_stats" : {
-    "failure_percentage" : 1.6313610908205503,
-    "passing_percentage" : 98.36863890917945,
+    "failure_percentage" : 1.5583150718285854,
+    "passing_percentage" : 98.44168492817141,
     "total_tests" : 4107,
-    "success_tests" : 4040,
-    "failure_tests" : 67
+    "success_tests" : 4043,
+    "failure_tests" : 64
   },
   "time_stats" : {
     "calls" : 4107,
-    "total_time_ms" : 62862,
-    "min_time_ns" : 705833,
+    "total_time_ms" : 66880,
+    "min_time_ns" : 638250,
     "min_time_ms" : 0,
-    "max_time_ms" : 4770,
-    "avg_time_ms" : 15
+    "max_time_ms" : 4773,
+    "avg_time_ms" : 16
   },
   "test_failures" : [ {
     "test_rule" : "920230",
@@ -201,20 +201,20 @@
     "tested_rule" : [ "SecRule TX:/paramcounter_.*/ \"@gt 1\" \"id:921180,\\\n  phase:2,\\\n  block,\\\n  msg:'HTTP Parameter Pollution (%{MATCHED_VAR_NAME})',\\\n  logdata:'Matched Data: %{MATCHED_VAR} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-protocol',\\\n  tag:'paranoia-level/3',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/PROTOCOL-ATTACK',\\\n  tag:'capec/1000/152/137/15/460',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  setvar:'tx.http_violation_score=+%{tx.critical_anomaly_score}',\\\n  setvar:'tx.inbound_anomaly_score_pl3=+%{tx.critical_anomaly_score}'\"" ]
   }, {
     "test_rule" : "922100",
-    "test_id" : 1,
+    "test_id" : 2,
     "test_path" : "REQUEST-922-MULTIPART-ATTACK/922100.yaml",
-    "description" : "Positive test: utf-7 is not in allowed charsets",
-    "cause" : "failed expect_id check: 922100 not found",
+    "description" : "Negative test: only allowed charsets when using _charset_",
+    "cause" : "failed no_expect_ids check: 922100 was found",
     "result" : {
       "disposition" : {
         "type" : "Disposition",
         "action_type" : "continue"
       },
-      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)" ]
+      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)", "phase=2 rule_id=922100 - Multipart content type global _charset_ definition is not allowed by policy" ]
     },
     "test" : {
-      "test_id" : 1,
-      "desc" : "Positive test: utf-7 is not in allowed charsets",
+      "test_id" : 2,
+      "desc" : "Negative test: only allowed charsets when using _charset_",
       "stages" : [ {
         "input" : {
           "dest_addr" : "127.0.0.1",
@@ -228,133 +228,16 @@
           "port" : 80,
           "uri" : "/post",
           "version" : "HTTP/1.1",
-          "data" : "--boundary\nContent-disposition: form-data; name=\"_charset_\"\n\nutf-7\n--boundary\nContent-disposition: form-data; name=\"positive\"\nContent-Type: text/plain\n\nLet me see if I can use utf-7.\n--boundary--\n"
+          "data" : "--boundary\nContent-disposition: form-data; name=\"_charset_\"\n\nutf-8\n--boundary\nContent-disposition: form-data; name=\"negative\"\nContent-Type: text/plain\n\nThis should be good as we use utf-8 that is allowed.\n--boundary--\n"
         },
         "output" : {
           "log" : {
-            "expect_ids" : [ 922100 ]
+            "no_expect_ids" : [ 922100 ]
           }
         }
       } ]
     },
     "tested_rule" : [ "SecRule &MULTIPART_PART_HEADERS:_charset_ \"!@eq 0\" \"id:922100,\\\n  phase:2,\\\n  block,\\\n  t:none,\\\n  msg:'Multipart content type global _charset_ definition is not allowed by policy',\\\n  logdata:'Matched Data: %{ARGS._charset_}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-multipart-header',\\\n  tag:'paranoia-level/1',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/MULTIPART-ATTACK',\\\n  tag:'capec/1000/255/153',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  setvar:'tx.922100_charset=|%{ARGS._charset_}|',\\\n  chain\"", "SecRule TX:922100_CHARSET \"!@within %{tx.allowed_request_content_type_charset}\" \"t:lowercase,\\\n  setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}'\"" ]
-  }, {
-    "test_rule" : "922100",
-    "test_id" : 3,
-    "test_path" : "REQUEST-922-MULTIPART-ATTACK/922100.yaml",
-    "description" : "Positive test: don't allow substrings of valid charsets when using _charset_",
-    "cause" : "failed expect_id check: 922100 not found",
-    "result" : {
-      "disposition" : {
-        "type" : "Disposition",
-        "action_type" : "continue"
-      },
-      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)" ]
-    },
-    "test" : {
-      "test_id" : 3,
-      "desc" : "Positive test: don't allow substrings of valid charsets when using _charset_",
-      "stages" : [ {
-        "input" : {
-          "dest_addr" : "127.0.0.1",
-          "headers" : {
-            "Host" : "localhost",
-            "User-Agent" : "OWASP CRS test agent",
-            "Content-Type" : "multipart/form-data; boundary=boundary",
-            "Accept" : "*/*"
-          },
-          "method" : "POST",
-          "port" : 80,
-          "uri" : "/post",
-          "version" : "HTTP/1.1",
-          "data" : "--boundary\nContent-disposition: form-data; name=\"_charset_\"\n\nutf-\n--boundary\nContent-disposition: form-data; name=\"negative\"\nContent-Type: text/plain\n\nutf-8 is valid but utf- should not be.\n--boundary--\n"
-        },
-        "output" : {
-          "log" : {
-            "expect_ids" : [ 922100 ]
-          }
-        }
-      } ]
-    },
-    "tested_rule" : [ "SecRule &MULTIPART_PART_HEADERS:_charset_ \"!@eq 0\" \"id:922100,\\\n  phase:2,\\\n  block,\\\n  t:none,\\\n  msg:'Multipart content type global _charset_ definition is not allowed by policy',\\\n  logdata:'Matched Data: %{ARGS._charset_}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-multipart-header',\\\n  tag:'paranoia-level/1',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/MULTIPART-ATTACK',\\\n  tag:'capec/1000/255/153',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  setvar:'tx.922100_charset=|%{ARGS._charset_}|',\\\n  chain\"", "SecRule TX:922100_CHARSET \"!@within %{tx.allowed_request_content_type_charset}\" \"t:lowercase,\\\n  setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}'\"" ]
-  }, {
-    "test_rule" : "922110",
-    "test_id" : 1,
-    "test_path" : "REQUEST-922-MULTIPART-ATTACK/922110.yaml",
-    "description" : "Positive test: utf-7 is not in allowed charsets",
-    "cause" : "failed expect_id check: 922110 not found",
-    "result" : {
-      "disposition" : {
-        "type" : "Disposition",
-        "action_type" : "continue"
-      },
-      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)" ]
-    },
-    "test" : {
-      "test_id" : 1,
-      "desc" : "Positive test: utf-7 is not in allowed charsets",
-      "stages" : [ {
-        "input" : {
-          "dest_addr" : "127.0.0.1",
-          "headers" : {
-            "Host" : "localhost",
-            "User-Agent" : "OWASP CRS test agent",
-            "Content-Type" : "multipart/form-data; boundary=boundary",
-            "Accept" : "*/*"
-          },
-          "method" : "POST",
-          "port" : 80,
-          "uri" : "/post",
-          "version" : "HTTP/1.1",
-          "data" : "--boundary\nContent-disposition: form-data; name=\"_charset_\"\n\nutf-8\n--boundary\nContent-disposition: form-data; name=\"922110\"\nContent-Type: text/plain; charset=utf-7\n\nKnock knock.\n--boundary--\n"
-        },
-        "output" : {
-          "log" : {
-            "expect_ids" : [ 922110 ]
-          }
-        }
-      } ]
-    },
-    "tested_rule" : [ "SecRule MULTIPART_PART_HEADERS \"@rx ^content-type\\s*:\\s*(.*)$\" \"id:922110,\\\n  phase:2,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:lowercase,\\\n  msg:'Illegal MIME Multipart Header content-type: charset parameter',\\\n  logdata:'Matched Data: %{TX.1} found within Content-Type multipart form',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-multipart-header',\\\n  tag:'attack-protocol',\\\n  tag:'paranoia-level/1',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/MULTIPART-ATTACK',\\\n  tag:'capec/272/220',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  chain\"", "SecRule TX:1 \"!@rx ^(?:(?:\\*|[^!\\\"\\(\\),/:-\\?\\[-\\]\\{\\}]+)/(?:\\*|[^!\\\"\\(\\),/:-\\?\\[-\\]\\{\\}]+)|\\*)(?:[\\s\\x0b]*;[\\s\\x0b]*(?:charset[\\s\\x0b]*=[\\s\\x0b]*\\\"?(?:iso-8859-15?|utf-8|windows-1252)\\b\\\"?|(?:[^\\s\\x0b-\\\"\\(\\),/:-\\?\\[-\\]c\\{\\}]|c(?:[^!\\\"\\(\\),/:-\\?\\[-\\]h\\{\\}]|h(?:[^!\\\"\\(\\),/:-\\?\\[-\\]a\\{\\}]|a(?:[^!\\\"\\(\\),/:-\\?\\[-\\]r\\{\\}]|r(?:[^!\\\"\\(\\),/:-\\?\\[-\\]s\\{\\}]|s(?:[^!\\\"\\(\\),/:-\\?\\[-\\]e\\{\\}]|e[^!\\\"\\(\\),/:-\\?\\[-\\]t\\{\\}]))))))[^!\\\"\\(\\),/:-\\?\\[-\\]\\{\\}]*[\\s\\x0b]*=[\\s\\x0b]*[^!\\(\\),/:-\\?\\[-\\]\\{\\}]+);?)*(?:[\\s\\x0b]*,[\\s\\x0b]*(?:(?:\\*|[^!\\\"\\(\\),/:-\\?\\[-\\]\\{\\}]+)/(?:\\*|[^!\\\"\\(\\),/:-\\?\\[-\\]\\{\\}]+)|\\*)(?:[\\s\\x0b]*;[\\s\\x0b]*(?:charset[\\s\\x0b]*=[\\s\\x0b]*\\\"?(?:iso-8859-15?|utf-8|windows-1252)\\b\\\"?|(?:[^\\s\\x0b-\\\"\\(\\),/:-\\?\\[-\\]c\\{\\}]|c(?:[^!\\\"\\(\\),/:-\\?\\[-\\]h\\{\\}]|h(?:[^!\\\"\\(\\),/:-\\?\\[-\\]a\\{\\}]|a(?:[^!\\\"\\(\\),/:-\\?\\[-\\]r\\{\\}]|r(?:[^!\\\"\\(\\),/:-\\?\\[-\\]s\\{\\}]|s(?:[^!\\\"\\(\\),/:-\\?\\[-\\]e\\{\\}]|e[^!\\\"\\(\\),/:-\\?\\[-\\]t\\{\\}]))))))[^!\\\"\\(\\),/:-\\?\\[-\\]\\{\\}]*[\\s\\x0b]*=[\\s\\x0b]*[^!\\(\\),/:-\\?\\[-\\]\\{\\}]+);?)*)*$\" \"setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}'\"" ]
-  }, {
-    "test_rule" : "922120",
-    "test_id" : 1,
-    "test_path" : "REQUEST-922-MULTIPART-ATTACK/922120.yaml",
-    "description" : "Positive test: utf-7 is not in allowed charsets",
-    "cause" : "failed expect_id check: 922120 not found",
-    "result" : {
-      "disposition" : {
-        "type" : "Disposition",
-        "action_type" : "continue"
-      },
-      "events" : [ "phase=2 rule_id=920272 - Invalid character in request (outside of printable chars below ascii 127)", "phase=2 rule_id=920273 - Invalid character in request (outside of very strict set)" ]
-    },
-    "test" : {
-      "test_id" : 1,
-      "desc" : "Positive test: utf-7 is not in allowed charsets",
-      "stages" : [ {
-        "input" : {
-          "dest_addr" : "127.0.0.1",
-          "headers" : {
-            "Host" : "localhost",
-            "User-Agent" : "OWASP CRS test agent",
-            "Content-Type" : "multipart/form-data; boundary=boundary",
-            "Accept" : "*/*"
-          },
-          "method" : "POST",
-          "port" : 80,
-          "uri" : "/post",
-          "version" : "HTTP/1.1",
-          "data" : "--boundary\nContent-Disposition: form-data; name=\"flavors\"\nContent-Transfer-Encoding: 8bit\nContent-Type: text/plain; charset=utf-7\n\nPineapple. Pizza.\n--boundary--\n"
-        },
-        "output" : {
-          "log" : {
-            "expect_ids" : [ 922120 ]
-          }
-        }
-      } ]
-    },
-    "tested_rule" : [ "SecRule MULTIPART_PART_HEADERS \"@rx content-transfer-encoding:(.*)\" \"id:922120,\\\n  phase:2,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:lowercase,\\\n  msg:'Content-Transfer-Encoding was deprecated by rfc7578 in 2015 and should not be used',\\\n  logdata:'Matched Data: %{TX.0}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-multipart-header',\\\n  tag:'attack-deprecated-header',\\\n  tag:'paranoia-level/1',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/MULTIPART-ATTACK',\\\n  tag:'capec/272/220',\\\n  ver:'OWASP_CRS/4.22.0-dev',\\\n  severity:'CRITICAL',\\\n  setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}'\"" ]
   }, {
     "test_rule" : "922130",
     "test_id" : 1,
