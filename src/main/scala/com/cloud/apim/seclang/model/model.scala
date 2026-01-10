@@ -2,6 +2,7 @@ package com.cloud.apim.seclang.model
 
 import akka.util.ByteString
 import com.cloud.apim.seclang.impl.compiler.Compiler
+import com.cloud.apim.seclang.impl.engine.EngineVariables.{deepMerge, jsToStr}
 import com.cloud.apim.seclang.impl.parser.AntlrParser
 import com.cloud.apim.seclang.impl.utils.{FormUrlEncoded, HashUtilsFast, MultipartVars, SimpleXmlSelector, StatusCodes}
 import com.github.blemale.scaffeine.Scaffeine
@@ -10,7 +11,9 @@ import play.api.libs.json._
 import java.io.File
 import java.net.URI
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
+import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
+import java.util.Base64
 import java.util.concurrent.atomic.AtomicReference
 import scala.collection.JavaConverters.asScalaIteratorConverter
 import scala.collection.concurrent.TrieMap
@@ -1388,6 +1391,22 @@ object SeverityValue {
   }
 }
 
+object RequestContext {
+  def jsToStr(js: JsValue): List[String] = js match {
+    case JsString(s) => List(s)
+    case JsNull => List("null")
+    case JsNumber(s) => List(s.toString())
+    case JsBoolean(s) => List(s.toString)
+    case o @ JsObject(_) => List(Json.stringify(o))
+    case a @ JsArray(_) => List(Json.stringify(a))
+  }
+  def deepMerge(m1: Map[String, List[String]], m2: Map[String, List[String]]): Map[String, List[String]] = {
+    (m1.keySet ++ m2.keySet).iterator.map { k =>
+      k -> (m1.getOrElse(k, Nil) ++ m2.getOrElse(k, Nil))
+    }.toMap
+  }
+}
+
 final case class RequestContext(
   requestId: String = s"${System.currentTimeMillis}.${scala.util.Random.nextInt(1000000).formatted("%06d")}",
   method: String,
@@ -1414,6 +1433,22 @@ final case class RequestContext(
   lazy val statusLine: String = {
     s"${protocol} ${status.getOrElse("0")} ${statusTxt.orElse(StatusCodes.get(status.getOrElse(0))).getOrElse("--")}"
   }
+  lazy val user: Option[String] = {
+    headers.get("Authorization").orElse(headers.get("authorization")).flatMap(_.lastOption).collect {
+      case auth if auth.startsWith("Basic ") => Try(new String(Base64.getDecoder.decode(auth.substring("Basic ".length).split(":")(0)), StandardCharsets.UTF_8)).getOrElse("")
+    }.filter(_.nonEmpty)
+  }
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  lazy val args: Map[String, List[String]] = {
+    (body match {
+      case Some(body) if isXwwwFormUrlEncoded=> {
+        val bodyArgs = FormUrlEncoded.parse(body.utf8String)
+        RequestContext.deepMerge(query, bodyArgs)
+      }
+      case _ => query
+    }) ++ (jsonBodyMap)
+  }
+  lazy val flatArgs: List[String] = args.toList.flatMap(_._2)
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   lazy val contentType: Option[String] = {
     headers.get("Content-Type").orElse(headers.get("content-type")).flatMap(_.lastOption)
@@ -1453,6 +1488,16 @@ final case class RequestContext(
       case Some(body) if isJson => Try(Json.parse(body.utf8String)).toOption
       case _ => None
     }
+  }
+  lazy val jsonBodyMap: Map[String, List[String]] = {
+    if (body.isDefined && isJson) {
+      try {
+        val map: Map[String, JsValue] = jsonBody.flatMap(_.asOpt[Map[String, JsValue]]).getOrElse(Map.empty)
+        map.mapValues(RequestContext.jsToStr)
+      } catch {
+        case t: Throwable => Map.empty
+      }
+    } else Map.empty
   }
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   lazy val isMultipartFormData: Boolean = {

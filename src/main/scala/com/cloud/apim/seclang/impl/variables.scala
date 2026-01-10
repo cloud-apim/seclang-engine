@@ -123,23 +123,7 @@ object EngineVariables {
             }.flatten.toList
         }
       }
-      case "ARGS_NAMES" => {
-        val headers = (ctx.body match {
-          case Some(body) if ctx.isWwwFormUrlEncoded => {
-            val bodyArgs = FormUrlEncoded.parse(body.utf8String)
-            deepMerge(ctx.query, bodyArgs)
-          }
-          case _ => ctx.query
-        }) ++ (if (ctx.body.isDefined && ctx.contentType.exists(_.contains("application/json"))) {
-          try {
-            val map: Map[String, JsValue] = Json.parse(ctx.body.map(_.utf8String).getOrElse("{}")).asOpt[Map[String, JsValue]].getOrElse(Map.empty)
-            map.mapValues(jsToStr)
-          } catch {
-            case t: Throwable => Map.empty
-          }
-        } else Map.empty)
-        headers.keySet.toList
-      }
+      case "ARGS_NAMES" => ctx.args.keySet.toList
       case "ARGS_COMBINED_SIZE" => {
         val args = resolveVariable(Variable.Simple("ARGS"), false, false, ctx, debug, state, integration)
         List(args.map(_.length).sum.toString)
@@ -165,9 +149,10 @@ object EngineVariables {
           }.toList
         case Some(key) => state.envMap.get(key).toList
       }
-      case "REQUEST_BODY" =>
+      case "REQUEST_BODY" => {
         if (ctx.isXml) List.empty
         else ctx.body.toList.map(_.utf8String)
+      }
       case "RESPONSE_BODY" => ctx.body.toList.map(_.utf8String)
       case "REQUEST_HEADERS_NAMES" | "RESPONSE_HEADERS_NAMES" => ctx.headers.keySet.toList
       case "DURATION" => List((System.currentTimeMillis() - ctx.startTime).toString)
@@ -176,9 +161,7 @@ object EngineVariables {
       case "REMOTE_ADDR" => List(ctx.remoteAddr)
       case "REMOTE_HOST" => List(ctx.remoteAddr)
       case "REMOTE_PORT" => List(ctx.remotePort.toString)
-      case "REMOTE_USER" => ctx.headers.get("Authorization").orElse(ctx.headers.get("authorization")).flatMap(_.lastOption).collect {
-        case auth if auth.startsWith("Basic ") => Try(new String(Base64.getDecoder.decode(auth.substring("Basic ".length).split(":")(0)), StandardCharsets.UTF_8)).getOrElse("")
-      }.toList.filter(_.nonEmpty)
+      case "REMOTE_USER" => ctx.user.toList
       case "REQUEST_BASENAME" => path.split("/").lastOption.orElse(Some("")).toList
       case "REQUEST_COOKIES" => key match {
         case None =>
