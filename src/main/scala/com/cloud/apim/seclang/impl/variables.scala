@@ -124,10 +124,7 @@ object EngineVariables {
         }
       }
       case "ARGS_NAMES" => ctx.args.keySet.toList
-      case "ARGS_COMBINED_SIZE" => {
-        val args = resolveVariable(Variable.Simple("ARGS"), false, false, ctx, debug, state, integration)
-        List(args.map(_.length).sum.toString)
-      }
+      case "ARGS_COMBINED_SIZE" => List(ctx.flatArgs.map(_.length).sum.toString)
       case "TX" => {
         key match {
           case None => List.empty
