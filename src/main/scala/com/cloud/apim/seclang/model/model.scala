@@ -1438,6 +1438,26 @@ final case class RequestContext(
       case auth if auth.startsWith("Basic ") => Try(new String(Base64.getDecoder.decode(auth.substring("Basic ".length).split(":")(0)), StandardCharsets.UTF_8)).getOrElse("")
     }.filter(_.nonEmpty)
   }
+  lazy val (rawPath, path, rawQuery) = {
+    if (method.toLowerCase == "connect") {
+      (uri, uri, "")
+    } else {
+      Try(new java.net.URI(uri)) match {
+        case Success(uri) => (uri.getRawPath, uri.getPath, uri.getRawQuery)
+        case Failure(e) => {
+          val ur = if (!uri.startsWith("/")) {
+            uri.replaceFirst("https://", "").replaceFirst("http://", "").split("/").tail.mkString("/")
+          } else {
+            uri
+          }
+          val parts = ur.split("\\?")
+          val p = parts.headOption.getOrElse("")
+          val rq = parts.tail.mkString("?")
+          (ur, p, rq)
+        }
+      }
+    }
+  }
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   lazy val args: Map[String, List[String]] = {
     (body match {

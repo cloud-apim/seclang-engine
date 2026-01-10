@@ -53,26 +53,9 @@ object EngineVariables {
         case k => k.toLowerCase()
       })
     }
-    val (rawPath, path, rawQuery) = {
-      if (ctx.method.toLowerCase == "connect") {
-        (ctx.uri, ctx.uri, "")
-      } else {
-        Try(new java.net.URI(ctx.uri)) match {
-          case Success(uri) => (uri.getRawPath, uri.getPath, uri.getRawQuery)
-          case Failure(e) => {
-            val uri = if (!ctx.uri.startsWith("/")) {
-              ctx.uri.replaceFirst("https://", "").replaceFirst("http://", "").split("/").tail.mkString("/")
-            } else {
-              ctx.uri
-            }
-            val parts = uri.split("\\?")
-            val p = parts.headOption.getOrElse("")
-            val rq = parts.tail.mkString("?")
-            (uri, p, rq)
-          }
-        }
-      }
-    }
+    val rawPath = ctx.rawPath
+    val path = ctx.path
+    val rawQuery = ctx.rawQuery
     val datetime = LocalDateTime.now()
     val res: List[String] = col match {
       case "REQUEST_URI" => List(ctx.uri)
@@ -94,31 +77,16 @@ object EngineVariables {
         }
       }
       case "ARGS" => {
-        val headers: Map[String, List[String]] = (ctx.body match {
-          case Some(body) if ctx.isXwwwFormUrlEncoded=> {
-            val bodyArgs = FormUrlEncoded.parse(body.utf8String)
-            deepMerge(ctx.query, bodyArgs)
-          }
-          case _ => ctx.query
-        }) ++ (if (ctx.body.isDefined && ctx.contentType.exists(_.contains("application/json"))) {
-          try {
-            val map: Map[String, JsValue] = Json.parse(ctx.body.map(_.utf8String).getOrElse("{}")).asOpt[Map[String, JsValue]].getOrElse(Map.empty)
-            map.mapValues(jsToStr)
-          } catch {
-            case t: Throwable => Map.empty
-          }
-        } else Map.empty)
+        val args: Map[String, List[String]] = ctx.args
         key match {
-          case None =>
-            // headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
-            headers.toList.flatMap(_._2)
+          case None => ctx.flatArgs
           case Some(h) if h.startsWith("/") && h.endsWith("/") =>
             val r = h.substring(1, h.length - 1).r
-            headers.collect {
+            args.collect {
               case (k, vs) if r.findFirstIn(k).isDefined => vs
             }.flatten.toList
           case Some(h) =>
-            headers.collect {
+            args.collect {
               case (k, vs) if k.toLowerCase == h => vs
             }.flatten.toList
         }
