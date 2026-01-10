@@ -146,7 +146,7 @@ object EngineVariables {
       }
       case "REQUEST_COOKIES_NAMES" => ctx.cookies.keySet.toList
       case "REQUEST_FILENAME" => List(path)
-      case "REQUEST_LINE" => List(s"${ctx.method.toUpperCase()} ${rawPath} ${ctx.protocol}")
+      case "REQUEST_LINE" => List(s"${ctx.method.toUpperCase()} ${ctx.uri} ${ctx.protocol}")
       case "REQUEST_PROTOCOL" | "RESPONSE_PROTOCOL" => List(ctx.protocol)
       case "REQUEST_URI_RAW" => List(ctx.uriRaw)
       case "REQUEST_CONTENT_TYPE" | "RESPONSE_CONTENT_TYPE" => ctx.contentType.toList
