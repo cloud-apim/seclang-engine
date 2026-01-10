@@ -1464,6 +1464,34 @@ final case class RequestContext(
       case _ => None
     }
   }
+  lazy val files: List[String] = {
+    body match {
+      case Some(body) if isMultipartFormData => {
+        body.utf8String.linesIterator
+          .collect {
+            case line if line.toLowerCase.startsWith("content-disposition:") && line.toLowerCase.contains("filename=") =>
+              """(?:^|[;\s])name="([^"]+)"""".r
+                .findFirstMatchIn(line)
+                .map(_.group(1))
+          }.flatten.toList
+      }
+      case _ => List.empty
+    }
+  }
+  lazy val filesNames: List[String] = {
+    body match {
+      case Some(body) if isMultipartFormData => {
+        body.utf8String.linesIterator
+          .collect {
+            case line if line.toLowerCase.startsWith("content-disposition:") && line.toLowerCase.contains("filename=") =>
+              """filename="([^"]+)"""".r
+                .findFirstMatchIn(line)
+                .map(_.group(1))
+          }.flatten.toList
+      }
+      case _ => List.empty
+    }
+  }
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   lazy val requestBodyProcessor: List[String] = contentType
     .map(_.toLowerCase)

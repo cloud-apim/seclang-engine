@@ -231,26 +231,15 @@ object EngineVariables {
         }
         case _ => List.empty
       }
-      case "FILES_COMBINED_SIZE" => ctx.contentType match {
-        case Some(ct) if ct.startsWith("multipart/form-data") => ctx.contentLength.toList
-        case _ => List.empty
-      }
-      case "FILES_NAMES" => ctx.contentType match {
-        case Some(ct) if ct.startsWith("multipart/form-data") && ctx.body.isDefined => {
-          ctx.body.get.utf8String.linesIterator
-            .collect {
-              case line if line.toLowerCase.startsWith("content-disposition:") && line.toLowerCase.contains("filename=") =>
-                """filename="([^"]+)"""".r
-                  .findFirstMatchIn(line)
-                  .map(_.group(1))
-            }.flatten.toList
+      case "FILES_COMBINED_SIZE" => {
+        if (ctx.isMultipartFormData && ctx.files.nonEmpty) {
+          ctx.contentType.toList
+        } else {
+          List.empty
         }
-        case _ => List.empty
       }
-      case "FILES_SIZES" => ctx.contentType match {
-        case Some(ct) if ct.startsWith("multipart/form-data") => ctx.contentLength.toList
-        case _ => List.empty
-      }
+      case "FILES_NAMES" => ctx.filesNames
+      case "FILES_SIZES" => List(ctx.filesNames.size.toString)
       case "FILES_TMPNAMES" => List.empty
       case "FILES_TMP_CONTENT" => List.empty
       case "REQBODY_PROCESSOR" => ctx.requestBodyProcessor
