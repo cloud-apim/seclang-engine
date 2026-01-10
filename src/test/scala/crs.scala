@@ -707,7 +707,7 @@ class SecLangCRSTest extends munit.FunSuite {
                 // here we try to catch Apache specific cases where Apache does the validation instead of the waf
                 ok = true
                 apache = true
-                println(s"Apache specific check: ${rule} - ${testId}")
+                //println(s"Apache specific check: ${rule} - ${testId}")
               } else if (outStatus != status.get) {
                 failures.incrementAndGet()
                 ok = false
