@@ -1,6 +1,7 @@
 package com.cloud.apim.seclang.impl.utils
 
 import com.comcast.ip4s._
+import org.apache.commons.text.StringEscapeUtils
 import org.w3c.dom.{Document, Node, NodeList}
 import org.xml.sax.{ErrorHandler, InputSource, SAXParseException}
 
@@ -539,6 +540,7 @@ object Transformations {
   )
 
   def htmlEntityDecode(input: String): String = try {
+    return StringEscapeUtils.unescapeHtml4(input)
     var out = input
 
     // Hexadecimal entities

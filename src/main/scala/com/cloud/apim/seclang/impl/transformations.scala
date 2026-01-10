@@ -2,6 +2,7 @@ package com.cloud.apim.seclang.impl.engine
 
 import com.cloud.apim.seclang.impl.utils.{EscapeSeq, MsUrlDecode, Transformations}
 import com.cloud.apim.seclang.model.SecLangIntegration
+import org.apache.commons.text.StringEscapeUtils
 
 import java.net.{URLDecoder, URLEncoder}
 import java.nio.charset.StandardCharsets
