@@ -1,6 +1,5 @@
 package com.cloud.apim.seclang.impl.utils
 
-import akka.util.ByteString
 import com.comcast.ip4s._
 import org.w3c.dom.{Document, Node, NodeList}
 import org.xml.sax.{ErrorHandler, InputSource, SAXParseException}
@@ -8,17 +7,16 @@ import org.xml.sax.{ErrorHandler, InputSource, SAXParseException}
 import java.io.{StringReader, StringWriter}
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 import javax.xml.parsers.DocumentBuilderFactory
+import javax.xml.stream.{XMLInputFactory, XMLStreamConstants, XMLStreamReader}
 import javax.xml.transform.dom.DOMSource
-import javax.xml.transform.{OutputKeys, TransformerFactory}
 import javax.xml.transform.stream.StreamResult
-import javax.xml.xpath.{XPath, XPathConstants, XPathFactory}
+import javax.xml.transform.{OutputKeys, TransformerFactory}
+import javax.xml.xpath.{XPathConstants, XPathFactory}
+import scala.collection.mutable.ArrayBuffer
 import scala.util.Try
 import scala.util.matching.Regex
-import java.nio.charset.StandardCharsets
-import java.security.MessageDigest
-import javax.xml.stream.{XMLInputFactory, XMLStreamConstants, XMLStreamReader}
-import scala.collection.mutable.ArrayBuffer
 
 object HashUtilsFast {
   private val HEX = "0123456789abcdef".toCharArray
@@ -173,8 +171,12 @@ object XmlXPathParser {
   }
 
   def evalXPath(xml: String, xpathExpr: String): List[String] = {
+    val doc = parseXml(xml)
+    evalXPath(doc, xpathExpr)
+  }
+
+  def evalXPath(doc: Document, xpathExpr: String): List[String] = {
     try {
-      val doc = parseXml(xml)
       val xp = XPathFactory.newInstance().newXPath()
       val expr = xp.compile(xpathExpr)
 
@@ -250,10 +252,24 @@ object SimpleXmlSelector {
     case _: Throwable => Nil
   }
 
-  private def selectAllAttributes(xml: String): List[String] = {
-    val attrs = ArrayBuffer.empty[String]
-    val xsr = createReader(xml)
+  def selectAttributesAndText(xml: String): Map[String, List[String]] = {
+    try {
+      val (attrs, texts) = parseOnce(xml)
+      Map(
+        "/*" -> texts,
+        "//@*" -> attrs,
+      )
+    } catch {
+      case _: Throwable => Map.empty
+    }
+  }
 
+  private def selectAllAttributes(xml: String): List[String] = {
+    selectAllAttributes(createReader(xml))
+  }
+
+  private def selectAllAttributes(xsr: XMLStreamReader): List[String] = {
+    val attrs = ArrayBuffer.empty[String]
     try {
       while (xsr.hasNext) {
         xsr.next() match {
@@ -275,9 +291,11 @@ object SimpleXmlSelector {
   }
 
   private def selectAllText(xml: String): List[String] = {
-    val texts = ArrayBuffer.empty[String]
-    val xsr = createReader(xml)
+    selectAllText(createReader(xml))
+  }
 
+  private def selectAllText(xsr: XMLStreamReader): List[String] = {
+    val texts = ArrayBuffer.empty[String]
     try {
       while (xsr.hasNext) {
         xsr.next() match {
@@ -300,6 +318,47 @@ object SimpleXmlSelector {
     try f.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, true) catch { case _: Throwable => () }
     try f.setProperty(XMLInputFactory.IS_COALESCING, true) catch { case _: Throwable => () }
     f.createXMLStreamReader(new StringReader(xml))
+  }
+
+  private def parseOnce(xml: String): (List[String], List[String]) = {
+    val attrs = scala.collection.mutable.ArrayBuffer.empty[String]
+    val texts = scala.collection.mutable.ArrayBuffer.empty[String]
+
+    val f = XMLInputFactory.newInstance()
+    setIfSupported(f, XMLInputFactory.SUPPORT_DTD, java.lang.Boolean.FALSE)
+    setIfSupported(f, "javax.xml.stream.isSupportingExternalEntities", java.lang.Boolean.FALSE)
+    setIfSupported(f, XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, java.lang.Boolean.TRUE)
+    setIfSupported(f, XMLInputFactory.IS_COALESCING, java.lang.Boolean.TRUE)
+
+    val xsr = f.createXMLStreamReader(new StringReader(xml))
+    try {
+      while (xsr.hasNext) {
+        xsr.next() match {
+          case XMLStreamConstants.START_ELEMENT =>
+            val n = xsr.getAttributeCount
+            var i = 0
+            while (i < n) {
+              val v = xsr.getAttributeValue(i)
+              if (v != null) attrs += v
+              i += 1
+            }
+
+          case XMLStreamConstants.CHARACTERS | XMLStreamConstants.CDATA =>
+            val t = xsr.getText.trim
+            if (t.nonEmpty) texts += t
+
+          case _ => ()
+        }
+      }
+      (attrs.toList, texts.toList)
+    } finally {
+      try xsr.close() catch { case _: Throwable => () }
+    }
+  }
+
+  private def setIfSupported(f: XMLInputFactory, key: String, value: AnyRef): Unit = {
+    try f.setProperty(key, value)
+    catch { case _: IllegalArgumentException => () }
   }
 }
 
@@ -553,8 +612,6 @@ object Transformations {
 
     normalizedSpaces.toLowerCase(java.util.Locale.ROOT)
   }
-
-  import java.lang.{Character => JChar}
 
   def utf8toUnicode(v: String): String = {
     if (v == null || v.isEmpty) return v
@@ -1006,7 +1063,7 @@ object EscapeSeq {
 }
 
 import java.io.ByteArrayOutputStream
-import java.nio.charset.{Charset, StandardCharsets}
+import java.nio.charset.Charset
 
 object MsUrlDecode {
 

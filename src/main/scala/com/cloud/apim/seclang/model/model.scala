@@ -3,7 +3,7 @@ package com.cloud.apim.seclang.model
 import akka.util.ByteString
 import com.cloud.apim.seclang.impl.compiler.Compiler
 import com.cloud.apim.seclang.impl.parser.AntlrParser
-import com.cloud.apim.seclang.impl.utils.{HashUtilsFast, StatusCodes}
+import com.cloud.apim.seclang.impl.utils.{HashUtilsFast, SimpleXmlSelector, StatusCodes}
 import com.github.blemale.scaffeine.Scaffeine
 import play.api.libs.json._
 
@@ -1406,29 +1406,39 @@ final case class RequestContext(
   variables: Map[String, String] = Map.empty,
   cache: TrieMap[String, List[String]] = new TrieMap[String, List[String]],
 ) {
-  def isResponse: Boolean = status.isDefined
-  def uriRaw: String = {
+  lazy val isResponse: Boolean = status.isDefined
+  lazy val uriRaw: String = {
     val host = headers.get("Host").orElse(headers.get("host")).getOrElse("")
     s"${if (secure) "https" else "http"}://$host$uri"
   }
-  def statusLine: String = {
+  lazy val statusLine: String = {
     s"${protocol} ${status.getOrElse("0")} ${statusTxt.orElse(StatusCodes.get(status.getOrElse(0))).getOrElse("--")}"
   }
-  def contentType: Option[String] = {
+  lazy val contentType: Option[String] = {
     headers.get("Content-Type").orElse(headers.get("content-type")).flatMap(_.lastOption)
   }
-  def contentLength: Option[String] = {
+  lazy val contentLength: Option[String] = {
     headers.get("Content-Length").orElse(headers.get("content-length")).flatMap(_.lastOption)
   }
-  def isXwwwFormUrlEncoded: Boolean = {
+  lazy val isXwwwFormUrlEncoded: Boolean = {
     contentType.exists(_.contains("application/www-form-urlencoded")) || contentType.exists(_.contains("application/x-www-form-urlencoded"))
   }
-  def isWwwFormUrlEncoded: Boolean = {
+  lazy val isWwwFormUrlEncoded: Boolean = {
     contentType.exists(_.contains("application/www-form-urlencoded")) || contentType.exists(_.contains("application/x-www-form-urlencoded"))
   }
-  def isXml: Boolean = {
+  lazy val isXml: Boolean = {
     contentType.exists(_.contains("application/xml")) || contentType.exists(_.contains("text/xml"))
   }
+  lazy val isJson: Boolean = {
+    contentType.exists(_.contains("application/json")) || contentType.exists(_.contains("text/json"))
+  }
+  lazy val xmlBody: Option[Map[String, List[String]]] = {
+    body match {
+      case Some(body) if isXml => Some(SimpleXmlSelector.selectAttributesAndText(body.utf8String))
+      case _ => None
+    }
+  }
+  // TODO: same for ARGS, JSON, FOrmUrlEncoded, etc
   def json: JsValue = Json.obj(
     "requestId" -> requestId,
     "method" -> method,

@@ -334,11 +334,18 @@ object EngineVariables {
           case _ => List.empty
         }
       }
+      //case "XML" => {
+      //  ctx.body match {
+      //    case Some(body) if key.isDefined && (ctx.contentType.exists(_.contains("application/xml")) || ctx.contentType.exists(_.contains("text/xml"))) => {
+      //      SimpleXmlSelector.select(body.utf8String, key.get)
+      //    }
+      //    case _ => List.empty
+      //  }
+      //}
       case "XML" => {
         ctx.body match {
-          case Some(body) if key.isDefined && (ctx.contentType.exists(_.contains("application/xml")) || ctx.contentType.exists(_.contains("text/xml"))) => {
-            //XmlXPathParser.evalXPath(body.utf8String, key.get)
-            SimpleXmlSelector.select(body.utf8String, key.get)
+          case Some(_) if key.isDefined && ctx.isXml => {
+            ctx.xmlBody.flatMap(_.get(key.get)).getOrElse(List.empty)
           }
           case _ => List.empty
         }
