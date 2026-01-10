@@ -5,9 +5,11 @@ import com.cloud.apim.seclang.impl.engine._
 import com.cloud.apim.seclang.impl.factory.SecLangEngineFactory
 import com.cloud.apim.seclang.impl.parser.AntlrParser
 import com.cloud.apim.seclang.model._
+import play.api.libs.json.{JsPath, Json, JsonValidationError}
 
 object SecLang {
   def parse(input: String): Either[String, Configuration] = AntlrParser.parse(input)
+  def parseJson(input: String): Either[Seq[(JsPath, Seq[JsonValidationError])], Configuration] = Configuration.format.reads(Json.parse(input)).asEither
   def compile(configuration: Configuration): CompiledProgram = Compiler.compile(configuration)
   def engine(
     program: CompiledProgram,

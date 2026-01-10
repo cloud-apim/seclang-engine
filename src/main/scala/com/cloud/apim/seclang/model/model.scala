@@ -2,9 +2,8 @@ package com.cloud.apim.seclang.model
 
 import akka.util.ByteString
 import com.cloud.apim.seclang.impl.compiler.Compiler
-import com.cloud.apim.seclang.impl.engine.EngineVariables.{deepMerge, jsToStr}
 import com.cloud.apim.seclang.impl.parser.AntlrParser
-import com.cloud.apim.seclang.impl.utils.{FormUrlEncoded, HashUtilsFast, MultipartVars, SimpleXmlSelector, StatusCodes}
+import com.cloud.apim.seclang.impl.utils._
 import com.github.blemale.scaffeine.Scaffeine
 import play.api.libs.json._
 
