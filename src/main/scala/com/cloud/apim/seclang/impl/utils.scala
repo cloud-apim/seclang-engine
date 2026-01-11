@@ -58,7 +58,7 @@ object Implicits {
 object MultipartVars {
 
   private val NameRx: Regex =
-    """(?i)\bcontent-disposition\s*:\s*.*?\bname="([^"]+)"""".r
+    RegexPool.regex("""(?i)\bcontent-disposition\s*:\s*.*?\bname="([^"]+)"""")
 
   // Extrait boundary depuis Content-Type: multipart/form-data; boundary=...
   def boundaryFromContentType(contentTypeOpt: Option[String]): Option[String] = {
@@ -535,10 +535,10 @@ object Transformations {
   }
 
   private val hexEntity: Regex =
-    """&#x([0-9a-fA-F]{1,4});?""".r
+    RegexPool.regex("""&#x([0-9a-fA-F]{1,4});?""")
 
   private val decEntity: Regex =
-    """&#([0-9]{1,5});?""".r
+    RegexPool.regex("""&#([0-9]{1,5});?""")
 
   private val namedEntities: Map[String, Char] = Map(
     "quot" -> '"',

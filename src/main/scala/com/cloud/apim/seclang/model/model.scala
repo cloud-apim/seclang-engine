@@ -1638,7 +1638,7 @@ final case class EngineResult(
 
 object RuntimeState {
   // (?i) => case-insensitive
-  private val TxExpr: Regex = """(?i)%\{tx\.([a-z0-9_.-]+)\}""".r
+  private val TxExpr: Regex = RegexPool.regex("""(?i)%\{tx\.([a-z0-9_.-]+)\}""")
 }
 final case class RuntimeState(mode: EngineMode, disabledIds: Set[Int], events: List[MatchEvent], txMap: TrieMap[String, String], envMap: TrieMap[String, String], uidRef: AtomicReference[String]) {
 
