@@ -1,6 +1,5 @@
 package com.cloud.apim.seclang.model
 
-import akka.util.ByteString
 import com.cloud.apim.seclang.impl.compiler.Compiler
 import com.cloud.apim.seclang.impl.parser.AntlrParser
 import com.cloud.apim.seclang.impl.utils._
@@ -19,6 +18,17 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.FiniteDuration
 import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
+
+object ByteString {
+  lazy val empty: ByteString = ByteString("")
+}
+
+case class ByteString(raw: String) extends AnyVal {
+  def length: Int = raw.length
+  def size: Int = raw.size
+  def utf8String: String = raw
+  def decodeBase64: ByteString = ByteString(new String(Base64.getDecoder.decode(raw), StandardCharsets.UTF_8))
+}
 
 sealed trait AstNode {
   def json: JsValue
@@ -1573,7 +1583,7 @@ final case class RequestContext(
     "headers" -> headers,
     "cookies" -> cookies,
     "query" -> query,
-    "body" -> body,
+    "body" -> body.map(v => JsString(v.raw)).getOrElse(JsNull).as[JsValue],
     "status" -> status,
     "statusTxt" -> statusTxt,
     "startTime" -> startTime,

@@ -37,7 +37,6 @@ lazy val root = (project in file("."))
   .settings(
     name := "seclang-engine",
     libraryDependencies ++= Seq(
-      "com.typesafe.akka" %% "akka-actor" % "2.6.20" % Provided,
       "com.comcast" %% "ip4s-core" % "3.2.0",
       "org.antlr" % "antlr4" % "4.13.2",
       "com.typesafe.play" %% "play-json" % "2.9.3",
@@ -46,7 +45,6 @@ lazy val root = (project in file("."))
       "org.apache.commons" % "commons-text" % "1.15.0",
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % "2.13.4" % Test,
-      "com.typesafe.akka" %% "akka-actor" % "2.6.20" % Test,
       munit % Test
     ),
     crossScalaVersions := Seq("2.12.21", "2.13.15"),

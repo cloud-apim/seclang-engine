@@ -1,10 +1,9 @@
 package com.cloud.apim.seclang.test
 
-import akka.util.ByteString
 import com.cloud.apim.seclang.impl.engine.SecLangEngine
 import com.cloud.apim.seclang.impl.utils.{MsUrlDecode, StatusCodes}
 import com.cloud.apim.seclang.model.Disposition.{Block, Continue}
-import com.cloud.apim.seclang.model.{CompiledItem, NoLogSecLangIntegration, RequestContext, RuleChain, SecLangEngineConfig}
+import com.cloud.apim.seclang.model.{ByteString, CompiledItem, NoLogSecLangIntegration, RequestContext, RuleChain, SecLangEngineConfig}
 import com.cloud.apim.seclang.scaladsl.SecLang
 import play.api.libs.json._
 
