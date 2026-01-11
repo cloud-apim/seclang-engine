@@ -1,6 +1,8 @@
 package com.cloud.apim.seclang.impl.compiler
 
+import com.cloud.apim.seclang.impl.utils.RegexPool
 import com.cloud.apim.seclang.model.ConfigDirective.{ComponentSignature, DefaultAction}
+import com.cloud.apim.seclang.model.Operator.Rx
 import com.cloud.apim.seclang.model._
 
 object Compiler {
@@ -19,6 +21,11 @@ object Compiler {
         .filterNot(_.isMetaData)
         .map(a => (actions.phase.get, a))
     }.flatten.groupBy(_._1).mapValues(_.map(_._2))
+    statements.collect {
+      case SecRule(_, _, Operator.Rx(pattern), _, _) => pattern
+    }.foreach { pattern =>
+      RegexPool.regex(pattern)
+    }
 
     // flatten into CompiledItem with chain logic
     val items = scala.collection.mutable.ArrayBuffer.empty[CompiledItem]

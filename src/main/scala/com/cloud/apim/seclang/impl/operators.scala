@@ -1,7 +1,7 @@
 package com.cloud.apim.seclang.impl.engine
 
 import com.cloud.apim.libinjection.LibInjection
-import com.cloud.apim.seclang.impl.utils.{ByteRangeValidator, EncodingHelper, IpMatch}
+import com.cloud.apim.seclang.impl.utils.{ByteRangeValidator, EncodingHelper, IpMatch, RegexPool}
 import com.cloud.apim.seclang.model.{Operator, RuntimeState, SecLangIntegration}
 import play.api.libs.json.{JsArray, JsString, Json}
 
@@ -38,7 +38,7 @@ object EngineOperators {
         return false
       }
       try {
-        val r: Regex = state.evalTxExpressions(pattern, state).r
+        val r: Regex = RegexPool.regex(state.evalTxExpressions(pattern, state))
         val s = System.nanoTime()
         val rs = r.findFirstMatchIn(value)
         val d = Duration(System.nanoTime() - s, TimeUnit.NANOSECONDS)

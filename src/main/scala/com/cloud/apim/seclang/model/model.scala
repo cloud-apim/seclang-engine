@@ -78,7 +78,7 @@ case class FsFilesSource(virtPath: String, path: String) extends FilesSource {
 }
 
 case class FsScanFilesSource(dirPath: String, pattern: String) extends FilesSource {
-  private val regex: Regex = pattern.r
+  private val regex: Regex = RegexPool.regex(pattern)
   override def getFiles(): Map[String, String] = {
     val root = Paths.get(dirPath)
 
@@ -147,7 +147,7 @@ case class FileConfigurationSource(path: String) extends ConfigurationSource {
 }
 
 case class FileScanConfigurationSource(dirPath: String, pattern: String) extends ConfigurationSource {
-  private val regex: Regex = pattern.r
+  private val regex: Regex = RegexPool.regex(pattern)
   def getRules(): String = {
     val root = Paths.get(dirPath)
 
@@ -1534,7 +1534,7 @@ final case class RequestContext(
         body.utf8String.linesIterator
           .collect {
             case line if line.toLowerCase.startsWith("content-disposition:") && line.toLowerCase.contains("filename=") =>
-              """(?:^|[;\s])name="([^"]+)"""".r
+              RegexPool.regex("""(?:^|[;\s])name="([^"]+)"""")
                 .findFirstMatchIn(line)
                 .map(_.group(1))
           }.flatten.toList
@@ -1548,7 +1548,7 @@ final case class RequestContext(
         body.utf8String.linesIterator
           .collect {
             case line if line.toLowerCase.startsWith("content-disposition:") && line.toLowerCase.contains("filename=") =>
-              """filename="([^"]+)"""".r
+              RegexPool.regex("""filename="([^"]+)"""")
                 .findFirstMatchIn(line)
                 .map(_.group(1))
           }.flatten.toList

@@ -1,6 +1,6 @@
 package com.cloud.apim.seclang.impl.engine
 
-import com.cloud.apim.seclang.impl.utils.{FormUrlEncoded, MultipartVars, SimpleXmlSelector, XmlXPathParser}
+import com.cloud.apim.seclang.impl.utils.{FormUrlEncoded, MultipartVars, RegexPool, SimpleXmlSelector, XmlXPathParser}
 import com.cloud.apim.seclang.model.{RequestContext, RuntimeState, SecLangIntegration, Variable}
 import play.api.libs.json.{JsArray, JsBoolean, JsNull, JsNumber, JsObject, JsString, JsValue, Json}
 
@@ -66,7 +66,7 @@ object EngineVariables {
             //ctx.headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
             ctx.headers.toList.flatMap(_._2)
           case Some(h) if h.startsWith("/") && h.endsWith("/") =>
-            val r = h.substring(1, h.length - 1).r
+            val r = RegexPool.regex(h.substring(1, h.length - 1))
             ctx.headers.collect {
               case (k, vs) if r.findFirstIn(k).isDefined => vs
             }.flatten.toList
@@ -81,7 +81,7 @@ object EngineVariables {
         key match {
           case None => ctx.flatArgs
           case Some(h) if h.startsWith("/") && h.endsWith("/") =>
-            val r = h.substring(1, h.length - 1).r
+            val r = RegexPool.regex(h.substring(1, h.length - 1))
             args.collect {
               case (k, vs) if r.findFirstIn(k).isDefined => vs
             }.flatten.toList
@@ -97,7 +97,7 @@ object EngineVariables {
         key match {
           case None => List.empty
           case Some(key) if key.startsWith("/") && key.endsWith("/") => {
-            val r = key.substring(1, key.length - 1).r
+            val r = RegexPool.regex(key.substring(1, key.length - 1))
             state.txMap.collect {
               case (k, vs) if r.findFirstIn(k).isDefined => vs
             }.toList
@@ -108,7 +108,7 @@ object EngineVariables {
       case "ENV" => key match {
         case None => List.empty
         case Some(h) if h.startsWith("/") && h.endsWith("/") =>
-          val r = h.substring(1, h.length - 1).r
+          val r = RegexPool.regex(h.substring(1, h.length - 1))
           state.envMap.collect {
             case (k, vs) if r.findFirstIn(k).isDefined => vs
           }.toList
@@ -135,7 +135,7 @@ object EngineVariables {
           if (debug) {
             println(s"REQUEST_COOKIES - key: ${key}")
           }
-          val r = h.substring(1, h.length - 1).r
+          val r = RegexPool.regex(h.substring(1, h.length - 1))
           ctx.cookies.collect {
             case (k, vs) if r.findFirstIn(k).isDefined => vs
           }.flatten.toList
@@ -194,7 +194,7 @@ object EngineVariables {
                 //headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
                 headers.toList.flatMap(_._2)
               case Some(h) if h.startsWith("/") && h.endsWith("/") =>
-                val r = h.substring(1, h.length - 1).r
+                val r = RegexPool.regex(h.substring(1, h.length - 1))
                 headers.collect {
                   case (k, vs) if r.findFirstIn(k).isDefined => vs
                 }.flatten.toList
@@ -213,7 +213,7 @@ object EngineVariables {
           case None =>
             headers.toList.flatMap(_._2)
           case Some(h) if h.startsWith("/") && h.endsWith("/") =>
-            val r = h.substring(1, h.length - 1).r
+            val r = RegexPool.regex(h.substring(1, h.length - 1))
             headers.collect {
               case (k, vs) if r.findFirstIn(k).isDefined => vs
             }.flatten.toList
@@ -232,7 +232,7 @@ object EngineVariables {
               case None =>
                 headers.toList.flatMap(_._2)
               case Some(h) if h.startsWith("/") && h.endsWith("/") =>
-                val r = h.substring(1, h.length - 1).r
+                val r = RegexPool.regex(h.substring(1, h.length - 1))
                 headers.collect {
                   case (k, vs) if r.findFirstIn(k).isDefined => vs
                 }.flatten.toList

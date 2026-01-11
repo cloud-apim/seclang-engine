@@ -15,9 +15,17 @@ import javax.xml.transform.dom.DOMSource
 import javax.xml.transform.stream.StreamResult
 import javax.xml.transform.{OutputKeys, TransformerFactory}
 import javax.xml.xpath.{XPathConstants, XPathFactory}
+import scala.collection.concurrent.TrieMap
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Try
 import scala.util.matching.Regex
+
+object RegexPool {
+  private val regexCache = new TrieMap[String, Regex]()
+  def regex(regex: String): Regex = {
+    regexCache.getOrElseUpdate(regex, regex.r)
+  }
+}
 
 object HashUtilsFast {
   private val HEX = "0123456789abcdef".toCharArray
@@ -59,7 +67,7 @@ object MultipartVars {
       if (!lower.startsWith("multipart/form-data")) None
       else {
         // boundary peut être quoted ou pas
-        val B1 = """(?i)\bboundary="?([^";]+)"?""".r
+        val B1 = RegexPool.regex("""(?i)\bboundary="?([^";]+)"?""")
         B1.findFirstMatchIn(ct).map(_.group(1))
       }
     }
