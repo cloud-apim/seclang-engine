@@ -19,11 +19,6 @@ rule language, providing full compatibility with the [OWASP Core Rule Set (CRS) 
 
 ## Status
 
-this project is a work in progress, right now we are passing **more than 98%** of
-the [CRS test suite](https://github.com/coreruleset/coreruleset/tree/main/tests/regression/tests)
-
-## Status
-
 This project is a work in progress. We are currently passing **more than 98%** of the [CRS test suite](https://github.com/coreruleset/coreruleset/tree/main/tests/regression/tests)
 
 ```json
