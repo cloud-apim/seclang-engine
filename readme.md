@@ -19,11 +19,11 @@ this project is a work in progress, right now we are passing **more than 98%** o
   },
   "time_stats" : {
     "calls" : 4109,
-    "total_time_ms" : 68935,
-    "min_time_ns" : 738917,
+    "total_time_ms" : 25426,
+    "min_time_ns" : 415000,
     "min_time_ms" : 0,
-    "max_time_ms" : 4856,
-    "avg_time_ms" : 16
+    "max_time_ms" : 3342,
+    "avg_time_ms" : 6
   }
 }
 ```
