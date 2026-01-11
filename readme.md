@@ -1,15 +1,30 @@
-# Cloud APIM - SecLang Engine WAF
+# Cloud APIM - SecLang Engine
 
-SecLang Engine WAF is a ModSecurity-compatible Web Application Firewall (WAF) library for the JVM, written in Scala.
+<p align="center">
+  <b>An open-source, enterprise-grade, high-performance Web Application Firewall (WAF) library for the JVM, made to protect your webapps.</b>
+</p>
 
-It implements a subset of the [ModSecurity language](https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29), 
-optimized to run the [OWASP Core Rule Set (CRS)](https://coreruleset.org/) at scale, with strong support for multi-tenancy, 
-high concurrency, and user-level customization.
+SecLang Engine is written in Scala and implements the [ModSecurity SecLang](https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29) 
+rule language, providing full compatibility with the [OWASP Core Rule Set (CRS) v4](https://coreruleset.org/).
+
+## Key Features
+
+- **CRS Compatibility** - Runs the OWASP Core Rule Set v4 out of the box, protecting your applications against SQL Injection, Cross-Site Scripting (XSS), Remote Code Execution, and other threats from the OWASP Top Ten.
+- **Multi-Tenant by Design** - Built from the ground up for multi-tenant environments, allowing different rule configurations per tenant with isolated execution contexts and shared rule presets.
+- **JVM Native** - Runs natively on the JVM with Scala 2.12/2.13 support. Easily integrates with existing Java/Scala applications, API gateways, and reverse proxies.
+- **High Performance** - Optimized for high-throughput scenarios with compiled rule programs, regex caching, and efficient variable resolution. Handles thousands of requests per second with minimal latency overhead.
+- **Library-First** - Designed as an embeddable library, not a standalone server. Integrate WAF capabilities directly into your application, gateway, or proxy with a simple API.
+- **Extensible** - Customize logging, caching, and integration points through the `SecLangIntegration` trait. Compose rule presets and configurations dynamically at runtime.
+- **Battle-Tested** - Passes more than 98% of the official CRS test suite, ensuring reliable protection against real-world attack patterns.
 
 ## Status
 
-this project is a work in progress, right now we are passing **more than 98%** of 
+this project is a work in progress, right now we are passing **more than 98%** of
 the [CRS test suite](https://github.com/coreruleset/coreruleset/tree/main/tests/regression/tests)
+
+## Status
+
+This project is a work in progress. We are currently passing **more than 98%** of the [CRS test suite](https://github.com/coreruleset/coreruleset/tree/main/tests/regression/tests)
 
 ```json
 {
