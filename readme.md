@@ -2,11 +2,14 @@
 
 SecLang Engine WAF is a ModSecurity-compatible Web Application Firewall (WAF) library for the JVM, written in Scala.
 
-It implements a subset of the [ModSecurity language](https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29), optimized to run the [OWASP Core Rule Set (CRS)](https://coreruleset.org/) at scale, with strong support for multi-tenancy, high concurrency, and user-level customization.
+It implements a subset of the [ModSecurity language](https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29), 
+optimized to run the [OWASP Core Rule Set (CRS)](https://coreruleset.org/) at scale, with strong support for multi-tenancy, 
+high concurrency, and user-level customization.
 
 ## Status
 
-this project is a work in progress, right now we are passing **more than 98%** of the [CRS test suite](https://github.com/coreruleset/coreruleset/tree/main/tests/regression/tests)
+this project is a work in progress, right now we are passing **more than 98%** of 
+the [CRS test suite](https://github.com/coreruleset/coreruleset/tree/main/tests/regression/tests)
 
 ```json
 {
