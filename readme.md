@@ -28,46 +28,6 @@ this project is a work in progress, right now we are passing **more than 98%** o
 }
 ```
 
-## Installation
-
-Add the following dependency to your `build.sbt`:
-
-```scala
-libraryDependencies += "com.cloud-apim" %% "seclang-engine" % "1.0.0"
-```
-
-The library is cross-compiled for Scala 2.12 and 2.13.
-
-### Using Snapshots
-
-To use snapshot versions, add the Sonatype snapshots repository:
-
-```scala
-resolvers += "Sonatype OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots"
-
-libraryDependencies += "com.cloud-apim" %% "seclang-engine" % "1.0.0-SNAPSHOT"
-```
-
-### Maven
-
-For Maven projects, add to your `pom.xml`:
-
-```xml
-<dependency>
-  <groupId>com.cloud-apim</groupId>
-  <artifactId>seclang-engine_2.12</artifactId>
-  <version>1.0.0</version>
-</dependency>
-```
-
-### Gradle
-
-For Gradle projects:
-
-```gradle
-implementation 'com.cloud-apim:seclang-engine_2.12:1.0.0'
-```
-
 ## Simple usage
 
 ```scala
@@ -216,6 +176,94 @@ class SecLangFactoryTest extends munit.FunSuite {
   }
 }
 ```
+
+## Installation
+
+Add the following dependency to your `build.sbt`:
+
+```scala
+libraryDependencies += "com.cloud-apim" %% "seclang-engine" % "1.0.0"
+```
+
+The library is cross-compiled for Scala 2.12 and 2.13.
+
+### Using Snapshots
+
+To use snapshot versions, add the Sonatype snapshots repository:
+
+```scala
+resolvers += "Sonatype OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots"
+
+libraryDependencies += "com.cloud-apim" %% "seclang-engine" % "1.0.0-SNAPSHOT"
+```
+
+### Maven
+
+For Maven projects, add to your `pom.xml`:
+
+```xml
+<dependency>
+  <groupId>com.cloud-apim</groupId>
+  <artifactId>seclang-engine_2.12</artifactId>
+  <version>1.0.0</version>
+</dependency>
+```
+
+### Gradle
+
+For Gradle projects:
+
+```gradle
+implementation 'com.cloud-apim:seclang-engine_2.12:1.0.0'
+```
+
+## Build
+
+To build the project from source:
+
+```bash
+# Clone the repository
+git clone https://github.com/cloud-apim/seclang-engine.git
+cd seclang-engine
+
+# Compile
+sbt compile
+
+# Package
+sbt package
+```
+
+## Testing
+
+The project uses the official [OWASP Core Rule Set (CRS) test suite](https://github.com/coreruleset/coreruleset/tree/main/tests/regression/tests) to validate the engine implementation.
+
+### Setup
+
+Before running the tests, you need to download the CRS test data:
+
+```bash
+./setuptest.sh
+```
+
+This script clones the CRS repository into `test-data/coreruleset/`.
+
+### Running tests
+
+```bash
+# Run all tests
+sbt test
+
+# Run a specific test suite
+sbt "testOnly *SecLangBasicTest"
+sbt "testOnly *SecLangCRSTest"
+
+# Run a specific test
+sbt "testOnly *SecLangBasicTest -- *simple*"
+```
+
+### Test status
+
+The file `crs-tests-status.json` contains the current status of the CRS test suite, including passing/failing tests and their failure reasons.
 
 ## Missing stuff
 
