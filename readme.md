@@ -1,6 +1,6 @@
 # Cloud APIM - SecLang Engine WAF
 
-SecLang Engine WAF is a ModSecurity-compatible Web Application Firewall library for the JVM, written in Scala.
+SecLang Engine WAF is a ModSecurity-compatible Web Application Firewall (WAF) library for the JVM, written in Scala.
 
 It implements a subset of the [ModSecurity language](https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29), optimized to run the [OWASP Core Rule Set (CRS)](https://coreruleset.org/) at scale, with strong support for multi-tenancy, high concurrency, and user-level customization.
 
