@@ -1,7 +1,8 @@
-# Cloud APIM SecLang Engine
+# Cloud APIM - SecLang Engine WAF
 
-A Scala-based engine implementation of a subset of the [OWASP/ModSecurity SecLang language](https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29) that can run on the JVM.
-Built to efficiently execute the [OWASP Core Rule Set (CRS)](https://coreruleset.org/) with user based customizations in highly concurrent and multi-tenant environments.
+SecLang Engine WAF is a ModSecurity-compatible Web Application Firewall library for the JVM, written in Scala.
+
+It implements a subset of the [ModSecurity language](https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29), optimized to run the [OWASP Core Rule Set (CRS)](https://coreruleset.org/) at scale, with strong support for multi-tenancy, high concurrency, and user-level customization.
 
 ## Status
 
@@ -10,19 +11,19 @@ this project is a work in progress, right now we are passing **more than 98%** o
 ```json
 {
   "global_stats" : {
-    "failure_percentage" : 1.6321559074299634,
-    "passing_percentage" : 98.36784409257004,
-    "total_tests" : 4105,
-    "success_tests" : 4038,
-    "failure_tests" : 67
+    "failure_percentage" : 1.3385251886103675,
+    "passing_percentage" : 98.66147481138964,
+    "total_tests" : 4109,
+    "success_tests" : 4054,
+    "failure_tests" : 55
   },
   "time_stats" : {
-    "calls" : 4105,
-    "total_time_ms" : 64070,
-    "min_time_ns" : 656958,
+    "calls" : 4109,
+    "total_time_ms" : 68935,
+    "min_time_ns" : 738917,
     "min_time_ms" : 0,
-    "max_time_ms" : 4719,
-    "avg_time_ms" : 15
+    "max_time_ms" : 4856,
+    "avg_time_ms" : 16
   }
 }
 ```
