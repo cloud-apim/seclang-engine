@@ -30,15 +30,15 @@ object EngineOperators {
     // https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29#user-content-Operators
     case Operator.Negated(oop)         => !evalOperator(ruleId, oop, value, files, state, integration)
     case Operator.UnconditionalMatch() => true
-    case Operator.Contains(x)          => value.contains(state.evalTxExpressions(x, state))
-    case Operator.Streq(x)             => value == state.evalTxExpressions(x, state)
-    case Operator.Pm(xs)               => state.evalTxExpressions(xs, state).split(" ").exists(it => value.toLowerCase().contains(it.toLowerCase))
+    case Operator.Contains(x)          => value.contains(state.evalTxExpressions(x))
+    case Operator.Streq(x)             => value == state.evalTxExpressions(x)
+    case Operator.Pm(xs)               => state.evalTxExpressions(xs).split(" ").exists(it => value.toLowerCase().contains(it.toLowerCase))
     case Operator.Rx(pattern) => {
       if ((ruleId == 932240 || ruleId == 941170) && value.length > (10*1024)) { // TODO: find a way to avoid that ?
         return false
       }
       try {
-        val r: Regex = RegexPool.regex(state.evalTxExpressions(pattern, state))
+        val r: Regex = RegexPool.regex(state.evalTxExpressions(pattern))
         val s = System.nanoTime()
         val rs = r.findFirstMatchIn(value)
         val d = Duration(System.nanoTime() - s, TimeUnit.NANOSECONDS)
@@ -61,24 +61,24 @@ object EngineOperators {
         case _: Throwable => false
       }
     }
-    case Operator.BeginsWith(x) => value.startsWith(state.evalTxExpressions(x, state))
-    case Operator.ContainsWord(x) => value.contains(state.evalTxExpressions(x, state).split(" ").filterNot(_.isEmpty).headOption.getOrElse(""))
-    case Operator.EndsWith(x) => value.endsWith(state.evalTxExpressions(x, state))
-    case Operator.Eq(x) => scala.util.Try(value.toInt).getOrElse(0) == scala.util.Try(state.evalTxExpressions(x, state).toInt).getOrElse(0)
-    case Operator.Ge(x) => scala.util.Try(value.toInt).getOrElse(0) >= scala.util.Try(state.evalTxExpressions(x, state).toInt).getOrElse(0)
-    case Operator.Gt(x) => scala.util.Try(value.toInt).getOrElse(0) > scala.util.Try(state.evalTxExpressions(x, state).toInt).getOrElse(0)
-    case Operator.Le(x) => scala.util.Try(value.toInt).getOrElse(0) <= scala.util.Try(state.evalTxExpressions(x, state).toInt).getOrElse(0)
-    case Operator.Lt(x) => scala.util.Try(value.toInt).getOrElse(0) < scala.util.Try(state.evalTxExpressions(x, state).toInt).getOrElse(0)
-    case Operator.StrMatch(x) => value.toLowerCase.contains(state.evalTxExpressions(x, state).toLowerCase)
+    case Operator.BeginsWith(x) => value.startsWith(state.evalTxExpressions(x))
+    case Operator.ContainsWord(x) => value.contains(state.evalTxExpressions(x).split(" ").filterNot(_.isEmpty).headOption.getOrElse(""))
+    case Operator.EndsWith(x) => value.endsWith(state.evalTxExpressions(x))
+    case Operator.Eq(x) => scala.util.Try(value.toInt).getOrElse(0) == scala.util.Try(state.evalTxExpressions(x).toInt).getOrElse(0)
+    case Operator.Ge(x) => scala.util.Try(value.toInt).getOrElse(0) >= scala.util.Try(state.evalTxExpressions(x).toInt).getOrElse(0)
+    case Operator.Gt(x) => scala.util.Try(value.toInt).getOrElse(0) > scala.util.Try(state.evalTxExpressions(x).toInt).getOrElse(0)
+    case Operator.Le(x) => scala.util.Try(value.toInt).getOrElse(0) <= scala.util.Try(state.evalTxExpressions(x).toInt).getOrElse(0)
+    case Operator.Lt(x) => scala.util.Try(value.toInt).getOrElse(0) < scala.util.Try(state.evalTxExpressions(x).toInt).getOrElse(0)
+    case Operator.StrMatch(x) => value.toLowerCase.contains(state.evalTxExpressions(x).toLowerCase)
     case Operator.Within(x) =>
-      val expr = state.evalTxExpressions(x, state).toLowerCase().split(" ")
+      val expr = state.evalTxExpressions(x).toLowerCase().split(" ")
       val v = value.toLowerCase
       if (v.isEmpty) {
         return false
       }
       expr.contains(v)
     case Operator.PmFromFile(xs) => {
-      val fileName = state.evalTxExpressions(xs, state)
+      val fileName = state.evalTxExpressions(xs)
       files.get(fileName) match {
         case None => false
         case Some(file) => {
@@ -96,7 +96,7 @@ object EngineOperators {
     case Operator.ValidateByteRange(x) => ByteRangeValidator.validateByteRange(value, x)
     case Operator.IpMatch(x) => IpMatch.ipMatch(x, value)
     case Operator.IpMatchFromFile(xs) => {
-      val fileName = state.evalTxExpressions(xs, state)
+      val fileName = state.evalTxExpressions(xs)
       files.get(fileName) match {
         case None => false
         case Some(file) => {
@@ -109,8 +109,8 @@ object EngineOperators {
         }
       }
     }
-    case Operator.DetectXSS(x) => LibInjection.isXSS(state.evalTxExpressions(value, state))
-    case Operator.DetectSQLi(x) => LibInjection.isSQLi(state.evalTxExpressions(value, state))
+    case Operator.DetectXSS(x) => LibInjection.isXSS(state.evalTxExpressions(value))
+    case Operator.DetectSQLi(x) => LibInjection.isSQLi(state.evalTxExpressions(value))
     case Operator.ValidateUrlEncoding(x) => !EncodingHelper.validateUrlEncoding(value)
     case Operator.ValidateUtf8Encoding(x) => !EncodingHelper.validateUtf8Encoding(value)
 

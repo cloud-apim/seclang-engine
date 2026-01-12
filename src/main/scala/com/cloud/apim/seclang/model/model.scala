@@ -1773,6 +1773,7 @@ object Disposition {
 final case class MatchEvent(
     ruleId: Option[Int],
     msg: Option[String],
+    logs: List[String],
     phase: Int,
     raw: String
 ) {
@@ -1785,6 +1786,7 @@ final case class MatchEvent(
       "rule_id" -> ruleId,
       "msg" -> message,
       "phase" -> phase,
+      "logs" -> logs,
       "raw" -> raw
     )
   }
@@ -1811,15 +1813,17 @@ object RuntimeState {
   // (?i) => case-insensitive
   private val TxExpr: Regex = RegexPool.regex("""(?i)%\{tx\.([a-z0-9_.-]+)\}""")
 }
-final case class RuntimeState(mode: EngineMode, disabledIds: Set[Int], events: List[MatchEvent], txMap: TrieMap[String, String], envMap: TrieMap[String, String], uidRef: AtomicReference[String]) {
+final case class RuntimeState(mode: EngineMode, disabledIds: Set[Int], events: List[MatchEvent], txMap: TrieMap[String, String], envMap: TrieMap[String, String], uidRef: AtomicReference[String], logs: List[String]) {
 
-  def evalTxExpressions(input: String, state: RuntimeState): String = {
+  def evalTxExpressions(input: String): String = {
     if (input.contains("%{")) {
-      val finalInput: String = if (input.contains("%{MATCHED_VAR}") || input.contains("%{MATCHED_VAR_NAME}")) {
+      val finalInput: String = if (input.toLowerCase.contains("%{matched_var}") || input.toLowerCase.contains("%{matched_var_name}")) {
         try {
           input
-            .replaceAll("%\\{MATCHED_VAR\\}", state.txMap.getOrElse("matched_var", "--"))
-            .replaceAll("%\\{MATCHED_VAR_NAME\\}", state.txMap.getOrElse("matched_var_name", "--"))
+            .replaceAll("%\\{MATCHED_VAR\\}", txMap.getOrElse("matched_var", "--"))
+            .replaceAll("%\\{MATCHED_VAR_NAME\\}", txMap.getOrElse("matched_var_name", "--"))
+            .replaceAll("%\\{matched_var_name\\}", txMap.getOrElse("matched_var_name", "--"))
+            .replaceAll("%\\{matched_var\\}", txMap.getOrElse("matched_var", "--"))
         } catch {
           case t: Throwable => input
         }
@@ -1829,7 +1833,7 @@ final case class RuntimeState(mode: EngineMode, disabledIds: Set[Int], events: L
       try {
         RuntimeState.TxExpr.replaceAllIn(finalInput, m => {
           val key = m.group(1).toLowerCase
-          state.txMap.getOrElse(key, m.matched)
+          txMap.getOrElse(key, m.matched)
         })
       } catch {
         case t: Throwable => finalInput

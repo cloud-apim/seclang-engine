@@ -46,7 +46,6 @@ object HashUtilsFast {
   }
 }
 
-
 object Implicits {
   implicit class BetterString(val obj: String) extends AnyVal {
     def toIntOption: Option[Int] = {
@@ -136,7 +135,7 @@ object FormUrlEncoded {
     body
       .split("&", -1)                    // keep empty segments
       .iterator
-      .map(_.trim)
+      //.map(_.trim)
       .filter(_.nonEmpty)
       .flatMap { pair =>
         try {

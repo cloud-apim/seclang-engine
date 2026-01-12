@@ -3,7 +3,7 @@ package com.cloud.apim.seclang.test
 import com.cloud.apim.seclang.impl.engine.SecLangEngine
 import com.cloud.apim.seclang.impl.utils.{MsUrlDecode, StatusCodes}
 import com.cloud.apim.seclang.model.Disposition.{Block, Continue}
-import com.cloud.apim.seclang.model.{ByteString, CompiledItem, Headers, NoLogSecLangIntegration, RequestContext, RuleChain, SecLangEngineConfig}
+import com.cloud.apim.seclang.model.{ByteString, CompiledItem, DefaultSecLangIntegration, Headers, NoLogSecLangIntegration, RequestContext, RuleChain, SecLangEngineConfig}
 import com.cloud.apim.seclang.scaladsl.SecLang
 import play.api.libs.json._
 
@@ -360,12 +360,36 @@ object CRSTestUtils {
                                 |    }
                                 |  } ]
                                 |}""".stripMargin),
+    //(932200, 13) -> Json.parse("""{
+    //                             |  "test_id" : 13,
+    //                             |  "desc" : "Test correct logging",
+    //                             |  "stages" : [ {
+    //                             |    "input" : {
+    //                             |      "dest_addr" : "127.0.0.1",
+    //                             |      "headers" : {
+    //                             |        "Accept" : "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5",
+    //                             |        "Host" : "localhost",
+    //                             |        "User-Agent" : "OWASP CRS test agent"
+    //                             |      },
+    //                             |      "method" : "GET",
+    //                             |      "port" : 80,
+    //                             |      "uri" : "/get?host=www.google.com;/bin/ca?+/et*/passwd",
+    //                             |      "version" : "HTTP/1.1"
+    //                             |    },
+    //                             |    "output" : {
+    //                             |      "log" : {
+    //                             |        "expect_ids" : [ 932200 ]
+    //                             |      }
+    //                             |    }
+    //                             |  } ]
+    //                             |}""".stripMargin), // avoid logging test
   )
 }
 
 class SecLangCRSTest extends munit.FunSuite {
 
-  //private val testOnly: List[(String, Int)] = List(("931100", 3))
+  //private val testOnly: List[(String, Int)] = List(("932200", 13))
+  //private val testOnly: List[(String, Int)] = List(("942440", 9))
   private val testOnly: List[(String, Int)] = List.empty
   private val ignoreTests: List[(String, Int)] = List.empty
   private val engine = CRSTestUtils.setupCRSEngine(testOnly.map(_._1.toInt))
@@ -443,6 +467,7 @@ class SecLangCRSTest extends munit.FunSuite {
             val log = (output \ "log").asOpt[JsObject].getOrElse(Json.obj())
             val expect_ids: List[Int] = (log \ "expect_ids").asOpt[List[Int]].getOrElse(List.empty)
             val no_expect_ids: List[Int] = (log \ "no_expect_ids").asOpt[List[Int]].getOrElse(List.empty)
+            val match_regex: Option[String] = (log \ "match_regex").asOpt[String]
             var checked = false
             var ok = true
             var apache = false
@@ -496,6 +521,19 @@ class SecLangCRSTest extends munit.FunSuite {
                 if (!dev) assertEquals(notpassed, false, s"no_expect_ids mismatch for test ${testId}")
               }
             }
+            if (!ok && match_regex.isDefined) {
+              checked = true
+              val regex = match_regex.get.r
+              val logs = result.events.flatMap(_.logs)
+              val exists = logs.exists(log => regex.findFirstIn(log).isDefined)
+              if (!exists) {
+                failures.incrementAndGet()
+                ok = false
+                println(s"[${rule} - ${testId}] ${desc.getOrElse("--")}")
+                println(s"      logs did not match regex")
+                cause = "logs did not match regex"
+              }
+            }
             if (checked && ok) {
               //  println(s"    - [${rule} - ${testId}] passed")
             } else if (!checked && ok) {
@@ -517,6 +555,7 @@ class SecLangCRSTest extends munit.FunSuite {
                 "description" -> descr,
                 "cause" -> cause,
                 "result" -> result.json,
+                "logs" -> JsArray(result.events.flatMap(_.logs).map(v => JsString(v))),
                 "test" -> test,
                 "tested_rule" -> testedRule
               )

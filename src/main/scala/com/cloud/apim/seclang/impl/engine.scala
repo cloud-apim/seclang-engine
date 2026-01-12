@@ -27,6 +27,7 @@ final class SecLangEngine(val program: CompiledProgram, config: SecLangEngineCon
         mode = pmode,
         disabledIds = Set.empty,
         events = Nil,
+        logs = Nil,
         txMap = txMap,
         envMap = envMap,
         uidRef = uidRef
@@ -137,7 +138,7 @@ final class SecLangEngine(val program: CompiledProgram, config: SecLangEngineCon
     }
     if (msg.nonEmpty) collectedMsg = msg
     addLogData = addLogData ++ actionsList.collect {
-      case Action.LogData(m) => st.evalTxExpressions(m, st)
+      case Action.LogData(m) => st.evalTxExpressions(m)
     }
     val status = actionsList.collectFirst {
       case Action.Status(s) => s
@@ -163,8 +164,9 @@ final class SecLangEngine(val program: CompiledProgram, config: SecLangEngineCon
       st = st.copy(disabledIds = st.disabledIds + id)
     }
 
-    st = st.copy(events = MatchEvent(action.id, msg, phase, Json.stringify(action.json)) :: st.events)
     st = EngineActions.performActions(action.id.getOrElse(0), actionsList, phase, ctx, st, integration, collectedMsg, addLogData, isLast = true)
+    st = st.copy(events = MatchEvent(action.id, msg, st.logs, phase, Json.stringify(action.json)) :: st.events)
+    st = st.copy(logs = List.empty)
     val disp =
       disruptive match {
         case Some(Action.Deny) | Some(Action.Drop) | Some(Action.Block()) =>
@@ -211,11 +213,11 @@ final class SecLangEngine(val program: CompiledProgram, config: SecLangEngineCon
           // TODO: implement actions: https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29#actions
           val actionsList = r.actions.toList.flatMap(_.actions)
           val msg = actionsList.collectFirst {
-            case Action.Msg(m) => st.evalTxExpressions(m, st)
+            case Action.Msg(m) => st.evalTxExpressions(m)
           }
           if (msg.nonEmpty) collectedMsg = msg
           addLogData = addLogData ++ actionsList.collect {
-            case Action.LogData(m) => st.evalTxExpressions(m, st)
+            case Action.LogData(m) => st.evalTxExpressions(m)
           }
 
           val status = actionsList.collectFirst {
@@ -242,12 +244,13 @@ final class SecLangEngine(val program: CompiledProgram, config: SecLangEngineCon
             st = st.copy(disabledIds = st.disabledIds + id)
           }
 
-          if (isLast) {
-            st = st.copy(events = MatchEvent(lastRuleId, msg, phase, Json.stringify(r.json)) :: events ++ st.events)
-          } else {
-            events = events :+ MatchEvent(lastRuleId, msg, phase, Json.stringify(r.json))
-          }
           st = EngineActions.performActions(lastRuleId.getOrElse(0), actionsList, phase, ctx, st, integration, collectedMsg, addLogData, isLast)
+          if (isLast) {
+            st = st.copy(events = MatchEvent(lastRuleId, msg, st.logs, phase, Json.stringify(r.json)) :: events ++ st.events)
+          } else {
+            events = events :+ MatchEvent(lastRuleId, msg, st.logs, phase, Json.stringify(r.json))
+          }
+          st = st.copy(logs = List.empty)
         }
         if (!matched) {
           allMatched = false

@@ -132,9 +132,6 @@ object EngineVariables {
         case None =>
           ctx.cookies.toList.flatMap { case (k, vs) => vs }//.map(v => s"$k: $v") }
         case Some(h) if h.startsWith("/") && h.endsWith("/") =>
-          if (debug) {
-            println(s"REQUEST_COOKIES - key: ${key}")
-          }
           val r = RegexPool.regex(h.substring(1, h.length - 1))
           ctx.cookies.collect {
             case (k, vs) if r.findFirstIn(k).isDefined => vs
@@ -252,15 +249,8 @@ object EngineVariables {
         }
       }
       case "XML" => {
-        if (debug) {
-          println(s"--- XML:${key} - ${ctx.isXml} - ${ctx.xmlBody} - ${ctx.headers.getOne("content-type")}")
-        }
         ctx.body match {
-          //case Some(_) if key.isDefined && ctx.isXml => ctx.xmlBody.flatMap(_.get(key.get)).getOrElse(List.empty)
-          case Some(_) if key.isDefined && ctx.isXml => ctx.xmlBody.flatMap { b =>
-
-            b.get(key.get)
-          }.getOrElse(List.empty)
+          case Some(_) if key.isDefined && ctx.isXml => ctx.xmlBody.flatMap(_.get(key.get)).getOrElse(List.empty)
           case _ => List.empty
         }
       }

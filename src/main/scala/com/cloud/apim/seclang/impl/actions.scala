@@ -9,9 +9,13 @@ object EngineActions {
     val events = state.events.filter(_.msg.isDefined).map { e =>
       s"phase=${e.phase} rule_id=${e.ruleId.getOrElse(0)} - ${e.msg.getOrElse("no msg")}"
     }.mkString(". ")
+    var hasLog = false
     val executableActions: List[NeedRunAction] = actions.collect {
+      case a @ Action.Log =>
+        hasLog = true
+        a
       case a: NeedRunAction => a
-    }
+    } ++ (if (!hasLog && logdata.nonEmpty) List(Action.Log) else Nil)
     executableActions.foreach {
       case Action.AuditLog() => {
         if (isLast) {
@@ -32,14 +36,16 @@ object EngineActions {
       case Action.Log => {
         if (isLast) {
           msg.foreach { msg =>
-            integration.logInfo(s"${context.requestId} - ${context.method} ${context.uri} matched on: $msg. ${logdata.mkString(". ")}")
+            val m = s"${context.requestId} - ${context.method} ${context.uri} matched on: $msg. ${logdata.mkString(". ")}"
+            localState = localState.copy(logs = localState.logs :+ m)
+            integration.logInfo(m)
           }
         }
       }
       case Action.SetEnv(expr) => {
         val parts = expr.split("=")
         val name = parts(0)
-        val value = state.evalTxExpressions(parts(1), state)
+        val value = state.evalTxExpressions(parts(1))
         state.envMap.put(name, value)
       }
       case Action.SetRsc(_) => ()
@@ -48,7 +54,7 @@ object EngineActions {
         state.uidRef.set(expr)
       }
       case Action.SetVar(expr) => {
-        state.evalTxExpressions(expr, state) match {
+        state.evalTxExpressions(expr) match {
           case expr if expr.startsWith("!") => {
             val name = expr.substring(1).replace("tx.", "").replace("TX.", "").toLowerCase()
             state.txMap.remove(name)
