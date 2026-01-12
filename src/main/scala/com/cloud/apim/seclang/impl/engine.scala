@@ -17,6 +17,13 @@ final class SecLangEngine(val program: CompiledProgram, config: SecLangEngineCon
       EngineResult(Disposition.Continue, List.empty)
     } else {
       val txMap = new TrieMap[String, String]()
+      // Initialize request_headers in txMap for use in operators like @endsWith %{request_headers.host}
+      ctx.headers.toList.foreach { case (name, values) =>
+        val lowerName = name.toLowerCase
+        values.headOption.foreach { v =>
+          txMap.put(s"request_headers.$lowerName", v)
+        }
+      }
       val envMap = {
         val tm = new TrieMap[String, String]()
         integration.getEnv.foreach(tm += _)

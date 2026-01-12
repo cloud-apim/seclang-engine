@@ -1813,6 +1813,7 @@ final case class EngineResult(
 object RuntimeState {
   // (?i) => case-insensitive
   private val TxExpr: Regex = RegexPool.regex("""(?i)%\{tx\.([a-z0-9_.-]+)\}""")
+  private val RequestHeadersExpr: Regex = RegexPool.regex("""(?i)%\{request_headers\.([a-z0-9_.-]+)\}""")
   private val MetaExpr: Regex = RegexPool.regex("""(?i)%\{([a-z0-9_.-]+)\}""")
 }
 final case class RuntimeState(mode: EngineMode, disabledIds: Set[Int], events: List[MatchEvent], txMap: TrieMap[String, String], envMap: TrieMap[String, String], uidRef: AtomicReference[String], logs: List[String], removedTargetsByTag: Map[String, Set[String]] = Map.empty) {
@@ -1841,13 +1842,22 @@ final case class RuntimeState(mode: EngineMode, disabledIds: Set[Int], events: L
       } else {
         input
       }
-      try {
+      val afterTx = try {
         RuntimeState.TxExpr.replaceAllIn(finalInput, m => {
           val key = m.group(1).toLowerCase
           txMap.getOrElse(key, m.matched)
         })
       } catch {
         case t: Throwable => finalInput
+      }
+      // Handle %{request_headers.xxx} expressions
+      try {
+        RuntimeState.RequestHeadersExpr.replaceAllIn(afterTx, m => {
+          val headerName = m.group(1).toLowerCase
+          txMap.getOrElse(s"request_headers.$headerName", m.matched)
+        })
+      } catch {
+        case t: Throwable => afterTx
       }
     } else {
       input
