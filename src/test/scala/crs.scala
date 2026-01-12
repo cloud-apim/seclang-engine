@@ -139,21 +139,17 @@ object CRSTestUtils {
     qs.split("&").foreach { pair =>
       val idx = pair.indexOf('=')
       val key =
-        if (idx > 0)
-          URLDecoder.decode(pair.substring(0, idx), StandardCharsets.UTF_8)
-        else
-          URLDecoder.decode(pair, StandardCharsets.UTF_8)
+        if (idx > 0) {
+          MsUrlDecode.urlDecodeMs(pair.substring(0, idx))
+        } else {
+          MsUrlDecode.urlDecodeMs(pair)
+        }
       val value: List[String] =
         if (idx > 0 && pair.length > idx + 1) {
-          try {
-            List(
-              URLDecoder.decode(pair.substring(idx + 1), StandardCharsets.UTF_8),
-              //MsUrlDecode.urlDecodeMs(pair.substring(idx + 1)),
-              pair.substring(idx + 1)
-            )
-          } catch {
-            case e: Throwable => List(pair.substring(idx + 1))
-          }
+          List(
+            MsUrlDecode.urlDecodeMs(pair.substring(idx + 1)),
+            pair.substring(idx + 1)
+          )
         }
         else
           List("")
@@ -388,7 +384,7 @@ object CRSTestUtils {
 
 class SecLangCRSTest extends munit.FunSuite {
 
-  //private val testOnly: List[(String, Int)] = List(("934120", 23))
+  //private val testOnly: List[(String, Int)] = List(("921150", 1))
   private val testOnly: List[(String, Int)] = List.empty
   private val ignoreTests: List[(String, Int)] = List.empty
   private val engine = CRSTestUtils.setupCRSEngine(testOnly.map(_._1.toInt))

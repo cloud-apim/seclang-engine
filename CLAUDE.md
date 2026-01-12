@@ -19,9 +19,6 @@ sbt test
 sbt "testOnly *SecLangBasicTest"
 sbt "testOnly *SecLangCRSTest"
 
-# Run a specific test
-sbt "testOnly *SecLangBasicTest -- *simple*"
-
 # Generate documentation
 sbt doc
 
