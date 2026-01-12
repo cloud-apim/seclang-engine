@@ -2,7 +2,7 @@ package com.cloud.apim.seclang.test
 
 import com.cloud.apim.seclang.javadsl._
 
-import java.util.Arrays
+import java.util.{Arrays, HashMap}
 
 class SecLangJavaApiTest extends munit.FunSuite {
 
@@ -233,5 +233,87 @@ class SecLangJavaApiTest extends munit.FunSuite {
 
     assert(result.isBlocked, "request should be blocked")
     assertEquals(result.getDisposition.getMessage.orElse(""), "test rule")
+  }
+
+  test("factory with presets via Java API") {
+    // Create presets
+    val presets = new HashMap[String, JSecLangPreset]()
+    presets.put("no_firefox", JSecLangPreset.withNoFiles("no_firefox",
+      """
+        |SecRule REQUEST_HEADERS:User-Agent "@pm firefox" \
+        |    "id:00001,\
+        |    phase:1,\
+        |    block,\
+        |    t:none,t:lowercase,\
+        |    msg:'someone used firefox to access',\
+        |    logdata:'someone used firefox to access',\
+        |    tag:'test',\
+        |    ver:'0.0.0-dev',\
+        |    status:403,\
+        |    severity:'CRITICAL'"
+        |""".stripMargin))
+
+    presets.put("health_check", JSecLangPreset.withNoFiles("health_check",
+      """
+        |SecRule REQUEST_URI "@contains /health" \
+        |    "id:00002,\
+        |    phase:1,\
+        |    pass,\
+        |    t:none,t:lowercase,\
+        |    msg:'someone called /health',\
+        |    logdata:'someone called /health',\
+        |    tag:'test',\
+        |    ver:'0.0.0-dev'"
+        |""".stripMargin))
+
+    // Create factory
+    val factory = SecLang.factory(presets)
+
+    // Define rule configuration
+    val rulesConfig = Arrays.asList(
+      "@import_preset no_firefox",
+      "@import_preset health_check",
+      "SecRuleEngine On"
+    )
+
+    // Test contexts
+    val failingCtx = JRequestContext.builder()
+      .method("GET")
+      .uri("/")
+      .header("User-Agent", "Firefox/128.0")
+      .queryParam("q", "test")
+      .build()
+
+    val passingCtx1 = JRequestContext.builder()
+      .method("GET")
+      .uri("/health")
+      .header("User-Agent", "curl/8.0")
+      .queryParam("q", "test")
+      .build()
+
+    val passingCtx2 = JRequestContext.builder()
+      .method("GET")
+      .uri("/admin")
+      .header("User-Agent", "chrome/8.0")
+      .queryParam("q", "test")
+      .build()
+
+    // Evaluate
+    val failingRes = factory.evaluate(rulesConfig, failingCtx, Arrays.asList(1, 2))
+    val passingRes1 = factory.evaluate(rulesConfig, passingCtx1, Arrays.asList(1, 2))
+    val passingRes2 = factory.evaluate(rulesConfig, passingCtx2, Arrays.asList(1, 2))
+
+    failingRes.displayPrintln()
+    passingRes1.displayPrintln()
+    passingRes2.displayPrintln()
+
+    // Assertions
+    assert(failingRes.isBlocked, "failingRes should be blocked")
+    assertEquals(failingRes.getDisposition.getStatus, 403)
+    assertEquals(failingRes.getDisposition.getMessage.orElse(""), "someone used firefox to access")
+    assertEquals(failingRes.getDisposition.getRuleId.orElse(0), Integer.valueOf(1))
+
+    assert(passingRes1.isContinue, "passingRes1 should continue")
+    assert(passingRes2.isContinue, "passingRes2 should continue")
   }
 }

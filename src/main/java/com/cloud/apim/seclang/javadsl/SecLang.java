@@ -2,14 +2,19 @@ package com.cloud.apim.seclang.javadsl;
 
 import com.cloud.apim.seclang.impl.compiler.Compiler;
 import com.cloud.apim.seclang.impl.engine.SecLangEngine;
+import com.cloud.apim.seclang.impl.factory.SecLangEngineFactory;
 import com.cloud.apim.seclang.impl.parser.AntlrParser;
 import com.cloud.apim.seclang.model.CompiledProgram;
 import com.cloud.apim.seclang.model.Configuration;
+import com.cloud.apim.seclang.model.SecLangPreset;
 import scala.collection.JavaConverters;
+import scala.concurrent.duration.Duration;
+import scala.concurrent.duration.FiniteDuration;
 import scala.util.Either;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Main entry point for the SecLang Java API.
@@ -158,6 +163,70 @@ public final class SecLang {
      */
     public static JSecLangEngine engine(CompiledProgram program, Map<String, String> files) {
         return engine(program, JSecLangEngineConfig.defaultConfig(), files, JSecLangIntegration.defaultIntegration());
+    }
+
+    /**
+     * Create a SecLang engine factory for multi-tenant rule composition.
+     *
+     * <p>The factory allows dynamic composition of rules from presets and inline rules,
+     * with caching for efficient multi-tenant scenarios.</p>
+     *
+     * @param presets     map of preset name to preset
+     * @param config      the engine configuration
+     * @param integration the integration for logging, caching, and auditing
+     * @param cacheTtlMs  cache TTL in milliseconds for compiled inline rules
+     * @return a factory for evaluating requests
+     */
+    public static JSecLangEngineFactory factory(
+            Map<String, JSecLangPreset> presets,
+            JSecLangEngineConfig config,
+            JSecLangIntegration integration,
+            long cacheTtlMs) {
+        Map<String, SecLangPreset> scalaPresets = new HashMap<>();
+        presets.forEach((name, preset) -> scalaPresets.put(name, preset.toScala()));
+        scala.collection.immutable.Map<String, SecLangPreset> scalaPresetsMap =
+            JavaConverters.mapAsScalaMapConverter(scalaPresets).asScala().toMap(
+                scala.Predef.<scala.Tuple2<String, SecLangPreset>>conforms()
+            );
+        FiniteDuration cacheTtl = Duration.apply(cacheTtlMs, TimeUnit.MILLISECONDS);
+        SecLangEngineFactory factory = new SecLangEngineFactory(
+            scalaPresetsMap,
+            config.toScala(),
+            integration.toScala(),
+            cacheTtl
+        );
+        return new JSecLangEngineFactory(factory);
+    }
+
+    /**
+     * Create a SecLang engine factory with default configuration.
+     *
+     * @param presets map of preset name to preset
+     * @return a factory for evaluating requests
+     */
+    public static JSecLangEngineFactory factory(Map<String, JSecLangPreset> presets) {
+        return factory(
+            presets,
+            JSecLangEngineConfig.defaultConfig(),
+            JSecLangIntegration.defaultIntegration(),
+            10 * 60 * 1000 // 10 minutes default TTL
+        );
+    }
+
+    /**
+     * Create a SecLang engine factory with custom config but default integration.
+     *
+     * @param presets map of preset name to preset
+     * @param config  the engine configuration
+     * @return a factory for evaluating requests
+     */
+    public static JSecLangEngineFactory factory(Map<String, JSecLangPreset> presets, JSecLangEngineConfig config) {
+        return factory(
+            presets,
+            config,
+            JSecLangIntegration.defaultIntegration(),
+            10 * 60 * 1000
+        );
     }
 
 }
