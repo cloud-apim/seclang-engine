@@ -23,7 +23,81 @@ import scala.util.matching.Regex
 object RegexPool {
   private val regexCache = new TrieMap[String, Regex]()
   def regex(regex: String): Regex = {
-    regexCache.getOrElseUpdate(regex, regex.r)
+    regexCache.getOrElseUpdate(regex, ModSecurityPatternConverter.convert(regex).r)
+  }
+}
+
+/**
+ * Converts ModSecurity byte-level regex patterns to Java Unicode patterns.
+ *
+ * ModSecurity matches on raw UTF-8 bytes, e.g., \x{e2}\x91\xa0 matches bytes E2 91 A0.
+ * Java regex matches on Unicode codepoints, e.g., \x{e2} matches U+00E2 (â).
+ *
+ * This converter transforms byte-level patterns to their Unicode equivalents.
+ */
+object ModSecurityPatternConverter {
+
+  // Pattern to match \x{HH} or \xHH sequences
+  private val hexEscapePattern = """\\x\{?([0-9a-fA-F]{2})\}?""".r
+
+  // Pattern to match byte ranges like [\xa0-\xbf] or [\xa0-\x{bf}]
+  private val byteRangePattern = """\[\\x\{?([0-9a-fA-F]{2})\}?-\\x\{?([0-9a-fA-F]{2})\}?\]""".r
+
+  def convert(pattern: String): String = {
+    // Check if pattern contains UTF-8 multi-byte sequences (starting with E0-EF for 3-byte, F0-F4 for 4-byte)
+    if (!pattern.contains("\\x")) {
+      return pattern
+    }
+
+    var result = pattern
+
+    // Convert specific UTF-8 3-byte patterns for "enclosed alphanumerics" (U+2460-U+24FF)
+    // \x{e2}(?:\x91[\xa0-\xbf]|\x92[\x80-\xbf]|\x93[\x80-\xa9\xab-\xbf])
+    // This matches circled numbers and letters
+    result = result.replace(
+      """\x{e2}(?:\x91[\xa0-\x{bf}]|\x92[\x80-\x{bf}]|\x93[\x80-\x{a9}\x{ab}-\x{bf}])""",
+      """[\u2460-\u247f\u2480-\u24bf\u24c0-\u24e9\u24eb-\u24ff]"""
+    )
+
+    // Also handle variant without curly braces
+    result = result.replace(
+      """\x{e2}(?:\x91[\xa0-\xbf]|\x92[\x80-\xbf]|\x93[\x80-\xa9\xab-\xbf])""",
+      """[\u2460-\u247f\u2480-\u24bf\u24c0-\u24e9\u24eb-\u24ff]"""
+    )
+
+    // Convert CJK period \x{e3}\x80\x82 -> U+3002
+    result = result.replace("""\x{e3}\x80\x82""", """\u3002""")
+
+    // Convert single-byte \x{HH} where HH < 80 to literal characters or \xHH
+    // These are ASCII and work the same way
+    result = convertSingleByteEscapes(result)
+
+    result
+  }
+
+  private def convertSingleByteEscapes(pattern: String): String = {
+    hexEscapePattern.replaceAllIn(pattern, m => {
+      val byteVal = Integer.parseInt(m.group(1), 16)
+      if (byteVal < 0x80) {
+        // ASCII byte - convert to Java Unicode escape
+        if (needsEscaping(byteVal)) {
+          f"\\\\x${byteVal}%02x"
+        } else {
+          java.util.regex.Matcher.quoteReplacement(byteVal.toChar.toString)
+        }
+      } else {
+        // High byte (>= 0x80) - keep as-is, might be part of a multi-byte sequence
+        // that wasn't matched by our specific patterns above
+        // Must quote the replacement to avoid backslash interpretation
+        java.util.regex.Matcher.quoteReplacement(m.matched)
+      }
+    })
+  }
+
+  private def needsEscaping(byteVal: Int): Boolean = {
+    // Characters that need escaping in regex
+    val specialChars = Set('\\', '[', ']', '(', ')', '{', '}', '.', '*', '+', '?', '^', '$', '|')
+    byteVal < 0x20 || specialChars.contains(byteVal.toChar)
   }
 }
 
