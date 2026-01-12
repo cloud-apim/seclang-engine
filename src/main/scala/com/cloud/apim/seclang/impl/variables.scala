@@ -188,16 +188,16 @@ object EngineVariables {
             val headers = ctx.multipartFormDataBody.getOrElse(Map.empty)
             key match {
               case None =>
-                //headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
-                headers.toList.flatMap(_._2)
+                // Return all raw headers including malformed ones for security inspection
+                headers.getOrElse("_all_headers", headers.toList.flatMap(_._2))
               case Some(h) if h.startsWith("/") && h.endsWith("/") =>
                 val r = RegexPool.regex(h.substring(1, h.length - 1))
                 headers.collect {
-                  case (k, vs) if r.findFirstIn(k).isDefined => vs
+                  case (k, vs) if k != "_all_headers" && r.findFirstIn(k).isDefined => vs
                 }.flatten.toList
               case Some(h) =>
                 headers.collect {
-                  case (k, vs) if k.toLowerCase == h => vs
+                  case (k, vs) if k != "_all_headers" && k.toLowerCase == h => vs
                 }.flatten.toList
             }
           }

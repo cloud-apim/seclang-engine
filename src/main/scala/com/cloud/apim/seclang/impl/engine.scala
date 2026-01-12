@@ -365,12 +365,15 @@ final class SecLangEngine(val program: CompiledProgram, config: SecLangEngineCon
         values.filter { v =>
           val m = EngineOperators.evalOperator(lastRuleId.getOrElse(-1), rule.operator, v, files, st, integration)
           if (m) {
-            st.txMap.put("matched_var_name", name)
+            // For variables without a key (like ARGS_NAMES), include the matched value in the name
+            // This matches ModSecurity behavior where MATCHED_VAR_NAME includes the specific item
+            val fullName = if (name.contains(":")) name else s"$name:$v"
+            st.txMap.put("matched_var_name", fullName)
             st.txMap.put("matched_var", v)//values.mkString(" "))
             st.txMap.put("0", v)//values.mkString(" "))
             matched_vars = matched_vars :+ v//values.mkString(" ")
-            matched_var_names = matched_var_names :+ name
-            f(name, v)
+            matched_var_names = matched_var_names :+ fullName
+            f(fullName, v)
           }
           m
         }.nonEmpty

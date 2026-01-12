@@ -262,6 +262,8 @@ object MultipartVars {
     var inHeaders = false
     var currentPartName: Option[String] = None
     val acc = scala.collection.mutable.HashMap.empty[String, List[String]].withDefaultValue(List.empty)
+    // Store all raw headers for security inspection (e.g., detecting invalid characters)
+    val allHeaders = scala.collection.mutable.ListBuffer.empty[String]
 
     body.linesIterator.foreach { raw =>
       val line = raw.stripLineEnd
@@ -280,6 +282,8 @@ object MultipartVars {
         if (line.isEmpty) {
           inHeaders = false
         } else {
+          // Always store raw header lines for security inspection
+          allHeaders += line
           line match {
             case NameRx(name) =>
               currentPartName = Some(name)
@@ -295,7 +299,7 @@ object MultipartVars {
       }
     }
 
-    acc.toMap
+    acc.toMap + ("_all_headers" -> allHeaders.toList)
   }
 
   def multipartPartHeadersFromCtx(body: String, contentTypeOpt: Option[String]): Option[Map[String, List[String]]] =
