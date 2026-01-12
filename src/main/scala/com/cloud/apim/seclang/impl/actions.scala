@@ -75,6 +75,24 @@ object EngineActions {
             val value = state.txMap.get(name).map(_.toInt).getOrElse(0)
             state.txMap.put(name, (value - decr).toString)
           }
+          case expr if expr.contains("=+") => {
+            // ModSecurity syntax: setvar:'TX.var=+1' means add 1 to the variable
+            val ex = expr.replace("tx.", "").replace("TX.", "").toLowerCase()
+            val parts = ex.split("=\\+")
+            val name = parts(0)
+            val incr = parts(1).toInt
+            val value = state.txMap.get(name).map(_.toInt).getOrElse(0)
+            state.txMap.put(name, (value + incr).toString)
+          }
+          case expr if expr.contains("=-") => {
+            // ModSecurity syntax: setvar:'TX.var=-1' means subtract 1 from the variable
+            val ex = expr.replace("tx.", "").replace("TX.", "").toLowerCase()
+            val parts = ex.split("=-")
+            val name = parts(0)
+            val decr = parts(1).toInt
+            val value = state.txMap.get(name).map(_.toInt).getOrElse(0)
+            state.txMap.put(name, (value - decr).toString)
+          }
           case expr if expr.contains("=") => {
             val ex = expr.replace("tx.", "").replace("TX.", "").toLowerCase()
             val parts = ex.split("=")

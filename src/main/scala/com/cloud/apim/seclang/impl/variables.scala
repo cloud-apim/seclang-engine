@@ -91,7 +91,7 @@ object EngineVariables {
             }.flatten.toList
         }
       }
-      case "ARGS_NAMES" => ctx.args.keySet.toList
+      case "ARGS_NAMES" => ctx.args.toList.flatMap { case (name, values) => values.map(_ => name) }
       case "ARGS_COMBINED_SIZE" => List(ctx.flatArgs.map(_.length).sum.toString)
       case "TX" => {
         key match {
@@ -220,7 +220,7 @@ object EngineVariables {
             }.flatten.toList
         }
       }
-      case "ARGS_GET_NAMES" =>  ctx.query.keySet.toList
+      case "ARGS_GET_NAMES" => ctx.query.toList.flatMap { case (name, values) => values.map(_ => name) }
       case "ARGS_POST" => {
         ctx.body match {
           case Some(_) if ctx.isXwwwFormUrlEncoded => {
@@ -244,7 +244,7 @@ object EngineVariables {
       }
       case "ARGS_POST_NAMES" => {
         ctx.body match {
-          case Some(_) if ctx.isXwwwFormUrlEncoded => ctx.wwwFormEncodedBody.map(_.keySet.toList).getOrElse(List.empty)
+          case Some(_) if ctx.isXwwwFormUrlEncoded => ctx.wwwFormEncodedBody.map(_.toList.flatMap { case (name, values) => values.map(_ => name) }).getOrElse(List.empty)
           case _ => List.empty
         }
       }
