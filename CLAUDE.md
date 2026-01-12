@@ -19,6 +19,11 @@ sbt test
 sbt "testOnly *SecLangBasicTest"
 sbt "testOnly *SecLangCRSTest"
 
+# run a specific CRS test
+# change in SecLangCRSTest 
+#  private val testOnly: List[(String, Int)] = List(("ruleId", testNumber))
+#  //private val testOnly: List[(String, Int)] = List.empty
+
 # Generate documentation
 sbt doc
 

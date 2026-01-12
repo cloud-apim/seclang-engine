@@ -147,8 +147,7 @@ object CRSTestUtils {
       val value: List[String] =
         if (idx > 0 && pair.length > idx + 1) {
           List(
-            MsUrlDecode.urlDecodeMs(pair.substring(idx + 1)),
-            pair.substring(idx + 1)
+            MsUrlDecode.urlDecodeMs(pair.substring(idx + 1))
           )
         }
         else
