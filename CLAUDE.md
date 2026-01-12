@@ -80,7 +80,7 @@ This generates Java parser code in `src/main/scala/com/cloud/apim/seclang/antlr/
 
 - `test-data/coreruleset/` - Local copy of OWASP CRS for testing
 - `src/test/scala/crs.scala` - CRS test suite validation. Mimic the official CRS test suite (using a local copy of the test cases).
-- `crs-test-status` - status file for the CRS test suite. Failing tests are listed here with test case, the tested rule and the failure reason
+- `test-data/crs-failing-tests` - status files for the CRS test suite. Failing tests are listed here with test case, the tested rule and the failure reason
 
 ## Conventions
 

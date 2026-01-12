@@ -434,7 +434,7 @@ class SecLangCRSTest extends munit.FunSuite {
           "max_time_ms" -> Duration.fromNanos(max).toMillis,
           "avg_time_ms" -> Duration.fromNanos(avg).toMillis,
         ),
-        "test_failures" -> JsArray(failingTests)
+        //"test_failures" -> JsArray(failingTests)
       )
       println(Json.prettyPrint((document \ "global_stats").as[JsObject]))
       println(Json.prettyPrint((document \ "time_stats").as[JsObject]))
