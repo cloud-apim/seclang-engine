@@ -9,6 +9,7 @@ import java.io.{StringReader, StringWriter}
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
+import java.util.concurrent.ConcurrentHashMap
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.stream.{XMLInputFactory, XMLStreamConstants, XMLStreamReader}
 import javax.xml.transform.dom.DOMSource
@@ -18,7 +19,112 @@ import javax.xml.xpath.{XPathConstants, XPathFactory}
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Try
-import scala.util.matching.Regex
+import scala.util.matching.{Regex, RegexUtil}
+import java.util.regex.{Pattern => JPattern}
+
+object RegexPoolFast {
+
+  // Cache final: key = original regex (ce que tu reçois), value = compiled java Pattern
+  private val compiled = new ConcurrentHashMap[String, JPattern]()
+
+  // Si tu veux aussi exposer Regex scala, tu peux mettre un 2e cache, ou wrapper à la volée.
+  // En pratique, Pattern est plus rapide.
+  def pattern(raw: String): JPattern = {
+    compiled.computeIfAbsent(raw, new java.util.function.Function[String, JPattern] {
+      override def apply(s: String): JPattern = {
+        val converted = ModSecurityPatternConverter.convert(s)
+        // DOTALL = équivalent de (?s) global, sans réécriture de string
+        JPattern.compile(converted, JPattern.DOTALL)
+      }
+    })
+  }
+
+  // Compat: si tu veux vraiment retourner scala Regex
+  def regex(raw: String): Regex = {
+    RegexUtil.build(pattern(raw))
+  }
+}
+
+object ModSecurityPatternConverterFast {
+
+  // tes remplacements “spécifiques” peuvent rester, mais fais-les uniquement
+  // si le pattern contient exactement ce préfixe, sinon ne tente pas.
+  private val enclosed1 =
+    """\x{e2}(?:\x91[\xa0-\x{bf}]|\x92[\x80-\x{bf}]|\x93[\x80-\x{a9}\x{ab}-\x{bf}])"""
+  private val enclosed2 =
+    """\x{e2}(?:\x91[\xa0-\xbf]|\x92[\x80-\xbf]|\x93[\x80-\xa9\xab-\xbf])"""
+  private val enclosedRepl =
+    """[\u2460-\u247f\u2480-\u24bf\u24c0-\u24e9\u24eb-\u24ff]"""
+
+  def convert(pattern: String): String = {
+    if (pattern.indexOf("\\x") < 0) return pattern
+
+    var s = pattern
+
+    // Ne fais ces replace que si vraiment présent (évite de rescanner inutilement)
+    if (s.indexOf(enclosed1) >= 0) s = s.replace(enclosed1, enclosedRepl)
+    if (s.indexOf(enclosed2) >= 0) s = s.replace(enclosed2, enclosedRepl)
+
+    if (s.indexOf("""\x{e3}\x80\x82""") >= 0) s = s.replace("""\x{e3}\x80\x82""", """\u3002""")
+
+    // Conversion rapide des \xHH / \x{HH} ASCII
+    convertAsciiHexEscapes(s)
+  }
+
+  private def convertAsciiHexEscapes(s: String): String = {
+    val n = s.length
+    val out = new StringBuilder(n)
+    var i = 0
+
+    while (i < n) {
+      val c = s.charAt(i)
+      if (c == '\\' && i + 1 < n && s.charAt(i + 1) == 'x') {
+        // \xHH ou \x{HH}
+        var j = i + 2
+        var hasBrace = false
+        if (j < n && s.charAt(j) == '{') { hasBrace = true; j += 1 }
+        if (j + 1 < n) {
+          val h1 = s.charAt(j)
+          val h2 = s.charAt(j + 1)
+          val b = hex2(h1, h2)
+          if (b >= 0) {
+            val end = j + 2 + (if (hasBrace && j + 2 < n && s.charAt(j + 2) == '}') 1 else 0)
+            if (b < 0x80) {
+              // garde \xHH pour les chars spéciaux sinon char direct
+              if (needsEscaping(b)) out.append("\\x").append(f"$b%02x")
+              else out.append(b.toChar)
+            } else {
+              // laisse tel quel (multi-byte non géré ici)
+              out.append(s, i, end)
+            }
+            i = end
+          } else {
+            out.append(c)
+            i += 1
+          }
+        } else {
+          out.append(c)
+          i += 1
+        }
+      } else {
+        out.append(c)
+        i += 1
+      }
+    }
+    out.toString()
+  }
+
+  private def hex2(a: Char, b: Char): Int = {
+    val hi = Character.digit(a, 16)
+    val lo = Character.digit(b, 16)
+    if (hi < 0 || lo < 0) -1 else (hi << 4) | lo
+  }
+
+  private def needsEscaping(byteVal: Int): Boolean = {
+    val ch = byteVal.toChar
+    ch < 0x20 || "\\[](){}.*+?^$|".indexOf(ch) >= 0
+  }
+}
 
 object RegexPool {
   private val regexCache = new TrieMap[String, Regex]()
@@ -26,6 +132,7 @@ object RegexPool {
   private val flagsPattern = """^\(\?([a-zA-Z]+)\)(.*)""".r
 
   def regex(regex: String): Regex = {
+    return RegexPoolFast.regex(regex) // --- 8ms avg / call
     // return regexCache.getOrElseUpdate(regex, regex.r) // --- 7ms avg / call
     // Add (?s) flag to enable DOTALL mode (. matches newlines) like PCRE_DOTALL in ModSecurity
     val converted = ModSecurityPatternConverter.convert(regex)
