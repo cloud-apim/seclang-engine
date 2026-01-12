@@ -1,6 +1,7 @@
 package com.cloud.apim.seclang.javadsl;
 
 import com.cloud.apim.seclang.model.ByteString;
+import com.cloud.apim.seclang.model.Headers;
 import com.cloud.apim.seclang.model.RequestContext;
 import scala.Option;
 import scala.Some;
@@ -67,7 +68,7 @@ public final class JRequestContext {
     }
 
     public Map<String, List<String>> getHeaders() {
-        return scalaMapToJava(underlying.headers());
+        return scalaMapToJava(underlying.headers().underlying());
     }
 
     public Map<String, List<String>> getCookies() {
@@ -279,7 +280,7 @@ public final class JRequestContext {
                 requestId,
                 method,
                 uri,
-                scalaHeaders,
+                Headers.apply(scalaHeaders),
                 scalaCookies,
                 scalaQuery,
                 scalaBody,

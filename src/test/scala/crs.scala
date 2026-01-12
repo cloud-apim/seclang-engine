@@ -3,7 +3,7 @@ package com.cloud.apim.seclang.test
 import com.cloud.apim.seclang.impl.engine.SecLangEngine
 import com.cloud.apim.seclang.impl.utils.{MsUrlDecode, StatusCodes}
 import com.cloud.apim.seclang.model.Disposition.{Block, Continue}
-import com.cloud.apim.seclang.model.{ByteString, CompiledItem, NoLogSecLangIntegration, RequestContext, RuleChain, SecLangEngineConfig}
+import com.cloud.apim.seclang.model.{ByteString, CompiledItem, Headers, NoLogSecLangIntegration, RequestContext, RuleChain, SecLangEngineConfig}
 import com.cloud.apim.seclang.scaladsl.SecLang
 import play.api.libs.json._
 
@@ -248,17 +248,17 @@ object CRSTestUtils {
     val encBody = (respStruct \ "encodedBody").asOpt[String].map(s => ByteString(s).decodeBase64)
     val respBody = encBody.orElse((respStruct \ "body").asOpt[String].map(s => ByteString(s)))
     val finalBody = if (isResponse) respBody else body
-    val pfheaders = if (isResponse) respHeaders else headers
+    val pfheaders = Headers(if (isResponse) respHeaders else headers)
     val autocomplete_headers = (json \ "autocomplete_headers").asOpt[Boolean].getOrElse(true)
     val finalHeaders: Map[String, List[String]] = {
-      val contentType = pfheaders.get("Content-Type").orElse(pfheaders.get("content-type")).getOrElse(List("application/www-form-urlencoded"))
-      val contentLength = pfheaders.get("Content-Length").orElse(pfheaders.get("content-length"))
+      val contentType = pfheaders.getOne("Content-Type").map(v => List(v)).getOrElse(List("application/www-form-urlencoded"))
+      val contentLength = pfheaders.getOne("Content-Length")
       if (finalBody.isDefined && autocomplete_headers && contentLength.isEmpty) {
-        pfheaders + ("Content-Length" -> List(finalBody.get.length.toString)) + ("Content-Type" -> contentType)
+        pfheaders.underlying + ("Content-Length" -> List(finalBody.get.length.toString)) + ("Content-Type" -> contentType)
       } else if (finalBody.isDefined && autocomplete_headers && contentLength.isDefined) {
-        pfheaders + ("Content-Type" -> contentType)
+        pfheaders.underlying + ("Content-Type" -> contentType)
       } else {
-        pfheaders
+        pfheaders.underlying
       }
     }
     val query: Map[String, List[String]] = try {
@@ -285,7 +285,7 @@ object CRSTestUtils {
       statusTxt = respStatusTxt,
       query = query,
       cookies = cookies,
-      headers = finalHeaders,
+      headers = Headers(finalHeaders),
       body = finalBody,
       protocol = (json \ "version").asOpt[String].orElse((json \ "protocol").asOpt[String]).getOrElse("HTTP/1.1"),
     )
@@ -365,7 +365,7 @@ object CRSTestUtils {
 
 class SecLangCRSTest extends munit.FunSuite {
 
-  //private val testOnly: List[(String, Int)] = List(("920100", 8))
+  //private val testOnly: List[(String, Int)] = List(("931100", 3))
   private val testOnly: List[(String, Int)] = List.empty
   private val ignoreTests: List[(String, Int)] = List.empty
   private val engine = CRSTestUtils.setupCRSEngine(testOnly.map(_._1.toInt))

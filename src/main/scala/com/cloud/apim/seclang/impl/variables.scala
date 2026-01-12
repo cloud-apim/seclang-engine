@@ -67,11 +67,11 @@ object EngineVariables {
             ctx.headers.toList.flatMap(_._2)
           case Some(h) if h.startsWith("/") && h.endsWith("/") =>
             val r = RegexPool.regex(h.substring(1, h.length - 1))
-            ctx.headers.collect {
+            ctx.headers.underlying.collect {
               case (k, vs) if r.findFirstIn(k).isDefined => vs
             }.flatten.toList
           case Some(h) =>
-            ctx.headers.collect {
+            ctx.headers.underlying.collect {
               case (k, vs) if k.toLowerCase == h => vs
             }.flatten.toList
         }
@@ -252,8 +252,15 @@ object EngineVariables {
         }
       }
       case "XML" => {
+        if (debug) {
+          println(s"--- XML:${key} - ${ctx.isXml} - ${ctx.xmlBody} - ${ctx.headers.getOne("content-type")}")
+        }
         ctx.body match {
-          case Some(_) if key.isDefined && ctx.isXml => ctx.xmlBody.flatMap(_.get(key.get)).getOrElse(List.empty)
+          //case Some(_) if key.isDefined && ctx.isXml => ctx.xmlBody.flatMap(_.get(key.get)).getOrElse(List.empty)
+          case Some(_) if key.isDefined && ctx.isXml => ctx.xmlBody.flatMap { b =>
+
+            b.get(key.get)
+          }.getOrElse(List.empty)
           case _ => List.empty
         }
       }

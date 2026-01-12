@@ -11,11 +11,12 @@ import java.net.{JarURLConnection, URI, URL}
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
-import java.util.Base64
+import java.util.{Base64, Locale}
 import java.util.concurrent.atomic.AtomicReference
 import java.util.jar.JarFile
 import scala.collection.JavaConverters.{asScalaIteratorConverter, enumerationAsScalaIteratorConverter}
 import scala.collection.concurrent.TrieMap
+import scala.collection.generic.CanBuildFrom
 import scala.concurrent.duration.FiniteDuration
 import scala.io.Source
 import scala.util.matching.Regex
@@ -1563,11 +1564,24 @@ object RequestContext {
   }
 }
 
+object Headers {
+  val empty = Headers(Map.empty)
+}
+
+final case class Headers(underlying: Map[String, List[String]]) {
+  private val index: Map[String, List[String]] =
+    underlying.map { case (k, v) => k.toLowerCase(Locale.ROOT) -> v }
+  def getOne(name: String): Option[String] = get(name).lastOption
+  def get(name: String): List[String] = index.getOrElse(name.toLowerCase(Locale.ROOT), Nil)
+  def keySet: Set[String] = underlying.keySet
+  def toList: List[(String, List[String])] = underlying.toList
+}
+
 final case class RequestContext(
   requestId: String = s"${System.currentTimeMillis}.${scala.util.Random.nextInt(1000000).formatted("%06d")}",
   method: String,
   uri: String,
-  headers: Map[String, List[String]] = Map.empty,
+  headers: Headers = Headers.empty,
   cookies: Map[String, List[String]] = Map.empty,
   query: Map[String, List[String]] = Map.empty,
   body: Option[ByteString] = None,
@@ -1583,14 +1597,14 @@ final case class RequestContext(
 ) {
   lazy val isResponse: Boolean = status.isDefined
   lazy val uriRaw: String = {
-    val host = headers.get("Host").orElse(headers.get("host")).getOrElse("")
+    val host = headers.getOne("Host").orElse(headers.getOne("host")).getOrElse("")
     s"${if (secure) "https" else "http"}://$host$uri"
   }
   lazy val statusLine: String = {
     s"${protocol} ${status.getOrElse("0")} ${statusTxt.orElse(StatusCodes.get(status.getOrElse(0))).getOrElse("--")}"
   }
   lazy val user: Option[String] = {
-    headers.get("Authorization").orElse(headers.get("authorization")).flatMap(_.lastOption).collect {
+    headers.getOne("Authorization").orElse(headers.getOne("authorization")).collect {
       case auth if auth.startsWith("Basic ") => Try(new String(Base64.getDecoder.decode(auth.substring("Basic ".length).split(":")(0)), StandardCharsets.UTF_8)).getOrElse("")
     }.filter(_.nonEmpty)
   }
@@ -1627,10 +1641,10 @@ final case class RequestContext(
   lazy val flatArgs: List[String] = args.toList.flatMap(_._2)
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   lazy val contentType: Option[String] = {
-    headers.get("Content-Type").orElse(headers.get("content-type")).flatMap(_.lastOption)
+    headers.getOne("Content-Type").orElse(headers.getOne("content-type"))
   }
   lazy val contentLength: Option[String] = {
-    headers.get("Content-Length").orElse(headers.get("content-length")).flatMap(_.lastOption)
+    headers.getOne("Content-Length").orElse(headers.getOne("content-length"))
   }
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   lazy val isXwwwFormUrlEncoded: Boolean = {
@@ -1727,7 +1741,7 @@ final case class RequestContext(
     "requestId" -> requestId,
     "method" -> method,
     "uri" -> uri,
-    "headers" -> headers,
+    "headers" -> headers.underlying,
     "cookies" -> cookies,
     "query" -> query,
     "body" -> body.map(v => JsString(v.raw)).getOrElse(JsNull).as[JsValue],
