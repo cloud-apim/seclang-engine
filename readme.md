@@ -114,6 +114,107 @@ class SecLangTest extends munit.FunSuite {
 }
 ```
 
+## Simple usage (Java)
+
+```java
+import com.cloud.apim.seclang.javadsl.*;
+import com.cloud.apim.seclang.model.CompiledProgram;
+
+import java.util.Arrays;
+import java.util.HashMap;
+
+public class SecLangExample {
+
+    public static void main(String[] args) {
+        String rules = """
+            SecRule REQUEST_HEADERS:User-Agent "@pm firefox" \\
+                "id:00001,\\
+                phase:1,\\
+                block,\\
+                t:none,t:lowercase,\\
+                msg:'someone used firefox to access',\\
+                logdata:'someone used firefox to access',\\
+                tag:'test',\\
+                ver:'0.0.0-dev',\\
+                status:403,\\
+                severity:'CRITICAL'"
+
+            SecRule REQUEST_URI "@contains /health" \\
+                "id:00002,\\
+                phase:1,\\
+                pass,\\
+                t:none,t:lowercase,\\
+                msg:'someone called /health',\\
+                logdata:'someone called /health',\\
+                tag:'test',\\
+                ver:'0.0.0-dev'"
+
+            SecRuleEngine On
+            """;
+
+        // Parse and compile rules
+        SecLang.ParseResult parseResult = SecLang.parse(rules);
+        if (parseResult.isError()) {
+            System.err.println("Parse error: " + parseResult.getError());
+            return;
+        }
+
+        CompiledProgram program = SecLang.compile(parseResult.getConfiguration());
+
+        // Create engine (with default config, no files, default integration)
+        JSecLangEngine engine = SecLang.engine(program);
+
+        // Or with custom configuration:
+        // JSecLangEngine engine = SecLang.engine(
+        //     program,
+        //     JSecLangEngineConfig.defaultConfig(),
+        //     new HashMap<>(),
+        //     JSecLangIntegration.defaultIntegration()
+        // );
+
+        // Build request contexts
+        JRequestContext failingCtx = JRequestContext.builder()
+            .method("GET")
+            .uri("/")
+            .header("User-Agent", "Firefox/128.0")
+            .queryParam("q", "test")
+            .build();
+
+        JRequestContext passingCtx1 = JRequestContext.builder()
+            .method("GET")
+            .uri("/health")
+            .header("User-Agent", "curl/8.0")
+            .queryParam("q", "test")
+            .build();
+
+        JRequestContext passingCtx2 = JRequestContext.builder()
+            .method("GET")
+            .uri("/admin")
+            .header("User-Agent", "chrome/8.0")
+            .queryParam("q", "test")
+            .build();
+
+        // Evaluate requests against rules
+        JEngineResult failingRes = engine.evaluate(failingCtx, Arrays.asList(1, 2));
+        JEngineResult passingRes1 = engine.evaluate(passingCtx1, Arrays.asList(1, 2));
+        JEngineResult passingRes2 = engine.evaluate(passingCtx2, Arrays.asList(1, 2));
+
+        // Check results
+        if (failingRes.isBlocked()) {
+            System.out.println("Request blocked!");
+            System.out.println("  Status: " + failingRes.getDisposition().getStatus());
+            System.out.println("  Message: " + failingRes.getDisposition().getMessage().orElse("N/A"));
+            System.out.println("  Rule ID: " + failingRes.getDisposition().getRuleId().orElse(0));
+        }
+
+        assert failingRes.isBlocked();
+        assert failingRes.getDisposition().getStatus() == 403;
+        assert passingRes1.isContinue();
+        assert passingRes2.isContinue();
+    }
+}
+```
+
 ## Factory with presets usage
 
 ```scala
