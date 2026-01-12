@@ -313,12 +313,27 @@ final class SecLangEngine(val program: CompiledProgram, config: SecLangEngineCon
       }
     }
     // 2) apply transformations
-    val transforms = rule.actions.toList.flatMap(_.actions).toList.collect { case Action.Transform(name) => name }.filterNot(_ == "none")
+    val actionsList = rule.actions.toList.flatMap(_.actions).toList
+    val transforms = actionsList.collect { case Action.Transform(name) => name }.filterNot(_ == "none")
+    val isMultiMatch = actionsList.contains(Action.MultiMatch)
+
+    // For multiMatch, we need to test after each transformation step
+    def applyTransformsWithMultiMatch(value: String, name: String, transforms: List[String]): List[String] = {
+      if (!isMultiMatch) {
+        List(EngineTransformations.applyTransforms(value, name, transforms, integration))
+      } else {
+        // Return value after each transformation step for multiMatch
+        transforms.scanLeft(value) { (v, t) =>
+          EngineTransformations.applyTransforms(v, name, List(t), integration)
+        }.distinct
+      }
+    }
+
     val transformed = extracted.map {
-      case (name, values) => (name, values.map(v => EngineTransformations.applyTransforms(v, name, transforms, integration)))
+      case (name, values) => (name, values.flatMap(v => applyTransformsWithMultiMatch(v, name, transforms)))
     }
     val negatedTransformed = negatedVariables.map {
-      case (name, values) => (name, values.map(v => EngineTransformations.applyTransforms(v, name, transforms, integration)))
+      case (name, values) => (name, values.flatMap(v => applyTransformsWithMultiMatch(v, name, transforms)))
     }
     // 3) operator match on ANY extracted value
     var matched_vars = List.empty[String]
