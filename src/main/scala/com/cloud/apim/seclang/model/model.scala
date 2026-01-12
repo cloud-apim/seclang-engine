@@ -14,6 +14,7 @@ import java.nio.file.{Files, Path, Paths}
 import java.util.{Base64, Locale}
 import java.util.concurrent.atomic.AtomicReference
 import java.util.jar.JarFile
+import java.util.regex.{Matcher, Pattern}
 import scala.collection.JavaConverters.{asScalaIteratorConverter, enumerationAsScalaIteratorConverter}
 import scala.collection.concurrent.TrieMap
 import scala.collection.generic.CanBuildFrom
@@ -1809,14 +1810,48 @@ final case class EngineResult(
   )
 }
 
+object MetaExpand {
+
+  // Match %{foo} / %{tx.foo} / %{bar_baz} etc.
+  private val Placeholder: Pattern = Pattern.compile("%\\{([^}]+)\\}")
+
+  def expand(input: String, values: TrieMap[String, String]): String = {
+    val m = Placeholder.matcher(input)
+    if (!m.find()) return input // fast path: rien à remplacer
+
+    val sb = new StringBuffer(input.length + 16)
+    do {
+      val rawKey = m.group(1)              // ex: "tx.foo"
+      val key = rawKey.toLowerCase         // map keys are lowercase
+      val replacement = values.getOrElse(key, m.group(0)) // garde "%{...}" si absent
+
+      // important: échapper $ et \ dans la replacement string
+      m.appendReplacement(sb, Matcher.quoteReplacement(replacement))
+    } while (m.find())
+
+    m.appendTail(sb)
+    sb.toString
+  }
+}
+
 object RuntimeState {
   // (?i) => case-insensitive
   private val TxExpr: Regex = RegexPool.regex("""(?i)%\{tx\.([a-z0-9_.-]+)\}""")
+  private val MetaExpr: Regex = RegexPool.regex("""(?i)%\{([a-z0-9_.-]+)\}""")
 }
 final case class RuntimeState(mode: EngineMode, disabledIds: Set[Int], events: List[MatchEvent], txMap: TrieMap[String, String], envMap: TrieMap[String, String], uidRef: AtomicReference[String], logs: List[String], removedTargetsByTag: Map[String, Set[String]] = Map.empty) {
 
   def evalTxExpressions(input: String): String = {
     if (input.contains("%{")) {
+      //try {
+      //  RuntimeState.MetaExpr.replaceAllIn(input, m => {
+      //    val key = m.group(1).toLowerCase
+      //    val finalKey = if (key.startsWith("tx.")) key.substring(3) else key
+      //    txMap.getOrElse(finalKey, m.matched)
+      //  })
+      //} catch {
+      //  case t: Throwable => input
+      //}
       val finalInput: String = if (input.toLowerCase.contains("%{matched_var}") || input.toLowerCase.contains("%{matched_var_name}")) {
         try {
           input

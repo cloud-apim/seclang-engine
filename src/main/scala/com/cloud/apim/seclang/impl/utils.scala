@@ -26,14 +26,16 @@ object RegexPool {
   private val flagsPattern = """^\(\?([a-zA-Z]+)\)(.*)""".r
 
   def regex(regex: String): Regex = {
+    // return regexCache.getOrElseUpdate(regex, regex.r) // --- 7ms avg / call
     // Add (?s) flag to enable DOTALL mode (. matches newlines) like PCRE_DOTALL in ModSecurity
     val converted = ModSecurityPatternConverter.convert(regex)
+    //return regexCache.getOrElseUpdate(regex, converted.r) // --- 22ms avg / call
     val withDotall = converted match {
       case flagsPattern(flags, rest) if !flags.contains('s') => s"(?${flags}s)$rest"
       case flagsPattern(_, _) => converted // already has 's' flag
       case _ => s"(?s)$converted"
     }
-    regexCache.getOrElseUpdate(regex, withDotall.r)
+    regexCache.getOrElseUpdate(regex, withDotall.r) // --- 24ms avg / call
   }
 }
 
