@@ -1810,30 +1810,6 @@ final case class EngineResult(
   )
 }
 
-object MetaExpand {
-
-  // Match %{foo} / %{tx.foo} / %{bar_baz} etc.
-  private val Placeholder: Pattern = Pattern.compile("%\\{([^}]+)\\}")
-
-  def expand(input: String, values: TrieMap[String, String]): String = {
-    val m = Placeholder.matcher(input)
-    if (!m.find()) return input // fast path: rien à remplacer
-
-    val sb = new StringBuffer(input.length + 16)
-    do {
-      val rawKey = m.group(1)              // ex: "tx.foo"
-      val key = rawKey.toLowerCase         // map keys are lowercase
-      val replacement = values.getOrElse(key, m.group(0)) // garde "%{...}" si absent
-
-      // important: échapper $ et \ dans la replacement string
-      m.appendReplacement(sb, Matcher.quoteReplacement(replacement))
-    } while (m.find())
-
-    m.appendTail(sb)
-    sb.toString
-  }
-}
-
 object RuntimeState {
   // (?i) => case-insensitive
   private val TxExpr: Regex = RegexPool.regex("""(?i)%\{tx\.([a-z0-9_.-]+)\}""")

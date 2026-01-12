@@ -23,25 +23,14 @@ import scala.util.matching.{Regex, RegexUtil}
 import java.util.regex.{Pattern => JPattern}
 
 object RegexPoolFast {
-
-  // Cache final: key = original regex (ce que tu reçois), value = compiled java Pattern
-  private val compiled = new ConcurrentHashMap[String, JPattern]()
-
-  // Si tu veux aussi exposer Regex scala, tu peux mettre un 2e cache, ou wrapper à la volée.
-  // En pratique, Pattern est plus rapide.
-  def pattern(raw: String): JPattern = {
-    compiled.computeIfAbsent(raw, new java.util.function.Function[String, JPattern] {
-      override def apply(s: String): JPattern = {
-        val converted = ModSecurityPatternConverter.convert(s)
-        // DOTALL = équivalent de (?s) global, sans réécriture de string
-        JPattern.compile(converted, JPattern.DOTALL)
-      }
-    })
-  }
-
-  // Compat: si tu veux vraiment retourner scala Regex
+  private val compiled = new ConcurrentHashMap[String, Regex]()
   def regex(raw: String): Regex = {
-    RegexUtil.build(pattern(raw))
+    compiled.computeIfAbsent(raw, (s: String) => {
+      val converted = ModSecurityPatternConverter.convert(s)
+      // DOTALL = equiv of global (?s), without string rewrite
+      // pattern is way faster ...
+      RegexUtil.build(JPattern.compile(converted, JPattern.DOTALL))
+    })
   }
 }
 
@@ -132,17 +121,17 @@ object RegexPool {
   private val flagsPattern = """^\(\?([a-zA-Z]+)\)(.*)""".r
 
   def regex(regex: String): Regex = {
-    return RegexPoolFast.regex(regex) // --- 8ms avg / call
-    // return regexCache.getOrElseUpdate(regex, regex.r) // --- 7ms avg / call
-    // Add (?s) flag to enable DOTALL mode (. matches newlines) like PCRE_DOTALL in ModSecurity
-    val converted = ModSecurityPatternConverter.convert(regex)
-    //return regexCache.getOrElseUpdate(regex, converted.r) // --- 22ms avg / call
-    val withDotall = converted match {
-      case flagsPattern(flags, rest) if !flags.contains('s') => s"(?${flags}s)$rest"
-      case flagsPattern(_, _) => converted // already has 's' flag
-      case _ => s"(?s)$converted"
-    }
-    regexCache.getOrElseUpdate(regex, withDotall.r) // --- 24ms avg / call
+    RegexPoolFast.regex(regex) // --- 8ms avg / call
+    // // return regexCache.getOrElseUpdate(regex, regex.r) // --- 7ms avg / call
+    // // Add (?s) flag to enable DOTALL mode (. matches newlines) like PCRE_DOTALL in ModSecurity
+    // val converted = ModSecurityPatternConverter.convert(regex)
+    // //return regexCache.getOrElseUpdate(regex, converted.r) // --- 22ms avg / call
+    // val withDotall = converted match {
+    //   case flagsPattern(flags, rest) if !flags.contains('s') => s"(?${flags}s)$rest"
+    //   case flagsPattern(_, _) => converted // already has 's' flag
+    //   case _ => s"(?s)$converted"
+    // }
+    // regexCache.getOrElseUpdate(regex, withDotall.r) // --- 24ms avg / call
   }
 }
 
