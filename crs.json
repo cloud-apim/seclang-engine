@@ -1529,7 +1529,7 @@
         "text" : " Default: |application/x-www-form-urlencoded| |multipart/form-data| |text/xml|"
       }, {
         "type" : "Comment",
-        "text" : " |application/xml| |application/soap+xml| |application/json| |application/reports+json| |application/csp-report|"
+        "text" : " |application/xml| |application/soap+xml| |application/json|"
       }, {
         "type" : "Comment",
         "text" : ""
@@ -1694,7 +1694,7 @@
         "text" : "    ver:'OWASP_CRS/4.23.0-dev',\\"
       }, {
         "type" : "Comment",
-        "text" : "    setvar:'tx.allowed_request_content_type=|application/x-www-form-urlencoded| |multipart/form-data| |text/xml| |application/xml| |application/soap+xml| |application/json| |application/reports+json| |application/csp-report|'\""
+        "text" : "    setvar:'tx.allowed_request_content_type=|application/x-www-form-urlencoded| |multipart/form-data| |text/xml| |application/xml| |application/soap+xml| |application/json|'\""
       } ]
     }
   }, {
@@ -4405,10 +4405,10 @@
       }, {
         "type" : "Action",
         "action_type" : "set_var",
-        "expr" : "tx.allowed_request_content_type=|application/x-www-form-urlencoded| |multipart/form-data| |text/xml| |application/xml| |application/soap+xml| |application/json| |application/reports+json| |application/csp-report|"
+        "expr" : "tx.allowed_request_content_type=|application/x-www-form-urlencoded| |multipart/form-data| |text/xml| |application/xml| |application/soap+xml| |application/json|"
       } ]
     },
-    "raw" : "SecRule &TX:allowed_request_content_type \"@eq 0\" \"id:901162,\\\n  phase:1,\\\n  pass,\\\n  nolog,\\\n  tag:'OWASP_CRS',\\\n  ver:'OWASP_CRS/4.23.0-dev',\\\n  setvar:'tx.allowed_request_content_type=|application/x-www-form-urlencoded| |multipart/form-data| |text/xml| |application/xml| |application/soap+xml| |application/json| |application/reports+json| |application/csp-report|'\""
+    "raw" : "SecRule &TX:allowed_request_content_type \"@eq 0\" \"id:901162,\\\n  phase:1,\\\n  pass,\\\n  nolog,\\\n  tag:'OWASP_CRS',\\\n  ver:'OWASP_CRS/4.23.0-dev',\\\n  setvar:'tx.allowed_request_content_type=|application/x-www-form-urlencoded| |multipart/form-data| |text/xml| |application/xml| |application/soap+xml| |application/json|'\""
   }, {
     "type" : "SecRule",
     "id" : 901168,
@@ -75028,5 +75028,5 @@
       } ]
     }
   } ],
-  "hash" : "4a559d7cfa2d8cb20d02a95940b7a94366706579c81e0e9d789449c8fa85438b888c7551c79d5694d9f2da14f27a18f359a3684cb6e6b735feb36935a03549ff"
+  "hash" : "e4b00445097d8e92b7bce7dcdd8d2c360b98af4045889ae2e7ad7d4a0b519ab2d78a0c68e529e3d42beea10fdc52d8f50680f343f9a6f3ecfadac2d54c3a8778"
 }
