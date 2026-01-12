@@ -1706,7 +1706,7 @@ final case class RequestContext(
         body.utf8String.linesIterator
           .collect {
             case line if line.toLowerCase.startsWith("content-disposition:") && line.toLowerCase.contains("filename=") =>
-              RegexPool.regex("""(?:^|[;\s])name="([^"]+)"""")
+              RegexPool.regex("""filename="([^"]+)"""")
                 .findFirstMatchIn(line)
                 .map(_.group(1))
           }.flatten.toList
@@ -1720,7 +1720,7 @@ final case class RequestContext(
         body.utf8String.linesIterator
           .collect {
             case line if line.toLowerCase.startsWith("content-disposition:") && line.toLowerCase.contains("filename=") =>
-              RegexPool.regex("""filename="([^"]+)"""")
+              RegexPool.regex("""(?:^|[;\s])name="([^"]+)"""")
                 .findFirstMatchIn(line)
                 .map(_.group(1))
           }.flatten.toList
