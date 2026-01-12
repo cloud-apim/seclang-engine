@@ -467,6 +467,7 @@ class SecLangCRSTest extends munit.FunSuite {
             val expect_ids: List[Int] = (log \ "expect_ids").asOpt[List[Int]].getOrElse(List.empty)
             val no_expect_ids: List[Int] = (log \ "no_expect_ids").asOpt[List[Int]].getOrElse(List.empty)
             val match_regex: Option[String] = (log \ "match_regex").asOpt[String]
+            val no_match_regex: Option[String] = (log \ "no_match_regex").asOpt[String]
             var checked = false
             var ok = true
             var apache = false
@@ -520,11 +521,24 @@ class SecLangCRSTest extends munit.FunSuite {
                 if (!dev) assertEquals(notpassed, false, s"no_expect_ids mismatch for test ${testId}")
               }
             }
-            if (!ok && match_regex.isDefined) {
+            if ((!ok || !checked) && match_regex.isDefined) {
               checked = true
               val regex = match_regex.get.r
               val logs = result.events.flatMap(_.logs)
               val exists = logs.exists(log => regex.findFirstIn(log).isDefined)
+              if (!exists) {
+                failures.incrementAndGet()
+                ok = false
+                println(s"[${rule} - ${testId}] ${desc.getOrElse("--")}")
+                println(s"      logs did not match regex")
+                cause = "logs did not match regex"
+              }
+            }
+            if ((!ok || !checked) && no_match_regex.isDefined) {
+              checked = true
+              val regex = no_match_regex.get.r
+              val logs = result.events.flatMap(_.logs)
+              val exists = !logs.exists(log => regex.findFirstIn(log).isDefined)
               if (!exists) {
                 failures.incrementAndGet()
                 ok = false
