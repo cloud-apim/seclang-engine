@@ -1813,7 +1813,7 @@ object RuntimeState {
   // (?i) => case-insensitive
   private val TxExpr: Regex = RegexPool.regex("""(?i)%\{tx\.([a-z0-9_.-]+)\}""")
 }
-final case class RuntimeState(mode: EngineMode, disabledIds: Set[Int], events: List[MatchEvent], txMap: TrieMap[String, String], envMap: TrieMap[String, String], uidRef: AtomicReference[String], logs: List[String]) {
+final case class RuntimeState(mode: EngineMode, disabledIds: Set[Int], events: List[MatchEvent], txMap: TrieMap[String, String], envMap: TrieMap[String, String], uidRef: AtomicReference[String], logs: List[String], removedTargetsByTag: Map[String, Set[String]] = Map.empty) {
 
   def evalTxExpressions(input: String): String = {
     if (input.contains("%{")) {

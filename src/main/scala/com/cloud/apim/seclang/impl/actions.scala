@@ -100,8 +100,8 @@ object EngineActions {
       case Action.CtlAction.RuleRemoveByTag(tag) => println("RuleRemoveByTag not implemented yet")
       case Action.CtlAction.RuleRemoveTargetById(id, target) => println("RuleRemoveTargetById not implemented yet")
       case Action.CtlAction.RuleRemoveTargetByTag(tag, target) => {
-        // println(s"RuleRemoveTargetByTag('${tag}', '${target}')")
-        // TODO: needs to be implemented
+        val existing = localState.removedTargetsByTag.getOrElse(tag, Set.empty)
+        localState = localState.copy(removedTargetsByTag = localState.removedTargetsByTag + (tag -> (existing + target.toUpperCase)))
       }
       case Action.CtlAction.RuleRemoveById(id) => {
         localState = localState.copy(disabledIds = localState.disabledIds + id)

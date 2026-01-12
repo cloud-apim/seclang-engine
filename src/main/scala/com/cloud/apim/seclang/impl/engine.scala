@@ -280,13 +280,29 @@ final class SecLangEngine(val program: CompiledProgram, config: SecLangEngineCon
 
   private def evalRule(rule: SecRule, lastRuleId: Option[Int], ctx: RequestContext, debug: Boolean, st: RuntimeState)(f: (String, String) => Unit): Boolean = {
     //println(s"eval rule ${rule.id} - ${lastRuleId} - ${st.mode}")
-    // 1) extract values from variables
-    val negatedVariables: List[(String, List[String])] = rule.variables.negatedVariables.map {
+    // 0) compute excluded targets for this rule based on its tags
+    val excludedTargets: Set[String] = rule.tags.flatMap(tag => st.removedTargetsByTag.getOrElse(tag, Set.empty))
+    // 1) extract values from variables (filtering out excluded targets)
+    val filteredVariables = rule.variables.variables.filterNot { v =>
+      val name = v match {
+        case Variable.Simple(n) => n.toUpperCase
+        case Variable.Collection(n, _) => n.toUpperCase
+      }
+      excludedTargets.contains(name)
+    }
+    val filteredNegatedVariables = rule.variables.negatedVariables.filterNot { v =>
+      val name = v match {
+        case Variable.Simple(n) => n.toUpperCase
+        case Variable.Collection(n, _) => n.toUpperCase
+      }
+      excludedTargets.contains(name)
+    }
+    val negatedVariables: List[(String, List[String])] = filteredNegatedVariables.map {
       case v @ Variable.Simple(name) => (name, EngineVariables.resolveVariable(v, false, true, ctx, debug, st, integration))
       case v @ Variable.Collection(name, key) => (s"$name:${key.getOrElse("")}", EngineVariables.resolveVariable(v, false, true, ctx, debug, st, integration))
     }
     val extracted: List[(String, List[String])] = {
-      val vrbls = rule.variables.variables.map {
+      val vrbls = filteredVariables.map {
         case v @ Variable.Simple(name) => (name, EngineVariables.resolveVariable(v, rule.variables.count, rule.variables.negated, ctx, debug, st, integration))
         case v @ Variable.Collection(name, key) => (s"$name:${key.getOrElse("")}", EngineVariables.resolveVariable(v, rule.variables.count, rule.variables.negated, ctx, debug, st, integration))
       }
