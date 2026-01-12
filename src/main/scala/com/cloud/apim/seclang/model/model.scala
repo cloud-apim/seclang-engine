@@ -6,16 +6,18 @@ import com.cloud.apim.seclang.impl.utils._
 import com.github.blemale.scaffeine.Scaffeine
 import play.api.libs.json._
 
-import java.io.File
-import java.net.URI
+import java.io.{File, InputStream}
+import java.net.{JarURLConnection, URI, URL}
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 import java.util.Base64
 import java.util.concurrent.atomic.AtomicReference
-import scala.collection.JavaConverters.asScalaIteratorConverter
+import java.util.jar.JarFile
+import scala.collection.JavaConverters.{asScalaIteratorConverter, enumerationAsScalaIteratorConverter}
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.FiniteDuration
+import scala.io.Source
 import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
 
@@ -87,6 +89,23 @@ case class FsFilesSource(virtPath: String, path: String) extends FilesSource {
   }
 }
 
+case class ResourceFilesSource(virtPath: String, path: String) extends FilesSource {
+  override def getFiles(): Map[String, String] = {
+    val resourcePath = if (path.startsWith("/")) path else "/" + path
+    val stream: InputStream =
+      Option(getClass.getResourceAsStream(resourcePath))
+        .getOrElse(throw new IllegalArgumentException(s"Resource not found: $resourcePath"))
+    val content =
+      try {
+        Source.fromInputStream(stream, StandardCharsets.UTF_8.name()).mkString
+      } finally {
+        stream.close()
+      }
+
+    Map(virtPath -> content)
+  }
+}
+
 case class FsScanFilesSource(dirPath: String, pattern: String) extends FilesSource {
   private val regex: Regex = RegexPool.regex(pattern)
   override def getFiles(): Map[String, String] = {
@@ -108,6 +127,69 @@ case class FsScanFilesSource(dirPath: String, pattern: String) extends FilesSour
     files
       .map { path =>
         (path.toAbsolutePath.toString.replaceFirst(dirPath, ""), Files.readString(path))
+      }.toMap
+  }
+}
+
+case class ResourceScanFilesSource(dirPath: String, pattern: String) extends FilesSource {
+
+  private val regex: Regex = RegexPool.regex(pattern)
+
+  override def getFiles(): Map[String, String] = {
+    val normalizedPath =
+      if (dirPath.startsWith("/")) dirPath.drop(1) else dirPath
+
+    val url: URL =
+      Option(getClass.getClassLoader.getResource(normalizedPath))
+        .getOrElse(return Map.empty)
+
+    url.getProtocol match {
+      case "file" => scanFileSystem(url)
+      case "jar"  => scanJar(url)
+      case _      => Map.empty
+    }
+  }
+
+  private def scanFileSystem(url: URL): Map[String, String] = {
+    val root = Paths.get(url.toURI)
+
+    Files.walk(root).iterator().asScala
+      .filter(Files.isRegularFile(_))
+      .filter(p => regex.findFirstIn(p.getFileName.toString).isDefined)
+      .toSeq
+      .sortBy(_.toString)
+      .map { path =>
+        val virtPath =
+          "/" + root.relativize(path).toString.replace("\\", "/")
+
+        virtPath -> Files.readString(path, StandardCharsets.UTF_8)
+      }.toMap
+  }
+
+  private def scanJar(url: URL): Map[String, String] = {
+    val conn = url.openConnection().asInstanceOf[JarURLConnection]
+    val jar: JarFile = conn.getJarFile
+    val rootEntry = conn.getEntryName
+
+    jar.entries()
+      .asScala
+      .filter(e => !e.isDirectory)
+      .filter(_.getName.startsWith(rootEntry))
+      .filter(e => regex.findFirstIn(e.getName.split("/").last).isDefined)
+      .toSeq
+      .sortBy(_.getName)
+      .map { entry =>
+        val is: InputStream = jar.getInputStream(entry)
+        val content =
+          try {
+            Source.fromInputStream(is, StandardCharsets.UTF_8.name()).mkString
+          } finally {
+            is.close()
+          }
+
+        val virtPath = "/" + entry.getName.stripPrefix(rootEntry).stripPrefix("/")
+
+        virtPath -> content
       }.toMap
   }
 }
@@ -156,6 +238,20 @@ case class FileConfigurationSource(path: String) extends ConfigurationSource {
   }
 }
 
+case class ResourceConfigurationSource(path: String) extends ConfigurationSource {
+  def getRules(): String = {
+    val stream: InputStream =
+      Option(getClass.getResourceAsStream(path))
+        .getOrElse(throw new IllegalArgumentException(s"Resource not found: $path"))
+    try {
+      Source.fromInputStream(stream, StandardCharsets.UTF_8.name()).mkString
+    } finally {
+      stream.close()
+    }
+  }
+}
+
+
 case class FileScanConfigurationSource(dirPath: String, pattern: String) extends ConfigurationSource {
   private val regex: Regex = RegexPool.regex(pattern)
   def getRules(): String = {
@@ -177,6 +273,57 @@ case class FileScanConfigurationSource(dirPath: String, pattern: String) extends
     files
       .map { path =>
         Files.readString(path)
+      }
+      .mkString("\n")
+  }
+}
+
+case class ResourceScanConfigurationSource(dirPath: String, pattern: String)
+  extends ConfigurationSource {
+
+  private val regex: Regex = RegexPool.regex(pattern)
+
+  override def getRules(): String = {
+    val normalizedPath =
+      if (dirPath.startsWith("/")) dirPath.drop(1) else dirPath
+    val url: URL =
+      Option(getClass.getClassLoader.getResource(normalizedPath))
+        .getOrElse(return "")
+    url.getProtocol match {
+      case "file" => scanFileSystem(url)
+      case "jar"  => scanJar(url)
+      case _      => ""
+    }
+  }
+
+  private def scanFileSystem(url: URL): String = {
+    val root = Paths.get(url.toURI)
+    Files.walk(root).iterator().asScala
+      .filter(Files.isRegularFile(_))
+      .filter(p => regex.findFirstIn(p.getFileName.toString).isDefined)
+      .toSeq
+      .sortBy(_.toString)
+      .map(p => Files.readString(p, StandardCharsets.UTF_8))
+      .mkString("\n")
+  }
+
+  private def scanJar(url: URL): String = {
+    val conn = url.openConnection().asInstanceOf[JarURLConnection]
+    val jar: JarFile = conn.getJarFile
+    val rootEntry = conn.getEntryName
+    jar.entries().asScala
+      .filter(e => !e.isDirectory)
+      .filter(_.getName.startsWith(rootEntry))
+      .filter(e => regex.findFirstIn(e.getName.split("/").last).isDefined)
+      .toSeq
+      .sortBy(_.getName)
+      .map { entry =>
+        val is: InputStream = jar.getInputStream(entry)
+        try {
+          Source.fromInputStream(is, StandardCharsets.UTF_8.name()).mkString
+        } finally {
+          is.close()
+        }
       }
       .mkString("\n")
   }
