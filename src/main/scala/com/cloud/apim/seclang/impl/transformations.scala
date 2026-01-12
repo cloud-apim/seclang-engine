@@ -11,6 +11,32 @@ import scala.util.Try
 
 object EngineTransformations {
 
+  /**
+   * Normalizes Unicode characters to their ASCII equivalents.
+   * Handles fullwidth characters (U+FF01-U+FF5E) -> ASCII (0x21-0x7E)
+   * This is what ModSecurity's utf8toUnicode transformation does for security normalization.
+   */
+  private def utf8toUnicode(input: String): String = {
+    val sb = new StringBuilder(input.length)
+    var i = 0
+    while (i < input.length) {
+      val c = input.charAt(i)
+      val normalized = c.toInt match {
+        // Fullwidth ASCII variants (U+FF01-U+FF5E) -> ASCII (0x21-0x7E)
+        case cp if cp >= 0xFF01 && cp <= 0xFF5E => (cp - 0xFEE0).toChar
+        // Fullwidth space (U+3000) -> ASCII space
+        case 0x3000 => ' '
+        // Other common Unicode normalizations for security
+        case 0x2018 | 0x2019 => '\'' // Smart quotes -> apostrophe
+        case 0x201C | 0x201D => '"'  // Smart double quotes -> quote
+        case _ => c
+      }
+      sb.append(normalized)
+      i += 1
+    }
+    sb.toString
+  }
+
   private def unimplementedTransform(name: String, v: String, integration: SecLangIntegration): String = {
     integration.logDebug("unimplemented transform " + name)
     v
@@ -49,7 +75,7 @@ object EngineTransformations {
       case (v, "sha1") => try java.security.MessageDigest.getInstance("SHA-1").digest(v.getBytes(StandardCharsets.UTF_8)).map("%02x".format(_)).mkString catch { case _: Throwable => v }
       case (v, "trimLeft") => v.dropWhile(_ == ' ')
       case (v, "trimRight") => v.reverse.dropWhile(_ == ' ').reverse
-      case (v, "utf8toUnicode") => v //Transformations.utf8toUnicode(v)// TODO: fixme
+      case (v, "utf8toUnicode") => utf8toUnicode(v)
       case (v, "jsDecode") => Transformations.jsDecode(v)
       case (v, "htmlEntityDecode") => Transformations.htmlEntityDecode(v)
       case (v, "cssDecode") => Transformations.cssDecode(v)
