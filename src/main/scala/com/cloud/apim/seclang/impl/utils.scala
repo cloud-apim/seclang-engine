@@ -22,8 +22,18 @@ import scala.util.matching.Regex
 
 object RegexPool {
   private val regexCache = new TrieMap[String, Regex]()
+  // Pattern to match existing flags at the start of a regex like (?i) or (?im)
+  private val flagsPattern = """^\(\?([a-zA-Z]+)\)(.*)""".r
+
   def regex(regex: String): Regex = {
-    regexCache.getOrElseUpdate(regex, ModSecurityPatternConverter.convert(regex).r)
+    // Add (?s) flag to enable DOTALL mode (. matches newlines) like PCRE_DOTALL in ModSecurity
+    val converted = ModSecurityPatternConverter.convert(regex)
+    val withDotall = converted match {
+      case flagsPattern(flags, rest) if !flags.contains('s') => s"(?${flags}s)$rest"
+      case flagsPattern(_, _) => converted // already has 's' flag
+      case _ => s"(?s)$converted"
+    }
+    regexCache.getOrElseUpdate(regex, withDotall.r)
   }
 }
 
