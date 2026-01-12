@@ -384,6 +384,7 @@ class SecLangCRSTest extends munit.FunSuite {
   private val allRules = items.collect {
     case rc @ RuleChain(rules) => rc
   }
+  val rootDir = new File("test-data/crs-failing-tests")
 
   def writeStats(): Unit = {
     if (testOnly.isEmpty) {
@@ -509,7 +510,7 @@ class SecLangCRSTest extends munit.FunSuite {
             }.getOrElse(JsNull).as[JsValue]
             if (!ok) {
               val descr = desc.getOrElse("--")
-              failingTests = failingTests :+ Json.obj(
+              val doc = Json.obj(
                 "test_rule" -> rule,
                 "test_id" -> testId,
                 "test_path" -> path,
@@ -519,6 +520,8 @@ class SecLangCRSTest extends munit.FunSuite {
                 "test" -> test,
                 "tested_rule" -> testedRule
               )
+              failingTests = failingTests :+ doc
+              Files.writeString(new File(s"test-data/crs-failing-tests/test-${rule}-${testId}.json").toPath, Json.prettyPrint(doc))
             }
             if (!ok && testOnly.nonEmpty && testOnly.contains((rule, testId))) {
               result.displayPrintln()
@@ -550,6 +553,14 @@ class SecLangCRSTest extends munit.FunSuite {
     }
   }
 
+  test("setup") {
+    if (!rootDir.exists()) {
+      rootDir.mkdir()
+    }
+    rootDir.listFiles().foreach { f =>
+      f.delete()
+    }
+  }
   test("REQUEST-911-METHOD-ENFORCEMENT") {
     execTest("911100", "REQUEST-911-METHOD-ENFORCEMENT/911100.yaml")
   }
