@@ -172,7 +172,9 @@ object CRSTestUtils {
               val value = part.substring(idx + 1).trim
               if (name.nonEmpty) Some(name -> value) else None
             } else {
-              None
+              // Cookie without '=' - treat the whole thing as the name with empty value
+              val name = part.trim
+              if (name.nonEmpty) Some(name -> "") else None
             }
           }
       }.groupBy(_._1).mapValues(_.map(_._2))
