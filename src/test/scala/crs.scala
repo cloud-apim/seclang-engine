@@ -544,7 +544,7 @@ class SecLangCRSTest extends munit.FunSuite {
                 ok = false
                 println(s"[${rule} - ${testId}] ${desc.getOrElse("--")}")
                 println(s"      logs did not match regex")
-                cause = "logs did not match regex"
+                cause = "logs did match regex"
               }
             }
             if (checked && ok) {
