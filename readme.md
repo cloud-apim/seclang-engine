@@ -4,6 +4,14 @@
   <b>An open-source, enterprise-grade, high-performance Web Application Firewall (WAF) library for the JVM, made to protect your webapps.</b>
 </p>
 
+<p align="center">
+  <a href="https://github.com/cloud-apim/seclang-engine/actions/workflows/ci.yaml"><img src="https://github.com/cloud-apim/seclang-engine/actions/workflows/ci.yaml/badge.svg" alt="CI"></a>
+  <a href="https://central.sonatype.com/artifact/com.cloud-apim/seclang-engine_2.12"><img src="https://img.shields.io/maven-central/v/com.cloud-apim/seclang-engine_2.12?color=blue" alt="Maven Central"></a>
+  <a href="https://github.com/cloud-apim/seclang-engine/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License"></a>
+  <img src="https://img.shields.io/badge/Scala-2.12-red.svg" alt="Scala 2.12">
+  <a href="https://coreruleset.org/"><img src="https://img.shields.io/badge/CRS%20v4-100%25-brightgreen" alt="CRS v4 Compatibility"></a>
+</p>
+
 SecLang Engine is written in Scala and implements the [ModSecurity SecLang](https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29) 
 rule language, providing full compatibility with the [OWASP Core Rule Set (CRS) v4](https://coreruleset.org/).
 
