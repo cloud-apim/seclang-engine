@@ -3,9 +3,7 @@ import Dependencies._
 ThisBuild / scalaVersion     := "2.12.21"
 ThisBuild / organization     := "com.cloud-apim"
 ThisBuild / organizationName := "Cloud-APIM"
-
 ThisBuild / description := "SecLang Engine WAF is a ModSecurity-compatible Web Application Firewall (WAF) library for the JVM, written in Scala."
-ThisBuild / versionScheme := Some("early-semver")
 ThisBuild / homepage := Some(url("https://github.com/cloud-apim/seclang-engine"))
 ThisBuild / licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
 ThisBuild / developers := List(
@@ -22,15 +20,12 @@ ThisBuild / developers := List(
     url("https://github.com/cloud-apim")
   )
 )
-
 ThisBuild / scmInfo := Some(
   ScmInfo(
     url("https://github.com/cloud-apim/seclang-engine"),
     "scm:git@github.com:cloud-apim/seclang-engine.git"
   )
 )
-
-usePgpKeyHex("235E536BA3E43419FD649B903C82DD5C11569EF6")
 ThisBuild / pomIncludeRepository := { _ => false }
 ThisBuild / publishMavenStyle := true
 ThisBuild / publishTo := {
@@ -38,6 +33,8 @@ ThisBuild / publishTo := {
   if (isSnapshot.value) Some("central-snapshots" at centralSnapshots)
   else localStaging.value
 }
+
+usePgpKeyHex("235E536BA3E43419FD649B903C82DD5C11569EF6")
 
 lazy val root = (project in file("."))
   .settings(
@@ -53,7 +50,6 @@ lazy val root = (project in file("."))
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % "2.13.4" % Test,
       munit % Test
     ),
-    crossScalaVersions := Seq("2.12.21"),//, "2.13.15"),
     Compile / doc / scalacOptions ++= Seq(
       "-doc-title", "SecLang Engine",
       "-doc-version", version.value
