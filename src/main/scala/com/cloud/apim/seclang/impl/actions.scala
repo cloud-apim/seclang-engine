@@ -4,7 +4,7 @@ import com.cloud.apim.seclang.model.{Action, EngineMode, NeedRunAction, RequestC
 import play.api.libs.json.Json
 
 object EngineActions {
-  def performActions(ruleId: Int, actions: List[Action], phase: Int, context: RequestContext, state: RuntimeState, integration: SecLangIntegration, msg: Option[String], logdata: List[String], isLast: Boolean): RuntimeState = {
+  def performActions(ruleId: Int, actions: List[Action], phase: Int, context: RequestContext, state: RuntimeState, integration: SecLangIntegration, msg: Option[String], rawLogdata: List[String], isLast: Boolean): RuntimeState = {
     var localState = state
     val events = state.events.filter(_.msg.isDefined).map { e =>
       s"phase=${e.phase} rule_id=${e.ruleId.getOrElse(0)} - ${e.msg.getOrElse("no msg")}"
@@ -15,33 +15,18 @@ object EngineActions {
         hasLog = true
         a
       case a: NeedRunAction => a
-    } ++ (if (!hasLog && logdata.nonEmpty) List(Action.Log) else Nil)
+    } ++ (if (!hasLog && rawLogdata.nonEmpty) List(Action.Log) else Nil)
+
+    // First pass: run SetVar and other non-log actions to populate TX variables
     executableActions.foreach {
-      case Action.AuditLog() => {
-        if (isLast) {
-          msg.foreach { msg =>
-            integration.audit(ruleId, context, state, phase,  msg, logdata)
-          }
-        }
-      }
+      case Action.Log => () // Skip log actions in first pass
+      case Action.AuditLog() => () // Skip audit log in first pass
       case Action.Capture() => {
         state.txMap.get("MATCHED_VAR").foreach(v => state.txMap.put("0", v))
         state.txMap.get("MATCHED_LIST").foreach { list =>
           val liststr = Json.parse(list).asOpt[Seq[String]].getOrElse(Seq.empty)
           liststr.zipWithIndex.foreach {
             case (v, idx) => state.txMap.put(s"${idx + 1}", v)
-          }
-        }
-      }
-      case Action.Log => {
-        if (isLast) {
-          msg.foreach { msg =>
-            // Include ModSecurity-style format with [id "..."][msg "..."] for compatibility with CRS tests
-            val logdataStr = if (logdata.nonEmpty) s" ${logdata.mkString(". ")}" else ""
-            val q = '"'
-            val m = s"${context.requestId} - ${context.method} ${context.uri} [id $q$ruleId$q][msg $q$msg$q]$logdataStr"
-            localState = localState.copy(logs = localState.logs :+ m)
-            integration.logInfo(m)
           }
         }
       }
@@ -144,6 +129,33 @@ object EngineActions {
         localState = localState.copy(disabledIds = localState.disabledIds + id)
       }
       case act => integration.logError("unimplemented action: " + act.getClass.getSimpleName)
+    }
+
+    // Now evaluate logdata expressions after all SetVar actions have run
+    val evaluatedLogdata = rawLogdata.map(state.evalTxExpressions)
+
+    // Second pass: run Log and AuditLog actions with evaluated logdata
+    executableActions.foreach {
+      case Action.AuditLog() => {
+        if (isLast) {
+          msg.foreach { msg =>
+            integration.audit(ruleId, context, state, phase, msg, evaluatedLogdata)
+          }
+        }
+      }
+      case Action.Log => {
+        if (isLast) {
+          msg.foreach { msg =>
+            // Include ModSecurity-style format with [id "..."][msg "..."] for compatibility with CRS tests
+            val logdataStr = if (evaluatedLogdata.nonEmpty) s" ${evaluatedLogdata.mkString(". ")}" else ""
+            val q = '"'
+            val m = s"${context.requestId} - ${context.method} ${context.uri} [id $q$ruleId$q][msg $q$msg$q]$logdataStr"
+            localState = localState.copy(logs = localState.logs :+ m)
+            integration.logInfo(m)
+          }
+        }
+      }
+      case _ => () // Other actions already handled in first pass
     }
     localState
   }

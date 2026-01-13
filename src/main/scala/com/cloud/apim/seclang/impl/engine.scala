@@ -151,8 +151,9 @@ final class SecLangEngine(val program: CompiledProgram, config: SecLangEngineCon
       case Action.Msg(m) => m
     }
     if (msg.nonEmpty) collectedMsg = msg
+    // Collect raw logdata strings - they will be evaluated in performActions after setvar runs
     addLogData = addLogData ++ actionsList.collect {
-      case Action.LogData(m) => st.evalTxExpressions(m)
+      case Action.LogData(m) => m
     }
     val status = actionsList.collectFirst {
       case Action.Status(s) => s
@@ -230,8 +231,9 @@ final class SecLangEngine(val program: CompiledProgram, config: SecLangEngineCon
             case Action.Msg(m) => st.evalTxExpressions(m)
           }
           if (msg.nonEmpty) collectedMsg = msg
+          // Collect raw logdata strings - they will be evaluated in performActions after setvar runs
           addLogData = addLogData ++ actionsList.collect {
-            case Action.LogData(m) => st.evalTxExpressions(m)
+            case Action.LogData(m) => m
           }
 
           val status = actionsList.collectFirst {
