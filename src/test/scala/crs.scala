@@ -436,7 +436,7 @@ class SecLangCRSTest extends munit.FunSuite {
             val input = (stage \ "input").as[JsObject]
             val ctx = CRSTestUtils.requestContext(input)
             val start = System.nanoTime()
-            val result = engine.evaluate(ctx, if(ctx.isResponse) List(3, 4, 5) else List(1, 2, 5))
+            val result = engine.evaluate(ctx, if(ctx.isResponse) List(1, 3, 4, 5) else List(1, 2, 5))
             val dur = System.nanoTime() - start
             times = times :+ dur
             val output = (stage \ "output").as[JsObject]
@@ -503,7 +503,8 @@ class SecLangCRSTest extends munit.FunSuite {
               checked = true
               val regex = match_regex.get.r
               val logs = result.events.flatMap(_.logs)
-              val exists = logs.exists(log => regex.findFirstIn(log).isDefined)
+              val msgs = result.events.flatMap(_.msg)
+              val exists = logs.exists(log => regex.findFirstIn(log).isDefined) || msgs.exists(msg => regex.findFirstIn(msg).isDefined)
               if (!exists) {
                 failures.incrementAndGet()
                 ok = false
@@ -516,7 +517,8 @@ class SecLangCRSTest extends munit.FunSuite {
               checked = true
               val regex = no_match_regex.get.r
               val logs = result.events.flatMap(_.logs)
-              val exists = !logs.exists(log => regex.findFirstIn(log).isDefined)
+              val msgs = result.events.flatMap(_.msg)
+              val exists = !logs.exists(log => regex.findFirstIn(log).isDefined) && !msgs.exists(msg => regex.findFirstIn(msg).isDefined)
               if (!exists) {
                 failures.incrementAndGet()
                 ok = false
