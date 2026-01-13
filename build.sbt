@@ -1,14 +1,20 @@
 import Dependencies._
 
 ThisBuild / scalaVersion     := "2.12.21"
-ThisBuild / version          := "1.0.0-dev"
 ThisBuild / organization     := "com.cloud-apim"
 ThisBuild / organizationName := "Cloud-APIM"
 
+ThisBuild / description := "SecLang Engine WAF is a ModSecurity-compatible Web Application Firewall (WAF) library for the JVM, written in Scala."
 ThisBuild / versionScheme := Some("early-semver")
 ThisBuild / homepage := Some(url("https://github.com/cloud-apim/seclang-engine"))
 ThisBuild / licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
 ThisBuild / developers := List(
+  Developer(
+    "mathieuancelin",
+    "Mathieu ANCELIN",
+    "mathieu@cloud-apim.com",
+    url("https://github.com/mathieuancelin")
+  ),
   Developer(
     "cloud-apim",
     "Cloud-APIM Team",
@@ -24,14 +30,14 @@ ThisBuild / scmInfo := Some(
   )
 )
 
-ThisBuild / pomIncludeRepository := { _ => false }
-ThisBuild / publishTo := sonatypePublishToBundle.value
-ThisBuild / publishMavenStyle := true
-ThisBuild / sonatypeCredentialHost := "s01.oss.sonatype.org"
-ThisBuild / sonatypeRepository := "https://s01.oss.sonatype.org/service/local"
-ThisBuild / sonatypeProfileName := "com.cloud-apim"
-
 usePgpKeyHex("235E536BA3E43419FD649B903C82DD5C11569EF6")
+ThisBuild / pomIncludeRepository := { _ => false }
+ThisBuild / publishMavenStyle := true
+ThisBuild / publishTo := {
+  val centralSnapshots = "https://central.sonatype.com/repository/maven-snapshots/"
+  if (isSnapshot.value) Some("central-snapshots" at centralSnapshots)
+  else localStaging.value
+}
 
 lazy val root = (project in file("."))
   .settings(
