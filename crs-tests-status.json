@@ -2,16 +2,16 @@
   "global_stats" : {
     "failure_percentage" : 0,
     "passing_percentage" : 100,
-    "total_tests" : 4104,
-    "success_tests" : 4104,
+    "total_tests" : 4135,
+    "success_tests" : 4135,
     "failure_tests" : 0
   },
   "time_stats" : {
-    "calls" : 4104,
-    "total_time_ms" : 30379,
-    "min_time_ns" : 1591250,
+    "calls" : 4135,
+    "total_time_ms" : 35945,
+    "min_time_ns" : 1727500,
     "min_time_ms" : 1,
-    "max_time_ms" : 4286,
-    "avg_time_ms" : 7
+    "max_time_ms" : 4242,
+    "avg_time_ms" : 8
   }
 }

@@ -97,7 +97,10 @@ object EngineVariables {
         key match {
           case None => List.empty
           case Some(key) if key.startsWith("/") && key.endsWith("/") => {
-            val r = RegexPool.regex(key.substring(1, key.length - 1))
+            // Convert glob-style wildcards to regex and make case-insensitive
+            val pattern = key.substring(1, key.length - 1).toLowerCase()
+              .replace("*", ".*") // Convert glob wildcard to regex
+            val r = RegexPool.regex(s"(?i)$pattern") // Case-insensitive
             state.txMap.collect {
               case (k, vs) if r.findFirstIn(k).isDefined => vs
             }.toList

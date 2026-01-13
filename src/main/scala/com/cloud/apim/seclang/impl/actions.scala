@@ -99,7 +99,7 @@ object EngineActions {
           }
           case expr if expr.contains("=") => {
             val ex = expr.replace("tx.", "").replace("TX.", "").toLowerCase()
-            val parts = ex.split("=")
+            val parts = ex.split("=", 2) // Only split on first '=' to preserve '=' in value
             val name = parts(0)
             val value = parts(1)
             state.txMap.put(name, value)
