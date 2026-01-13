@@ -29,9 +29,9 @@ sbt "testOnly *SecLangCRSTest"
 # Generate documentation
 sbt doc
 
-# Cross-compile for Scala 2.12 and 2.13
-sbt +compile
-sbt +test
+# Compile for Scala 2.12
+sbt compile
+sbt test
 ```
 
 ## Regenerating ANTLR Parser

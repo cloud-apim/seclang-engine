@@ -19,7 +19,7 @@ rule language, providing full compatibility with the [OWASP Core Rule Set (CRS) 
 
 - **CRS Compatibility** - Runs the OWASP Core Rule Set v4 out of the box, protecting your applications against SQL Injection, Cross-Site Scripting (XSS), Remote Code Execution, and other threats from the OWASP Top Ten.
 - **Multi-Tenant by Design** - Built from the ground up for multi-tenant environments, allowing different rule configurations per tenant with isolated execution contexts and shared rule presets.
-- **JVM Native** - Runs natively on the JVM with Scala 2.12/2.13 support. Easily integrates with existing Java/Scala applications, API gateways, and reverse proxies.
+- **JVM Native** - Runs natively on the JVM with Scala 2.12 support. Easily integrates with existing Java/Scala applications, API gateways, and reverse proxies.
 - **High Performance** - Optimized for high-throughput scenarios with compiled rule programs, regex caching, and efficient variable resolution. Handles thousands of requests per second with minimal latency overhead.
 - **Library-First** - Designed as an embeddable library, not a standalone server. Integrate WAF capabilities directly into your application, gateway, or proxy with a simple API.
 - **Extensible** - Customize logging, caching, and integration points through the `SecLangIntegration` trait. Compose rule presets and configurations dynamically at runtime.
@@ -307,7 +307,7 @@ Add the following dependency to your `build.sbt`:
 libraryDependencies += "com.cloud-apim" %% "seclang-engine" % "1.0.0"
 ```
 
-The library is cross-compiled for Scala 2.12 and 2.13.
+The library is compiled for Scala 2.12
 
 ### Using Snapshots
 

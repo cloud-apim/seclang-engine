@@ -58,10 +58,10 @@ sed -i.bak "s/ThisBuild \/ version.*:= \".*\"/ThisBuild \/ version          := \
 rm -f build.sbt.bak
 
 echo_info "Running tests..."
-sbt clean +test
+sbt clean test
 
 echo_info "Building documentation..."
-sbt +doc
+sbt doc
 
 echo_info "Committing version bump..."
 git add build.sbt
@@ -71,10 +71,10 @@ echo_info "Creating git tag v$VERSION..."
 git tag -a "v$VERSION" -m "Release version $VERSION"
 
 echo_info "Publishing signed artifacts to Sonatype..."
-sbt +publishSigned
+sbt publishSigned
 
 echo_info "Releasing to Maven Central..."
-sbt sonatypeBundleRelease
+sbt sonaRelease
 
 echo_info "Pushing changes to remote..."
 git push origin "$CURRENT_BRANCH"
@@ -100,5 +100,5 @@ echo_info "3. Create GitHub release at: https://github.com/cloud-apim/seclang-en
 echo_info ""
 echo_info "Artifact coordinates:"
 echo_info "  groupId: com.cloud-apim"
-echo_info "  artifactId: seclang-engine_2.12 (or seclang-engine_2.13)"
+echo_info "  artifactId: seclang-engine_2.12"
 echo_info "  version: $VERSION"
