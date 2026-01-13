@@ -221,7 +221,9 @@ object CRSTestUtils {
             .orElse(Try(Base64.getUrlDecoder.decode(encodedRaw.getBytes(StandardCharsets.UTF_8))))
             .orElse(Try(Base64.getDecoder.decode(encodedRaw.getBytes(StandardCharsets.UTF_8))))
             .get
-          _json.as[JsObject].deepMerge(parseRawHttpRequest(new String(enc, StandardCharsets.UTF_8)))
+          // Use ISO_8859_1 to preserve raw bytes (each byte 0-255 maps to Unicode U+0000 to U+00FF)
+          // This is important for rules that detect binary patterns like Java serialization magic bytes
+          _json.as[JsObject].deepMerge(parseRawHttpRequest(new String(enc, StandardCharsets.ISO_8859_1)))
         } catch {
           case t: Throwable =>
             println("failed to parse request: " + encodedRaw)
