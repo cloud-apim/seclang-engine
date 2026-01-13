@@ -24,6 +24,9 @@ jobs:
         id: build-libs
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
         run: |
           sbt ';compile;package'
           sbt ';publishSigned;sonatypeBundleRelease'
