@@ -8,6 +8,7 @@ import com.cloud.apim.seclang.model.CompiledProgram;
 import com.cloud.apim.seclang.model.Configuration;
 import com.cloud.apim.seclang.model.SecLangPreset;
 import scala.collection.JavaConverters;
+import scala.collection.concurrent.TrieMap;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 import scala.util.Either;
@@ -139,7 +140,28 @@ public final class SecLang {
             program,
             config.toScala(),
             scalaFiles,
+            scala.None$.empty(),
             integration.toScala()
+        );
+        return new JSecLangEngine(engine);
+    }
+
+    public static JSecLangEngine engine(
+            CompiledProgram program,
+            JSecLangEngineConfig config,
+            Map<String, String> files,
+            TrieMap<String, String> txMap,
+            JSecLangIntegration integration) {
+        scala.collection.immutable.Map<String, String> scalaFiles =
+                JavaConverters.mapAsScalaMapConverter(files != null ? files : new HashMap<>()).asScala().toMap(
+                        scala.Predef.<scala.Tuple2<String, String>>conforms()
+                );
+        SecLangEngine engine = new SecLangEngine(
+                program,
+                config.toScala(),
+                scalaFiles,
+                scala.Some.apply(txMap),
+                integration.toScala()
         );
         return new JSecLangEngine(engine);
     }

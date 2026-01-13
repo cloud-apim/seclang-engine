@@ -3,6 +3,7 @@ package com.cloud.apim.seclang.javadsl;
 import com.cloud.apim.seclang.impl.factory.SecLangEngineFactory;
 import com.cloud.apim.seclang.model.EngineResult;
 import scala.collection.JavaConverters;
+import scala.collection.concurrent.TrieMap;
 
 import java.util.Arrays;
 import java.util.List;
@@ -56,6 +57,13 @@ public final class JSecLangEngineFactory {
         this.underlying = underlying;
     }
 
+    public JSecLangEngine engine(List<String> configs) {
+        scala.collection.immutable.List<String> scalaConfigs =
+                JavaConverters.asScalaBufferConverter(configs).asScala().toList();
+        return new JSecLangEngine(underlying.engine(scalaConfigs));
+    }
+
+
     /**
      * Evaluate a request against a dynamically composed rule set.
      *
@@ -89,7 +97,16 @@ public final class JSecLangEngineFactory {
             JavaConverters.asScalaBufferConverter(configs).asScala().toList();
         scala.collection.immutable.List<Object> scalaPhases =
             (scala.collection.immutable.List<Object>)(Object)JavaConverters.asScalaBufferConverter(phases).asScala().toList();
-        EngineResult result = underlying.evaluate(scalaConfigs, ctx.toScala(), scalaPhases);
+        EngineResult result = underlying.evaluate(scalaConfigs, ctx.toScala(), scalaPhases, scala.None$.empty());
+        return JEngineResult.fromScala(result);
+    }
+
+    public JEngineResult evaluate(List<String> configs, JRequestContext ctx, List<Integer> phases, TrieMap<String, String> txMap) {
+        scala.collection.immutable.List<String> scalaConfigs =
+                JavaConverters.asScalaBufferConverter(configs).asScala().toList();
+        scala.collection.immutable.List<Object> scalaPhases =
+                (scala.collection.immutable.List<Object>)(Object)JavaConverters.asScalaBufferConverter(phases).asScala().toList();
+        EngineResult result = underlying.evaluate(scalaConfigs, ctx.toScala(), scalaPhases, scala.Some.apply(txMap));
         return JEngineResult.fromScala(result);
     }
 }

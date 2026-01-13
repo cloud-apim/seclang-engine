@@ -1597,6 +1597,7 @@ final case class RequestContext(
   cache: TrieMap[String, List[String]] = new TrieMap[String, List[String]],
 ) {
   lazy val isResponse: Boolean = status.isDefined
+  lazy val isRequest: Boolean = !isResponse
   lazy val uriRaw: String = {
     val host = headers.getOne("Host").orElse(headers.getOne("host")).getOrElse("")
     s"${if (secure) "https" else "http"}://$host$uri"

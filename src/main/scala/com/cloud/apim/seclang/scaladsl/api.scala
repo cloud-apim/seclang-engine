@@ -7,6 +7,8 @@ import com.cloud.apim.seclang.impl.parser.AntlrParser
 import com.cloud.apim.seclang.model._
 import play.api.libs.json.{JsPath, Json, JsonValidationError}
 
+import scala.collection.concurrent.TrieMap
+
 object SecLang {
   def parse(input: String): Either[String, Configuration] = AntlrParser.parse(input)
   def parseJson(input: String): Either[Seq[(JsPath, Seq[JsonValidationError])], Configuration] = Configuration.format.reads(Json.parse(input)).asEither
@@ -15,9 +17,10 @@ object SecLang {
     program: CompiledProgram,
     config: SecLangEngineConfig = SecLangEngineConfig.default,
     files: Map[String, String] = Map.empty,
+    txMap: Option[TrieMap[String, String]] = None,
     integration: SecLangIntegration = DefaultSecLangIntegration.default,
   ): SecLangEngine = {
-    new SecLangEngine(program, config, files, integration)
+    new SecLangEngine(program, config, files, txMap, integration)
   }
   def factory(presets: Map[String, SecLangPreset], config: SecLangEngineConfig = SecLangEngineConfig.default, integration: SecLangIntegration = DefaultSecLangIntegration.default): SecLangEngineFactory = {
     new SecLangEngineFactory(

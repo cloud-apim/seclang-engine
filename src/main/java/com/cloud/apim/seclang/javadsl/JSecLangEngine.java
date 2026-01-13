@@ -3,6 +3,7 @@ package com.cloud.apim.seclang.javadsl;
 import com.cloud.apim.seclang.impl.engine.SecLangEngine;
 import com.cloud.apim.seclang.model.EngineResult;
 import scala.collection.JavaConverters;
+import scala.collection.concurrent.TrieMap;
 
 import java.util.Arrays;
 import java.util.List;
@@ -70,7 +71,15 @@ public final class JSecLangEngine {
         @SuppressWarnings("unchecked")
         scala.collection.immutable.List<Object> scalaPhases =
             (scala.collection.immutable.List<Object>)(Object)JavaConverters.asScalaBufferConverter(phases).asScala().toList();
-        EngineResult result = underlying.evaluate(ctx.toScala(), scalaPhases);
+        EngineResult result = underlying.evaluate(ctx.toScala(), scalaPhases, scala.None$.empty());
+        return JEngineResult.fromScala(result);
+    }
+
+    public JEngineResult evaluate(JRequestContext ctx, List<Integer> phases, TrieMap<String, String> txMap) {
+        @SuppressWarnings("unchecked")
+        scala.collection.immutable.List<Object> scalaPhases =
+                (scala.collection.immutable.List<Object>)(Object)JavaConverters.asScalaBufferConverter(phases).asScala().toList();
+        EngineResult result = underlying.evaluate(ctx.toScala(), scalaPhases, scala.Some.apply(txMap));
         return JEngineResult.fromScala(result);
     }
 }

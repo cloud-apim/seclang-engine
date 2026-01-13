@@ -8,27 +8,39 @@ import play.api.libs.json._
 import java.util.concurrent.atomic.AtomicReference
 import scala.collection.concurrent.TrieMap
 
-final class SecLangEngine(val program: CompiledProgram, config: SecLangEngineConfig, files: Map[String, String] = Map.empty, integration: SecLangIntegration) {
+final class SecLangEngine(
+  val program: CompiledProgram,
+  config: SecLangEngineConfig = SecLangEngineConfig.default,
+  files: Map[String, String] = Map.empty,
+  engineTxMap: Option[TrieMap[String, String]] = None,
+  integration: SecLangIntegration = DefaultSecLangIntegration.default
+) {
 
   // runtime disables (ctl:ruleRemoveById)
-  def evaluate(ctx: RequestContext, phases: List[Int] = List(1, 2)): EngineResult = {
+  def evaluate(ctx: RequestContext, phases: List[Int] = List(1, 2), evalTxMap: Option[TrieMap[String, String]] = None): EngineResult = {
     val pmode = program.mode.getOrElse(EngineMode.On)
     if (pmode.isOff) {
       EngineResult(Disposition.Continue, List.empty)
     } else {
-      val txMap = new TrieMap[String, String]()
+      val txMap = evalTxMap.orElse(engineTxMap).getOrElse(new TrieMap[String, String]())
       // Initialize request_headers in txMap for use in operators like @endsWith %{request_headers.host}
       ctx.headers.toList.foreach { case (name, values) =>
         val lowerName = name.toLowerCase
         values.headOption.foreach { v =>
-          txMap.put(s"request_headers.$lowerName", v)
+          if (ctx.isResponse) {
+            txMap.put(s"response_headers.$lowerName", v)
+          } else {
+            txMap.put(s"request_headers.$lowerName", v)
+          }
         }
       }
       // Initialize args in txMap for use in expressions like %{ARGS.xxx}
-      ctx.args.foreach { case (name, values) =>
-        val lowerName = name.toLowerCase
-        values.headOption.foreach { v =>
-          txMap.put(s"args.$lowerName", v)
+      if (ctx.isRequest) {
+        ctx.args.foreach { case (name, values) =>
+          val lowerName = name.toLowerCase
+          values.headOption.foreach { v =>
+            txMap.put(s"args.$lowerName", v)
+          }
         }
       }
       val envMap = {
