@@ -16,21 +16,20 @@ class SecLangEngineFactory(
 ) {
 
   def evaluate(configs: List[String], ctx: RequestContext, phases: List[Int] = List(1, 2)): EngineResult = {
-    val programsAndFiles: List[(CompiledProgram, Map[String, String])] = configs.map {
+    val programsAndFiles: List[(CompiledProgram, Map[String, String])] = configs.flatMap {
       case line if line.trim.startsWith("@import_preset ") => {
         val presetName = line.replaceFirst("@import_preset ", "").trim
-        val p = presets(presetName)
-        (p.program, p.files)
+        presets.get(presetName).orElse(integration.getExternalPreset(presetName)).map(p => (p.program, p.files))
       }
       case line => {
         val hash = HashUtilsFast.sha512Hex(line)
         integration.getCachedProgram(hash) match {
-          case Some(p) => (p, Map.empty[String, String])
+          case Some(p) => Some((p, Map.empty[String, String]))
           case None => {
             val parsed = AntlrParser.parse(line).right.get
             val compiled = Compiler.compile(parsed)
             integration.putCachedProgram(hash, compiled, cacheTtl)
-            (compiled, Map.empty[String, String])
+            Some((compiled, Map.empty[String, String]))
           }
         }
       }

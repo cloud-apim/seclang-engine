@@ -1946,13 +1946,14 @@ trait SecLangIntegration {
   def logAudit(msg: String): Unit
   def logError(msg: String): Unit
   def getEnv: Map[String, String]
+  def getExternalPreset(name: String): Option[SecLangPreset]
   def getCachedProgram(key: String): Option[CompiledProgram]
   def putCachedProgram(key: String, program: CompiledProgram, ttl: FiniteDuration): Unit
   def removeCachedProgram(key: String): Unit
   def audit(ruleId: Int, context: RequestContext, state: RuntimeState, phase: Int, msg: String, logdata: List[String]): Unit
 }
 
-class DefaultSecLangIntegration(maxCacheItems: Int = 1000) extends SecLangIntegration {
+class DefaultSecLangIntegration(maxCacheItems: Int = 1000, externalPresets: Map[String, SecLangPreset] = Map.empty) extends SecLangIntegration {
 
   private val cache = Scaffeine()
     .expireAfter[String, (CompiledProgram, FiniteDuration)](
@@ -1969,6 +1970,7 @@ class DefaultSecLangIntegration(maxCacheItems: Int = 1000) extends SecLangIntegr
   def logError(msg: String): Unit = println(s"[Error]: $msg")
   def getEnv(): Map[String, String] = sys.env
 
+  def getExternalPreset(name: String): Option[SecLangPreset] = externalPresets.get(name)
   def getCachedProgram(key: String): Option[CompiledProgram] = cache.getIfPresent(key).map(_._1)
   def putCachedProgram(key: String, program: CompiledProgram, ttl: FiniteDuration): Unit = cache.put(key, (program, ttl))
   def removeCachedProgram(key: String): Unit = cache.invalidate(key)
