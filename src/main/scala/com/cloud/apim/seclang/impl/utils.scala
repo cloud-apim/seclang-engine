@@ -304,6 +304,54 @@ object MultipartVars {
 
   def multipartPartHeadersFromCtx(body: String, contentTypeOpt: Option[String]): Option[Map[String, List[String]]] =
     boundaryFromContentType(contentTypeOpt).map(b => multipartPartHeaders(body, b))
+
+  /** Parse multipart form-data and extract field values (not headers) */
+  def multipartPartValues(body: String, boundary: String): Map[String, List[String]] = {
+    val startBoundary = s"--$boundary"
+    val endBoundary   = s"--$boundary--"
+
+    var inPart = false
+    var inHeaders = false
+    var inContent = false
+    var currentPartName: Option[String] = None
+    val contentBuffer = new StringBuilder
+    val acc = scala.collection.mutable.HashMap.empty[String, List[String]].withDefaultValue(List.empty)
+
+    body.linesIterator.foreach { raw =>
+      val line = raw.stripLineEnd
+
+      if (line == startBoundary || line == endBoundary) {
+        // Save previous part content if any
+        if (inContent && currentPartName.isDefined) {
+          val content = contentBuffer.toString.stripSuffix("\n")
+          acc.update(currentPartName.get, acc(currentPartName.get) :+ content)
+        }
+        contentBuffer.clear()
+        inPart = line == startBoundary
+        inHeaders = inPart
+        inContent = false
+        currentPartName = None
+      } else if (inPart && inHeaders) {
+        if (line.isEmpty) {
+          inHeaders = false
+          inContent = true
+        } else {
+          line match {
+            case NameRx(name) => currentPartName = Some(name)
+            case _ => ()
+          }
+        }
+      } else if (inPart && inContent) {
+        if (contentBuffer.nonEmpty) contentBuffer.append("\n")
+        contentBuffer.append(line)
+      }
+    }
+
+    acc.toMap
+  }
+
+  def multipartPartValuesFromCtx(body: String, contentTypeOpt: Option[String]): Option[Map[String, List[String]]] =
+    boundaryFromContentType(contentTypeOpt).map(b => multipartPartValues(body, b))
 }
 
 object FormUrlEncoded {

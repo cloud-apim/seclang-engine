@@ -1632,9 +1632,13 @@ final case class RequestContext(
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   lazy val args: Map[String, List[String]] = {
     (body match {
-      case Some(body) if isXwwwFormUrlEncoded=> {
+      case Some(body) if isXwwwFormUrlEncoded => {
         val bodyArgs = FormUrlEncoded.parse(body.utf8String)
         RequestContext.deepMerge(query, bodyArgs)
+      }
+      case Some(body) if isMultipartFormData => {
+        val multipartArgs = MultipartVars.multipartPartValuesFromCtx(body.utf8String, contentType).getOrElse(Map.empty)
+        RequestContext.deepMerge(query, multipartArgs)
       }
       case _ => query
     }) ++ (jsonBodyMap)
@@ -1814,6 +1818,7 @@ object RuntimeState {
   // (?i) => case-insensitive
   private val TxExpr: Regex = RegexPool.regex("""(?i)%\{tx\.([a-z0-9_.-]+)\}""")
   private val RequestHeadersExpr: Regex = RegexPool.regex("""(?i)%\{request_headers\.([a-z0-9_.-]+)\}""")
+  private val ArgsExpr: Regex = RegexPool.regex("""(?i)%\{args\.([a-z0-9_.-]+)\}""")
   private val MetaExpr: Regex = RegexPool.regex("""(?i)%\{([a-z0-9_.-]+)\}""")
 }
 final case class RuntimeState(mode: EngineMode, disabledIds: Set[Int], events: List[MatchEvent], txMap: TrieMap[String, String], envMap: TrieMap[String, String], uidRef: AtomicReference[String], logs: List[String], removedTargetsByTag: Map[String, Set[String]] = Map.empty) {
@@ -1851,13 +1856,22 @@ final case class RuntimeState(mode: EngineMode, disabledIds: Set[Int], events: L
         case t: Throwable => finalInput
       }
       // Handle %{request_headers.xxx} expressions
-      try {
+      val afterHeaders = try {
         RuntimeState.RequestHeadersExpr.replaceAllIn(afterTx, m => {
           val headerName = m.group(1).toLowerCase
           txMap.getOrElse(s"request_headers.$headerName", m.matched)
         })
       } catch {
         case t: Throwable => afterTx
+      }
+      // Handle %{ARGS.xxx} expressions
+      try {
+        RuntimeState.ArgsExpr.replaceAllIn(afterHeaders, m => {
+          val argName = m.group(1).toLowerCase
+          txMap.getOrElse(s"args.$argName", m.matched)
+        })
+      } catch {
+        case t: Throwable => afterHeaders
       }
     } else {
       input

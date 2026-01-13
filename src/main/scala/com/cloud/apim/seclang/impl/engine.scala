@@ -24,6 +24,13 @@ final class SecLangEngine(val program: CompiledProgram, config: SecLangEngineCon
           txMap.put(s"request_headers.$lowerName", v)
         }
       }
+      // Initialize args in txMap for use in expressions like %{ARGS.xxx}
+      ctx.args.foreach { case (name, values) =>
+        val lowerName = name.toLowerCase
+        values.headOption.foreach { v =>
+          txMap.put(s"args.$lowerName", v)
+        }
+      }
       val envMap = {
         val tm = new TrieMap[String, String]()
         integration.getEnv.foreach(tm += _)
