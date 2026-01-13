@@ -32,7 +32,8 @@ ThisBuild / sonatypeRepository := "https://s01.oss.sonatype.org/service/local"
 ThisBuild / sonatypeProfileName := "com.cloud-apim"
 //ThisBuild / pgpPassphrase := Some(sys.env("CLOUDAPIM_GPG_KEY_PASSPHRASE").toCharArray)
 ThisBuild / useGpgAgent := true
-ThisBuild / usePgpKeyHex("235E536BA3E43419FD649B903C82DD5C11569EF6")
+
+usePgpKeyHex("235E536BA3E43419FD649B903C82DD5C11569EF6")
 
 lazy val root = (project in file("."))
   .settings(
