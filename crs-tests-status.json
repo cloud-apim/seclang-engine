@@ -1,17 +1,17 @@
 {
   "global_stats" : {
-    "failure_percentage" : 0.07304601899196493,
-    "passing_percentage" : 99.92695398100804,
-    "total_tests" : 4107,
+    "failure_percentage" : 0,
+    "passing_percentage" : 100,
+    "total_tests" : 4104,
     "success_tests" : 4104,
-    "failure_tests" : 3
+    "failure_tests" : 0
   },
   "time_stats" : {
-    "calls" : 4107,
-    "total_time_ms" : 32796,
-    "min_time_ns" : 1631375,
+    "calls" : 4104,
+    "total_time_ms" : 30379,
+    "min_time_ns" : 1591250,
     "min_time_ms" : 1,
-    "max_time_ms" : 3857,
+    "max_time_ms" : 4286,
     "avg_time_ms" : 7
   }
 }

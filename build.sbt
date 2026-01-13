@@ -47,7 +47,7 @@ lazy val root = (project in file("."))
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % "2.13.4" % Test,
       munit % Test
     ),
-    crossScalaVersions := Seq("2.12.21", "2.13.15"),
+    crossScalaVersions := Seq("2.12.21"),//, "2.13.15"),
     Compile / doc / scalacOptions ++= Seq(
       "-doc-title", "SecLang Engine",
       "-doc-version", version.value

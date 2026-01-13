@@ -22685,12 +22685,12 @@
     "type" : "SecRule",
     "id" : 931131,
     "phase" : 1,
-    "chain" : true,
+    "chain" : false,
     "comment_block" : {
       "type" : "CommentBlock",
       "comments" : [ {
         "type" : "Comment",
-        "text" : " This is a (stricter) sibling of 931130."
+        "text" : " This is a sibling of 931130."
       }, {
         "type" : "Comment",
         "text" : ""
@@ -22753,7 +22753,7 @@
       }, {
         "type" : "Action",
         "action_type" : "msg",
-        "value" : "Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link"
+        "value" : "Possible Remote File Inclusion (RFI) Attack"
       }, {
         "type" : "Action",
         "action_type" : "log_data",
@@ -22801,52 +22801,10 @@
       }, {
         "type" : "Action",
         "action_type" : "set_var",
-        "expr" : "tx.rfi_parameter_%{MATCHED_VAR_NAME}=.%{tx.1}"
-      }, {
-        "type" : "Action",
-        "action_type" : "chain"
-      } ]
-    },
-    "raw" : "SecRule REQUEST_FILENAME \"@rx (?i)(?:(?:url|jar):)?(?:a(?:cap|f[ps]|ttachment)|b(?:eshare|itcoin|lob)|c(?:a(?:llto|p)|id|vs|ompress.(?:zlib|bzip2))|d(?:a(?:v|ta)|ict|n(?:s|tp))|e(?:d2k|xpect)|f(?:(?:ee)?d|i(?:le|nger|sh)|tps?)|g(?:it|o(?:pher)?|lob)|h(?:323|ttps?)|i(?:ax|cap|(?:ma|p)ps?|rc[6s]?)|ja(?:bbe)?r|l(?:dap[is]?|ocal_file)|m(?:a(?:ilto|ven)|ms|umble)|n(?:e(?:tdoc|ws)|fs|ntps?)|ogg|p(?:aparazzi|h(?:ar|p)|op(?:2|3s?)|r(?:es|oxy)|syc)|r(?:mi|sync|tm(?:f?p)?|ar)|s(?:3|ftp|ips?|m(?:[bs]|tps?)|n(?:ews|mp)|sh(?:2(?:.(?:s(?:hell|(?:ft|c)p)|exec|tunnel))?)?|vn(?:\\+ssh)?)|t(?:e(?:amspeak|lnet)|ftp|urns?)|u(?:dp|nreal|t2004)|v(?:entrilo|iew-source|nc)|w(?:ebcal|ss?)|x(?:mpp|ri)|zip)://(?:[^@]+@)?([^/]*)\" \"id:931131,\\\n  phase:1,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:urlDecodeUni,\\\n  msg:'Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-rfi',\\\n  tag:'paranoia-level/2',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/ATTACK-RFI',\\\n  tag:'capec/1000/152/175/253',\\\n  ver:'OWASP_CRS/4.23.0-dev',\\\n  severity:'CRITICAL',\\\n  setvar:'tx.rfi_parameter_%{MATCHED_VAR_NAME}=.%{tx.1}',\\\n  chain\""
-  }, {
-    "type" : "SecRule",
-    "id" : null,
-    "phase" : 2,
-    "chain" : false,
-    "comment_block" : null,
-    "variables" : {
-      "type" : "Variables",
-      "negated" : true,
-      "count" : false,
-      "variables" : [ {
-        "type" : "CollectionVariable",
-        "collection" : "TX",
-        "key" : "/rfi_parameter_.*/"
-      } ],
-      "negated_variables" : [ ]
-    },
-    "operator" : {
-      "type" : "Operator",
-      "operator_type" : "negated",
-      "operator" : {
-        "type" : "Operator",
-        "operator_type" : "ends_with",
-        "value" : ".%{request_headers.host}"
-      }
-    },
-    "actions" : {
-      "type" : "Actions",
-      "actions" : [ {
-        "type" : "Action",
-        "action_type" : "set_var",
-        "expr" : "tx.rfi_score=+%{tx.critical_anomaly_score}"
-      }, {
-        "type" : "Action",
-        "action_type" : "set_var",
         "expr" : "tx.inbound_anomaly_score_pl2=+%{tx.critical_anomaly_score}"
       } ]
     },
-    "raw" : "SecRule TX:/rfi_parameter_.*/ \"!@endsWith .%{request_headers.host}\" \"setvar:'tx.rfi_score=+%{tx.critical_anomaly_score}',\\\n  setvar:'tx.inbound_anomaly_score_pl2=+%{tx.critical_anomaly_score}'\""
+    "raw" : "SecRule REQUEST_FILENAME \"@rx (?i)(?:(?:url|jar):)?(?:a(?:cap|f[ps]|ttachment)|b(?:eshare|itcoin|lob)|c(?:a(?:llto|p)|id|vs|ompress.(?:zlib|bzip2))|d(?:a(?:v|ta)|ict|n(?:s|tp))|e(?:d2k|xpect)|f(?:(?:ee)?d|i(?:le|nger|sh)|tps?)|g(?:it|o(?:pher)?|lob)|h(?:323|ttps?)|i(?:ax|cap|(?:ma|p)ps?|rc[6s]?)|ja(?:bbe)?r|l(?:dap[is]?|ocal_file)|m(?:a(?:ilto|ven)|ms|umble)|n(?:e(?:tdoc|ws)|fs|ntps?)|ogg|p(?:aparazzi|h(?:ar|p)|op(?:2|3s?)|r(?:es|oxy)|syc)|r(?:mi|sync|tm(?:f?p)?|ar)|s(?:3|ftp|ips?|m(?:[bs]|tps?)|n(?:ews|mp)|sh(?:2(?:.(?:s(?:hell|(?:ft|c)p)|exec|tunnel))?)?|vn(?:\\+ssh)?)|t(?:e(?:amspeak|lnet)|ftp|urns?)|u(?:dp|nreal|t2004)|v(?:entrilo|iew-source|nc)|w(?:ebcal|ss?)|x(?:mpp|ri)|zip)://(?:[^@]+@)?([^/]*)\" \"id:931131,\\\n  phase:1,\\\n  block,\\\n  capture,\\\n  t:none,\\\n  t:urlDecodeUni,\\\n  msg:'Possible Remote File Inclusion (RFI) Attack',\\\n  logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-rfi',\\\n  tag:'paranoia-level/2',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/ATTACK-RFI',\\\n  tag:'capec/1000/152/175/253',\\\n  ver:'OWASP_CRS/4.23.0-dev',\\\n  severity:'CRITICAL',\\\n  setvar:'tx.inbound_anomaly_score_pl2=+%{tx.critical_anomaly_score}'\""
   }, {
     "type" : "SecRule",
     "id" : 931015,
@@ -75028,5 +74986,5 @@
       } ]
     }
   } ],
-  "hash" : "e4b00445097d8e92b7bce7dcdd8d2c360b98af4045889ae2e7ad7d4a0b519ab2d78a0c68e529e3d42beea10fdc52d8f50680f343f9a6f3ecfadac2d54c3a8778"
+  "hash" : "e055ed6eed4b8c9939ec7ede942c76c3139d9559a7b4b78e15b5fc28d9a26136c1ec14d8c08c0ff7254acd3d2ebd349b53d9943ab7901ac633fe1593c7fd6494"
 }

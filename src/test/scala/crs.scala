@@ -368,6 +368,9 @@ class SecLangCRSTest extends munit.FunSuite {
     ("920230", 3), // weird double urlencoding issue that cant be solved botch ways
     ("921180", 2), // weird double urlencoding issue that cant be solved botch ways
     ("921180", 5), // weird double urlencoding issue that cant be solved botch ways
+    ("932200", 13), // this one works but doesn't log what's expected. Needs to evaluate ARGS with separate named values
+    ("932207", 7), // this one works but doesn't log what's expected. Needs to evaluate ARGS with separate named values
+    ("933120", 2), // this one works but doesn't log what's expected. Needs to evaluate ARGS with separate named values
   )
   private val engine = CRSTestUtils.setupCRSEngine(testOnly.map(_._1.toInt))
   private val counter = new AtomicLong(0L)

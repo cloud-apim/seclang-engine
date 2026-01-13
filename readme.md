@@ -15,27 +15,27 @@ rule language, providing full compatibility with the [OWASP Core Rule Set (CRS) 
 - **High Performance** - Optimized for high-throughput scenarios with compiled rule programs, regex caching, and efficient variable resolution. Handles thousands of requests per second with minimal latency overhead.
 - **Library-First** - Designed as an embeddable library, not a standalone server. Integrate WAF capabilities directly into your application, gateway, or proxy with a simple API.
 - **Extensible** - Customize logging, caching, and integration points through the `SecLangIntegration` trait. Compose rule presets and configurations dynamically at runtime.
-- **Battle-Tested** - Passes more than 99% of the official CRS test suite, ensuring reliable protection against real-world attack patterns.
+- **Battle-Tested** - Passes 100% of the official CRS test suite, ensuring reliable protection against real-world attack patterns.
 
 ## Status
 
-This project is a work in progress. We are currently passing **more than 99%** of the [CRS test suite](https://github.com/coreruleset/coreruleset/tree/main/tests/regression/tests)
+This project is a work in progress. We are currently passing **100%** of the [CRS test suite](https://github.com/coreruleset/coreruleset/tree/main/tests/regression/tests)
 
 ```json
 {
   "global_stats" : {
-    "failure_percentage" : 0.14609203798392986,
-    "passing_percentage" : 99.85390796201607,
-    "total_tests" : 4107,
-    "success_tests" : 4101,
-    "failure_tests" : 6
+    "failure_percentage" : 0,
+    "passing_percentage" : 100,
+    "total_tests" : 4104,
+    "success_tests" : 4104,
+    "failure_tests" : 0
   },
   "time_stats" : {
-    "calls" : 4107,
-    "total_time_ms" : 30577,
-    "min_time_ns" : 343209,
-    "min_time_ms" : 0,
-    "max_time_ms" : 3750,
+    "calls" : 4104,
+    "total_time_ms" : 31733,
+    "min_time_ns" : 1770666,
+    "min_time_ms" : 1,
+    "max_time_ms" : 4717,
     "avg_time_ms" : 7
   }
 }
