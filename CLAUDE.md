@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 SecLang Engine is a Scala library implementing a subset of the OWASP/ModSecurity SecLang language for the JVM. It parses, compiles, and evaluates SecLang rules, primarily designed to run the OWASP Core Rule Set (CRS) in multi-tenant environments.
 
+Project is built on JDK 17 using SBT (Simple Build Tool) for scala.
+
 ## Build Commands
 
 ```bash
