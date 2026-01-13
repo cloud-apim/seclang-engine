@@ -30,8 +30,6 @@ ThisBuild / publishMavenStyle := true
 ThisBuild / sonatypeCredentialHost := "s01.oss.sonatype.org"
 ThisBuild / sonatypeRepository := "https://s01.oss.sonatype.org/service/local"
 ThisBuild / sonatypeProfileName := "com.cloud-apim"
-//ThisBuild / pgpPassphrase := Some(sys.env("CLOUDAPIM_GPG_KEY_PASSPHRASE").toCharArray)
-ThisBuild / useGpgAgent := true
 
 usePgpKeyHex("235E536BA3E43419FD649B903C82DD5C11569EF6")
 
