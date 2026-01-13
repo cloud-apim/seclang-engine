@@ -36,7 +36,10 @@ object EngineActions {
       case Action.Log => {
         if (isLast) {
           msg.foreach { msg =>
-            val m = s"${context.requestId} - ${context.method} ${context.uri} matched on: $msg. ${logdata.mkString(". ")}"
+            // Include ModSecurity-style format with [id "..."][msg "..."] for compatibility with CRS tests
+            val logdataStr = if (logdata.nonEmpty) s" ${logdata.mkString(". ")}" else ""
+            val q = '"'
+            val m = s"${context.requestId} - ${context.method} ${context.uri} [id $q$ruleId$q][msg $q$msg$q]$logdataStr"
             localState = localState.copy(logs = localState.logs :+ m)
             integration.logInfo(m)
           }

@@ -436,7 +436,7 @@ class SecLangCRSTest extends munit.FunSuite {
             val input = (stage \ "input").as[JsObject]
             val ctx = CRSTestUtils.requestContext(input)
             val start = System.nanoTime()
-            val result = engine.evaluate(ctx, if(ctx.isResponse) List(3, 4) else List(1, 2))
+            val result = engine.evaluate(ctx, if(ctx.isResponse) List(3, 4, 5) else List(1, 2, 5))
             val dur = System.nanoTime() - start
             times = times :+ dur
             val output = (stage \ "output").as[JsObject]
