@@ -25,9 +25,12 @@ jobs:
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
         run: |
+          mkdir -p ~/.gnupg
           mkdir -p ~/.sbt/gpg
-          echo "$PGP_SECRET" | base64 --decode > ~/.sbt/gpg/secring.key
-          gpg --batch --pinentry-mode=loopback --yes --passphrase "$PGP_PASSPHRASE" --import ~/.sbt/gpg/secring.key
+          chmod 700 ~/.gnupg
+          echo "${GPG_SECRET}" | gpg --batch --import
+          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+          gpgconf --kill gpg-agent
           gpg --batch --pinentry-mode=loopback --yes --passphrase "$PGP_PASSPHRASE" --export-secret-key 4EFDC6FC2DEC936B13B7478C2F8C0F4E1D397E7F > ~/.sbt/gpg/secring.gpg
       - name: build-libs
         id: build-libs
