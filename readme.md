@@ -26,17 +26,17 @@ This project is a work in progress. We are currently passing **100%** of the [CR
   "global_stats" : {
     "failure_percentage" : 0,
     "passing_percentage" : 100,
-    "total_tests" : 4104,
-    "success_tests" : 4104,
+    "total_tests" : 4135,
+    "success_tests" : 4135,
     "failure_tests" : 0
   },
   "time_stats" : {
-    "calls" : 4104,
-    "total_time_ms" : 31733,
-    "min_time_ns" : 1770666,
+    "calls" : 4135,
+    "total_time_ms" : 35945,
+    "min_time_ns" : 1727500,
     "min_time_ms" : 1,
-    "max_time_ms" : 4717,
-    "avg_time_ms" : 7
+    "max_time_ms" : 4242,
+    "avg_time_ms" : 8
   }
 }
 ```

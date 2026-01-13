@@ -26,6 +26,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           sbt ';compile;package'
+          sbt ';publishSigned;sonatypeBundleRelease'
       - name: Generate SHA-256
         run: |
           shasum -a 256 ./target/scala-2.12/seclang-engine_2.12-${{ inputs.version }}.jar | cut -d ' ' -f 1 > ./target/scala-2.12/seclang-engine_2.12-${{ inputs.version }}.jar.sha256
