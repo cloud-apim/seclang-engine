@@ -7,17 +7,15 @@ import com.github.blemale.scaffeine.Scaffeine
 import play.api.libs.json._
 
 import java.io.{File, InputStream}
-import java.net.{JarURLConnection, URI, URL}
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
+import java.net.{JarURLConnection, URI, URL}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
-import java.util.{Base64, Locale}
 import java.util.concurrent.atomic.AtomicReference
 import java.util.jar.JarFile
-import java.util.regex.{Matcher, Pattern}
+import java.util.{Base64, Locale}
 import scala.collection.JavaConverters.{asScalaIteratorConverter, enumerationAsScalaIteratorConverter}
 import scala.collection.concurrent.TrieMap
-import scala.collection.generic.CanBuildFrom
 import scala.concurrent.duration.FiniteDuration
 import scala.io.Source
 import scala.util.matching.Regex
