@@ -48,10 +48,10 @@ final class SecLangEngine(
 ) {
 
   def evaluate(ctx: RequestContext, phases: List[Int] = List(1, 2), evalTxMap: Option[TrieMap[String, String]] = None): EngineResult = {
-    evaluateE(ctx, phases, evalTxMap).fold(err => throw err.throwable, identity)
+    evaluateSafe(ctx, phases, evalTxMap).fold(err => throw err.throwable, identity)
   }
   // runtime disables (ctl:ruleRemoveById)
-  def evaluateE(ctx: RequestContext, phases: List[Int] = List(1, 2), evalTxMap: Option[TrieMap[String, String]] = None): Either[SecLangError, EngineResult] = try {
+  def evaluateSafe(ctx: RequestContext, phases: List[Int] = List(1, 2), evalTxMap: Option[TrieMap[String, String]] = None): Either[SecLangError, EngineResult] = try {
     val pmode = program.mode.getOrElse(EngineMode.On)
     if (pmode.isOff) {
       Right(EngineResult(Disposition.Continue, List.empty))

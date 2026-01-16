@@ -1948,9 +1948,9 @@ final case class SecLangPreset(name: String, program: CompiledProgram, files: Ma
 
 object SecLangPreset {
   def withNoFiles(name: String, rules: String): SecLangPreset = {
-    withNoFilesE(name, rules).fold(err => throw err.throwable, identity)
+    withNoFilesSafe(name, rules).fold(err => throw err.throwable, identity)
   }
-  def withNoFilesE(name: String, rules: String): Either[SecLangError, SecLangPreset] = {
+  def withNoFilesSafe(name: String, rules: String): Either[SecLangError, SecLangPreset] = {
     val parsed = AntlrParser.parse(rules).right.get
     Compiler.compile(parsed) match {
       case Left(err) => Left(err)
@@ -1958,9 +1958,9 @@ object SecLangPreset {
     }
   }
   def withFiles(name: String, rules: String, files: Map[String, String]): SecLangPreset = {
-    withFilesE(name, rules, files).fold(err => throw err.throwable, identity)
+    withFilesSafe(name, rules, files).fold(err => throw err.throwable, identity)
   }
-  def withFilesE(name: String, rules: String, files: Map[String, String]): Either[SecLangError, SecLangPreset] = {
+  def withFilesSafe(name: String, rules: String, files: Map[String, String]): Either[SecLangError, SecLangPreset] = {
     val parsed = AntlrParser.parse(rules).right.get
     Compiler.compile(parsed) match {
       case Left(err) => Left(err)
@@ -1968,9 +1968,9 @@ object SecLangPreset {
     }
   }
   def fromSource(name: String, rulesSource: ConfigurationSourceList = ConfigurationSourceList.empty, filesSource: FilesSourceList): SecLangPreset = {
-    fromSourceE(name, rulesSource, filesSource).fold(err => throw err.throwable, identity)
+    fromSourceSafe(name, rulesSource, filesSource).fold(err => throw err.throwable, identity)
   }
-  def fromSourceE(name: String, rulesSource: ConfigurationSourceList = ConfigurationSourceList.empty, filesSource: FilesSourceList): Either[SecLangError, SecLangPreset] = {
+  def fromSourceSafe(name: String, rulesSource: ConfigurationSourceList = ConfigurationSourceList.empty, filesSource: FilesSourceList): Either[SecLangError, SecLangPreset] = {
     Compiler.compile(Configuration.fromList(rulesSource)) match {
       case Left(err) => Left(err)
       case Right(program) => Right(SecLangPreset(

@@ -17,9 +17,9 @@ class SecLangEngineFactory(
 ) {
 
   def engine(configs: List[String]): SecLangEngine = {
-    engineE(configs).fold(err => throw err.head.throwable, identity)
+    engineSafe(configs).fold(err => throw err.head.throwable, identity)
   }
-  def engineE(configs: List[String]): Either[List[SecLangError], SecLangEngine] = {
+  def engineSafe(configs: List[String]): Either[List[SecLangError], SecLangEngine] = {
     val programsAndFilesE: List[Either[SecLangError, (CompiledProgram, Map[String, String])]] = configs.flatMap {
       case line if line.trim.startsWith("@import_preset ") => {
         val presetName = line.replaceFirst("@import_preset ", "").trim
@@ -56,12 +56,12 @@ class SecLangEngineFactory(
   }
 
   def evaluate(configs: List[String], ctx: RequestContext, phases: List[Int] = List(1, 2), txMap: Option[TrieMap[String, String]] = None): EngineResult = {
-    evaluateE(configs, ctx, phases, txMap).fold(err => throw err.head.throwable, identity)
+    evaluateSafe(configs, ctx, phases, txMap).fold(err => throw err.head.throwable, identity)
   }
-  def evaluateE(configs: List[String], ctx: RequestContext, phases: List[Int] = List(1, 2), txMap: Option[TrieMap[String, String]] = None): Either[List[SecLangError], EngineResult] = {
-    engineE(configs) match {
+  def evaluateSafe(configs: List[String], ctx: RequestContext, phases: List[Int] = List(1, 2), txMap: Option[TrieMap[String, String]] = None): Either[List[SecLangError], EngineResult] = {
+    engineSafe(configs) match {
       case Left(err) => Left(err)
-      case Right(engine) => engine.evaluateE(ctx, phases, txMap) match {
+      case Right(engine) => engine.evaluateSafe(ctx, phases, txMap) match {
         case Left(err) => Left(List(err))
         case Right(r) => Right(r)
       }
