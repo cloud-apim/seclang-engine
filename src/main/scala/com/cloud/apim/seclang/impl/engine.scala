@@ -9,6 +9,36 @@ import java.util.concurrent.atomic.AtomicReference
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable.ArrayBuffer
 
+// Helper case class to extract all action info in a single pass
+private[engine] case class ExtractedActionInfo(
+  msg: Option[String] = None,
+  status: Option[Int] = None,
+  disruptive: Option[Action] = None,
+  skipAfter: Option[String] = None,
+  logData: List[String] = Nil,
+  idsToDisable: List[Int] = Nil
+)
+
+private[engine] object ExtractedActionInfo {
+  def extract(actions: List[Action], evalExpr: String => String = identity): ExtractedActionInfo = {
+    actions.foldLeft(ExtractedActionInfo()) { (acc, action) =>
+      action match {
+        case Action.Msg(m) if acc.msg.isEmpty => acc.copy(msg = Some(evalExpr(m)))
+        case Action.Status(s) if acc.status.isEmpty => acc.copy(status = Some(s))
+        case Action.LogData(m) => acc.copy(logData = m :: acc.logData)
+        case Action.SkipAfter(m) if acc.skipAfter.isEmpty => acc.copy(skipAfter = Some(m))
+        case Action.Block() if acc.disruptive.isEmpty => acc.copy(disruptive = Some(Action.Block()))
+        case Action.Deny if acc.disruptive.isEmpty => acc.copy(disruptive = Some(Action.Deny))
+        case Action.Drop if acc.disruptive.isEmpty => acc.copy(disruptive = Some(Action.Drop))
+        case Action.Pass if acc.disruptive.isEmpty => acc.copy(disruptive = Some(Action.Pass))
+        case Action.Allow(m) if acc.disruptive.isEmpty => acc.copy(disruptive = Some(Action.Allow(m)))
+        case CtlAction.RuleRemoveById(id) => acc.copy(idsToDisable = id :: acc.idsToDisable)
+        case _ => acc
+      }
+    }
+  }
+}
+
 final class SecLangEngine(
   val program: CompiledProgram,
   config: SecLangEngineConfig = SecLangEngineConfig.default,
@@ -164,45 +194,22 @@ final class SecLangEngine(
     var skipAfter: Option[String] = None
     var lastRuleId: Option[Int] = None
     val actionsList = action.actions.actions.toList
-    var addLogData = List.empty[String]
 
-    val msg = actionsList.collectFirst {
-      case Action.Msg(m) => m
-    }
-    if (msg.nonEmpty) collectedMsg = msg
-    // Collect raw logdata strings - they will be evaluated in performActions after setvar runs
-    addLogData = addLogData ++ actionsList.collect {
-      case Action.LogData(m) => m
-    }
-    val status = actionsList.collectFirst {
-      case Action.Status(s) => s
-    }
-    if (status.nonEmpty) collectedStatus = status
-
-    // disruptive action can appear anywhere, but we keep last
-    val dis = actionsList.collectFirst {
-      case Action.Block() => Action.Block()
-      case Action.Deny => Action.Deny
-      case Action.Drop => Action.Drop
-      case Action.Pass => Action.Pass
-      case Action.Allow(m) => Action.Allow(m)
-    }
-    if (dis.nonEmpty) disruptive = dis
-
-    // skipAfter
-    val sk = actionsList.collectFirst { case Action.SkipAfter(m) => m }
-    if (sk.nonEmpty) skipAfter = sk
-
-    // runtime ctl disable - batch all IDs in one copy
-    val idsToDisable = actionsList.collect { case CtlAction.RuleRemoveById(id) => id }
-    if (idsToDisable.nonEmpty) {
-      st = st.copy(disabledIds = st.disabledIds ++ idsToDisable)
+    // Single pass extraction of all action info
+    val extracted = ExtractedActionInfo.extract(actionsList)
+    if (extracted.msg.nonEmpty) collectedMsg = extracted.msg
+    if (extracted.status.nonEmpty) collectedStatus = extracted.status
+    if (extracted.disruptive.nonEmpty) disruptive = extracted.disruptive
+    if (extracted.skipAfter.nonEmpty) skipAfter = extracted.skipAfter
+    val addLogData = extracted.logData.reverse
+    if (extracted.idsToDisable.nonEmpty) {
+      st = st.copy(disabledIds = st.disabledIds ++ extracted.idsToDisable)
     }
 
     st = EngineActions.performActions(action.id.getOrElse(0), actionsList, phase, ctx, st, integration, collectedMsg, addLogData, isLast = true)
     // Batch events and logs update in single copy
     st = st.copy(
-      events = MatchEvent(action.id, msg, st.logs, phase, Json.stringify(action.json)) :: st.events,
+      events = MatchEvent(action.id, extracted.msg, st.logs, phase, Json.stringify(action.json)) :: st.events,
       logs = List.empty
     )
     val disp =
@@ -250,49 +257,26 @@ final class SecLangEngine(
         val matched = evalRule(r, lastRuleId, ctx, debug = lastRuleId.exists(id => config.debugRules.contains(id)), st) { (_, _) =>
           // TODO: implement actions: https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29#actions
           val actionsList = r.actions.toList.flatMap(_.actions)
-          val msg = actionsList.collectFirst {
-            case Action.Msg(m) => st.evalTxExpressions(m)
-          }
-          if (msg.nonEmpty) collectedMsg = msg
-          // Collect raw logdata strings - they will be evaluated in performActions after setvar runs
-          addLogData = addLogData ++ actionsList.collect {
-            case Action.LogData(m) => m
-          }
-
-          val status = actionsList.collectFirst {
-            case Action.Status(s) => s
-          }
-          if (status.nonEmpty) collectedStatus = status
-
-          // disruptive action can appear anywhere, but we keep last
-          val dis = actionsList.collectFirst {
-            case Action.Block() => Action.Block()
-            case Action.Deny => Action.Deny
-            case Action.Drop => Action.Drop
-            case Action.Pass => Action.Pass
-            case Action.Allow(m) => Action.Allow(m)
-          }
-          if (dis.nonEmpty) disruptive = dis
-
-          // skipAfter
-          val sk = actionsList.collectFirst { case Action.SkipAfter(m) => m }
-          if (sk.nonEmpty) skipAfter = sk
-
-          // runtime ctl disable - batch all IDs in one copy
-          val idsToDisable = actionsList.collect { case CtlAction.RuleRemoveById(id) => id }
-          if (idsToDisable.nonEmpty) {
-            st = st.copy(disabledIds = st.disabledIds ++ idsToDisable)
+          // Single pass extraction of all action info
+          val extracted = ExtractedActionInfo.extract(actionsList, st.evalTxExpressions)
+          if (extracted.msg.nonEmpty) collectedMsg = extracted.msg
+          if (extracted.status.nonEmpty) collectedStatus = extracted.status
+          if (extracted.disruptive.nonEmpty) disruptive = extracted.disruptive
+          if (extracted.skipAfter.nonEmpty) skipAfter = extracted.skipAfter
+          addLogData = addLogData ++ extracted.logData.reverse
+          if (extracted.idsToDisable.nonEmpty) {
+            st = st.copy(disabledIds = st.disabledIds ++ extracted.idsToDisable)
           }
 
           st = EngineActions.performActions(lastRuleId.getOrElse(0), actionsList, phase, ctx, st, integration, collectedMsg, addLogData, isLast)
           if (isLast) {
             // Batch events and logs update in single copy
             st = st.copy(
-              events = MatchEvent(lastRuleId, msg, st.logs, phase, Json.stringify(r.json)) :: events.toList ++ st.events,
+              events = MatchEvent(lastRuleId, extracted.msg, st.logs, phase, Json.stringify(r.json)) :: events.toList ++ st.events,
               logs = List.empty
             )
           } else {
-            events += MatchEvent(lastRuleId, msg, st.logs, phase, Json.stringify(r.json))
+            events += MatchEvent(lastRuleId, extracted.msg, st.logs, phase, Json.stringify(r.json))
             st = st.copy(logs = List.empty)
           }
         }
