@@ -1592,7 +1592,6 @@ final case class RequestContext(
   protocol: String = "HTTP/1.1",
   secure: Boolean = false,
   variables: Map[String, String] = Map.empty,
-  cache: TrieMap[String, List[String]] = new TrieMap[String, List[String]],
 ) {
   lazy val isResponse: Boolean = status.isDefined
   lazy val isRequest: Boolean = !isResponse

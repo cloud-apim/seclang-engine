@@ -291,8 +291,7 @@ public final class JRequestContext {
                 remotePort,
                 protocol,
                 secure,
-                scalaVariables,
-                new TrieMap<>()
+                scalaVariables
             );
 
             return new JRequestContext(ctx);
