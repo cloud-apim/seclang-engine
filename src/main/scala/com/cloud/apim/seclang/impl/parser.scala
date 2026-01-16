@@ -350,7 +350,7 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
 }
 
 object AntlrParser {
-  def parse(in: String): Either[String, Configuration] = {
+  def parse(in: String): Either[SecLangError, Configuration] = {
     import org.antlr.v4.runtime._
     
     try {
@@ -380,7 +380,7 @@ object AntlrParser {
       val result = visitor.visitConfiguration(tree).copy(hash = hash)
       Right(result)
     } catch {
-      case e: Exception => Left(s"Parse error: ${e.getMessage}")
+      case e: Exception => Left(ParseError(e))
     }
   }
 }

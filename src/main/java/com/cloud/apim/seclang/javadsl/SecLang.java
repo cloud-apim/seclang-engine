@@ -6,6 +6,7 @@ import com.cloud.apim.seclang.impl.factory.SecLangEngineFactory;
 import com.cloud.apim.seclang.impl.parser.AntlrParser;
 import com.cloud.apim.seclang.model.CompiledProgram;
 import com.cloud.apim.seclang.model.Configuration;
+import com.cloud.apim.seclang.model.SecLangError;
 import com.cloud.apim.seclang.model.SecLangPreset;
 import scala.collection.JavaConverters;
 import scala.collection.concurrent.TrieMap;
@@ -100,11 +101,11 @@ public final class SecLang {
      * @return a ParseResult containing either the Configuration or an error message
      */
     public static ParseResult parse(String input) {
-        Either<String, Configuration> result = AntlrParser.parse(input);
+        Either<SecLangError, Configuration> result = com.cloud.apim.seclang.scaladsl.SecLang.parse(input);
         if (result.isRight()) {
             return ParseResult.success(result.right().get());
         } else {
-            return ParseResult.error(result.left().get());
+            return ParseResult.error(result.left().get().msg());
         }
     }
 
@@ -115,7 +116,7 @@ public final class SecLang {
      * @return a compiled program ready for execution
      */
     public static CompiledProgram compile(Configuration configuration) {
-        return Compiler.compile(configuration);
+        return com.cloud.apim.seclang.scaladsl.SecLang.compile(configuration);
     }
 
     /**

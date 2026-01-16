@@ -2,7 +2,6 @@ package com.cloud.apim.seclang.impl.compiler
 
 import com.cloud.apim.seclang.impl.utils.RegexPool
 import com.cloud.apim.seclang.model.ConfigDirective.{ComponentSignature, DefaultAction}
-import com.cloud.apim.seclang.model.Operator.Rx
 import com.cloud.apim.seclang.model._
 
 object Compiler {
@@ -11,7 +10,7 @@ object Compiler {
     println("unimplemented statement " + name)
   }
 
-  def compile(configuration: Configuration): CompiledProgram = {
+  def compile(configuration: Configuration): Either[SecLangError, CompiledProgram] = try {
     val statements = configuration.statements
     val removed = statements.collect { case SecRuleRemoveById(_, ids) => ids }.flatten.toSet
     val removedRuleTags: Set[String] = statements.collect { case SecRuleRemoveByTag(_, tag) => tag }.toSet
@@ -123,6 +122,8 @@ object Compiler {
         // TODO: support all statements here
     }
 
-    SimpleCompiledProgram(byPhase.toMap, removed, mode, configuration.hash)
+    Right(SimpleCompiledProgram(byPhase.toMap, removed, mode, configuration.hash))
+  } catch {
+    case t: Throwable => Left(CompileError(t))
   }
 }

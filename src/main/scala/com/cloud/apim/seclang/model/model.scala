@@ -1948,21 +1948,50 @@ final case class SecLangPreset(name: String, program: CompiledProgram, files: Ma
 
 object SecLangPreset {
   def withNoFiles(name: String, rules: String): SecLangPreset = {
+    withNoFilesE(name, rules).fold(err => throw err.throwable, identity)
+  }
+  def withNoFilesE(name: String, rules: String): Either[SecLangError, SecLangPreset] = {
     val parsed = AntlrParser.parse(rules).right.get
-    val program = Compiler.compile(parsed)
-    SecLangPreset(name, program, Map.empty)
+    Compiler.compile(parsed) match {
+      case Left(err) => Left(err)
+      case Right(program) => Right(SecLangPreset(name, program, Map.empty))
+    }
   }
   def withFiles(name: String, rules: String, files: Map[String, String]): SecLangPreset = {
+    withFilesE(name, rules, files).fold(err => throw err.throwable, identity)
+  }
+  def withFilesE(name: String, rules: String, files: Map[String, String]): Either[SecLangError, SecLangPreset] = {
     val parsed = AntlrParser.parse(rules).right.get
-    val program = Compiler.compile(parsed)
-    SecLangPreset(name, program, files)
+    Compiler.compile(parsed) match {
+      case Left(err) => Left(err)
+      case Right(program) => Right(SecLangPreset(name, program, files))
+    }
   }
-
   def fromSource(name: String, rulesSource: ConfigurationSourceList = ConfigurationSourceList.empty, filesSource: FilesSourceList): SecLangPreset = {
-    SecLangPreset(
-      name = name,
-      program = Compiler.compile(Configuration.fromList(rulesSource)),
-      files = filesSource.sources.map(_.getFiles()).reduce((a, b) => a ++ b)
-    )
+    fromSourceE(name, rulesSource, filesSource).fold(err => throw err.throwable, identity)
   }
+  def fromSourceE(name: String, rulesSource: ConfigurationSourceList = ConfigurationSourceList.empty, filesSource: FilesSourceList): Either[SecLangError, SecLangPreset] = {
+    Compiler.compile(Configuration.fromList(rulesSource)) match {
+      case Left(err) => Left(err)
+      case Right(program) => Right(SecLangPreset(
+        name = name,
+        program = program,
+        files = filesSource.sources.map(_.getFiles()).reduce((a, b) => a ++ b)
+      ))
+    }
+  }
+}
+
+sealed trait SecLangError {
+  def msg: String
+  def throwable: Throwable
+}
+case class ParseError(throwable: Throwable) extends SecLangError {
+  override def msg: String = throwable.getMessage
+}
+case class CompileError(throwable: Throwable) extends SecLangError {
+  override def msg: String = throwable.getMessage
+}
+case class EvaluationError(throwable: Throwable) extends SecLangError {
+  override def msg: String = throwable.getMessage
 }

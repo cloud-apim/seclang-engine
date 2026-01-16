@@ -232,7 +232,7 @@ class SecLangBasicTest extends munit.FunSuite {
         |SecRuleEngine On
         |""".stripMargin
 
-    val loaded = SecLang.parse(rules).fold(err => sys.error(err), identity)
+    val loaded = SecLang.parse(rules).fold(err => throw err.throwable, identity)
     val program = SecLang.compile(loaded)
     val engine = SecLang.engine(program)
 
@@ -311,7 +311,7 @@ class SecLangBasicTest extends munit.FunSuite {
         |SecRuleEngine On
         |""".stripMargin
 
-    val loaded = SecLang.parse(rules).fold(err => sys.error(err), identity)
+    val loaded = SecLang.parse(rules).fold(err => throw err.throwable, identity)
     val program = SecLang.compile(loaded)
     val engine = SecLang.engine(program)
     val failing_ctx_1 = RequestContext(
@@ -431,7 +431,7 @@ class SecRuleRawParsing extends munit.FunSuite {
         |    severity:'CRITICAL'"
         |""".stripMargin
 
-    val loaded = SecLang.parse(rules).fold(err => sys.error(err), identity)
+    val loaded = SecLang.parse(rules).fold(err => throw err.throwable, identity)
     println("\n\n")
     loaded.statements.collect {
       case rule: SecRule => println(rule.raw)

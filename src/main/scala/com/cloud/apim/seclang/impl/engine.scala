@@ -47,11 +47,14 @@ final class SecLangEngine(
   integration: SecLangIntegration = DefaultSecLangIntegration.default
 ) {
 
-  // runtime disables (ctl:ruleRemoveById)
   def evaluate(ctx: RequestContext, phases: List[Int] = List(1, 2), evalTxMap: Option[TrieMap[String, String]] = None): EngineResult = {
+    evaluateE(ctx, phases, evalTxMap).fold(err => throw err.throwable, identity)
+  }
+  // runtime disables (ctl:ruleRemoveById)
+  def evaluateE(ctx: RequestContext, phases: List[Int] = List(1, 2), evalTxMap: Option[TrieMap[String, String]] = None): Either[SecLangError, EngineResult] = try {
     val pmode = program.mode.getOrElse(EngineMode.On)
     if (pmode.isOff) {
-      EngineResult(Disposition.Continue, List.empty)
+      Right(EngineResult(Disposition.Continue, List.empty))
     } else {
       val txMap = evalTxMap.orElse(engineTxMap).getOrElse(new TrieMap[String, String]())
       // Initialize request_headers in txMap for use in operators like @endsWith %{request_headers.host}
@@ -106,8 +109,10 @@ final class SecLangEngine(
         if (seen.contains(e)) false
         else { seen += e; true }
       }
-      EngineResult(disp, uniqueEvents.reverse)
+      Right(EngineResult(disp, uniqueEvents.reverse))
     }
+  } catch {
+    case t: Throwable => Left(EvaluationError(t))
   }
 
   private def runPhase(phase: Int, ctx: RequestContext, st0: RuntimeState): (Disposition, RuntimeState) = {

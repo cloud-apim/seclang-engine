@@ -10488,7 +10488,7 @@
         "text" : ""
       }, {
         "type" : "Comment",
-        "text" : " Missing Content-Type Header with Request Body"
+        "text" : " Missing Content-Type Header with Request Body (Phase 1)"
       }, {
         "type" : "Comment",
         "text" : ""
@@ -10497,43 +10497,49 @@
         "text" : " -=[ Rule Logic ]=-"
       }, {
         "type" : "Comment",
-        "text" : " This rule will first check to see if the value of the Content-Length header is"
+        "text" : " This rule checks if the Content-Length header value is non-zero (indicating"
       }, {
         "type" : "Comment",
-        "text" : " non-equal to 0. The chained rule is then checking the existence of the"
+        "text" : " the client declares a body is present), then verifies the existence of the"
       }, {
         "type" : "Comment",
-        "text" : " Content-Type header. The RFCs do not state there must be a"
+        "text" : " Content-Type header. While RFCs do not mandate a Content-Type header for all"
       }, {
         "type" : "Comment",
-        "text" : " Content-Type header. However, a request missing a Content-Header is a"
+        "text" : " requests, its absence in requests with a body is a strong indication of a"
       }, {
         "type" : "Comment",
-        "text" : " strong indication of a non-compliant browser or an evasion attempt."
-      }, {
-        "type" : "Comment",
-        "text" : ""
-      }, {
-        "type" : "Comment",
-        "text" : " Also, omitting the CT header allows to bypass the Request Body Processor"
-      }, {
-        "type" : "Comment",
-        "text" : " unless you set the optional tx.enforce_bodyproc_urlencoded variable."
+        "text" : " non-compliant browser or an evasion attempt."
       }, {
         "type" : "Comment",
         "text" : ""
       }, {
         "type" : "Comment",
-        "text" : " Enabling this rule is important as it maximizes"
+        "text" : " Omitting the Content-Type header allows bypassing the Request Body Processor"
       }, {
         "type" : "Comment",
-        "text" : " the detection of risky practices that attempt to disable"
+        "text" : " unless you set the optional tx.enforce_bodyproc_urlencoded variable. This can"
       }, {
         "type" : "Comment",
-        "text" : " body processors (such as XML, JSON, etc.) in order to hide"
+        "text" : " be used to evade detection by preventing proper parsing of XML, JSON, or other"
       }, {
         "type" : "Comment",
-        "text" : " malicious payloads."
+        "text" : " body formats."
+      }, {
+        "type" : "Comment",
+        "text" : ""
+      }, {
+        "type" : "Comment",
+        "text" : " This rule operates in phase:1 (request headers) based on the Content-Length"
+      }, {
+        "type" : "Comment",
+        "text" : " header declaration. A complementary rule (920640) operates in phase:2 based"
+      }, {
+        "type" : "Comment",
+        "text" : " on the actual REQUEST_BODY_LENGTH to catch cases where the body is present"
+      }, {
+        "type" : "Comment",
+        "text" : " but Content-Length was omitted or set to zero."
       }, {
         "type" : "Comment",
         "text" : ""
@@ -10542,7 +10548,10 @@
         "text" : " -=[ References ]=-"
       }, {
         "type" : "Comment",
-        "text" : " http://httpwg.org/specs/rfc7231.html#header.content-type"
+        "text" : " https://httpwg.org/specs/rfc7231.html#header.content-type"
+      }, {
+        "type" : "Comment",
+        "text" : " https://httpwg.org/specs/rfc7230.html#header.content-length"
       } ]
     },
     "variables" : {
@@ -10585,7 +10594,7 @@
       }, {
         "type" : "Action",
         "action_type" : "msg",
-        "value" : "Request Containing Content, but Missing Content-Type header"
+        "value" : "Content-Type header missing from request with non-zero Content-Length"
       }, {
         "type" : "Action",
         "action_type" : "tag",
@@ -10631,7 +10640,7 @@
         "action_type" : "chain"
       } ]
     },
-    "raw" : "SecRule REQUEST_HEADERS:Content-Length \"!@rx ^0$\" \"id:920340,\\\n  phase:1,\\\n  block,\\\n  t:none,\\\n  msg:'Request Containing Content,\\\n   but Missing Content-Type header',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-protocol',\\\n  tag:'paranoia-level/1',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/PROTOCOL-ENFORCEMENT',\\\n  tag:'capec/1000/210/272',\\\n  ver:'OWASP_CRS/4.23.0-dev',\\\n  severity:'CRITICAL',\\\n  chain\""
+    "raw" : "SecRule REQUEST_HEADERS:Content-Length \"!@rx ^0$\" \"id:920340,\\\n  phase:1,\\\n  block,\\\n  t:none,\\\n  msg:'Content-Type header missing from request with non-zero Content-Length',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-protocol',\\\n  tag:'paranoia-level/1',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/PROTOCOL-ENFORCEMENT',\\\n  tag:'capec/1000/210/272',\\\n  ver:'OWASP_CRS/4.23.0-dev',\\\n  severity:'CRITICAL',\\\n  chain\""
   }, {
     "type" : "SecRule",
     "id" : null,
@@ -12318,6 +12327,201 @@
       } ]
     },
     "raw" : "SecRule REQUEST_HEADERS:Content-Type \"@rx charset.*?charset\" \"id:920530,\\\n  phase:1,\\\n  block,\\\n  t:none,\\\n  t:lowercase,\\\n  msg:'Multiple charsets detected in content type header',\\\n  logdata:'%{MATCHED_VAR}',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-protocol',\\\n  tag:'paranoia-level/1',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/PROTOCOL-ENFORCEMENT',\\\n  tag:'capec/1000/255/153',\\\n  ver:'OWASP_CRS/4.23.0-dev',\\\n  severity:'CRITICAL',\\\n  setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}'\""
+  }, {
+    "type" : "SecRule",
+    "id" : 920640,
+    "phase" : 2,
+    "chain" : true,
+    "comment_block" : {
+      "type" : "CommentBlock",
+      "comments" : [ {
+        "type" : "Comment",
+        "text" : ""
+      }, {
+        "type" : "Comment",
+        "text" : " Missing Content-Type Header with Request Body (Phase 2)"
+      }, {
+        "type" : "Comment",
+        "text" : ""
+      }, {
+        "type" : "Comment",
+        "text" : " -=[ Rule Logic ]=-"
+      }, {
+        "type" : "Comment",
+        "text" : " This rule checks if the actual REQUEST_BODY_LENGTH is greater than zero"
+      }, {
+        "type" : "Comment",
+        "text" : " (indicating a body was received), then verifies the existence of the"
+      }, {
+        "type" : "Comment",
+        "text" : " Content-Type header. This operates in phase:2 (request body) and complements"
+      }, {
+        "type" : "Comment",
+        "text" : " rule 920340 which checks in phase:1 based on the Content-Length header."
+      }, {
+        "type" : "Comment",
+        "text" : ""
+      }, {
+        "type" : "Comment",
+        "text" : " This rule catches evasion attempts where:"
+      }, {
+        "type" : "Comment",
+        "text" : " - The Content-Length header was omitted entirely"
+      }, {
+        "type" : "Comment",
+        "text" : " - The Content-Length header was set to zero but a body was sent anyway"
+      }, {
+        "type" : "Comment",
+        "text" : " - The request bypassed phase:1 checks but still contains a body"
+      }, {
+        "type" : "Comment",
+        "text" : ""
+      }, {
+        "type" : "Comment",
+        "text" : " Without a Content-Type header, the Request Body Processor cannot properly"
+      }, {
+        "type" : "Comment",
+        "text" : " parse the body content (XML, JSON, multipart, etc.), allowing attackers to"
+      }, {
+        "type" : "Comment",
+        "text" : " hide malicious payloads from inspection unless tx.enforce_bodyproc_urlencoded"
+      }, {
+        "type" : "Comment",
+        "text" : " is configured."
+      }, {
+        "type" : "Comment",
+        "text" : ""
+      }, {
+        "type" : "Comment",
+        "text" : " -=[ References ]=-"
+      }, {
+        "type" : "Comment",
+        "text" : " https://httpwg.org/specs/rfc7231.html#header.content-type"
+      }, {
+        "type" : "Comment",
+        "text" : " https://httpwg.org/specs/rfc7230.html#message.body"
+      }, {
+        "type" : "Comment",
+        "text" : ""
+      } ]
+    },
+    "variables" : {
+      "type" : "Variables",
+      "negated" : true,
+      "count" : false,
+      "variables" : [ {
+        "type" : "SimpleVariable",
+        "name" : "REQUEST_BODY_LENGTH"
+      } ],
+      "negated_variables" : [ ]
+    },
+    "operator" : {
+      "type" : "Operator",
+      "operator_type" : "gt",
+      "value" : "0"
+    },
+    "actions" : {
+      "type" : "Actions",
+      "actions" : [ {
+        "type" : "Action",
+        "action_type" : "id",
+        "value" : 920640
+      }, {
+        "type" : "Action",
+        "action_type" : "phase",
+        "value" : 2
+      }, {
+        "type" : "Action",
+        "action_type" : "block"
+      }, {
+        "type" : "Action",
+        "action_type" : "transform",
+        "name" : "none"
+      }, {
+        "type" : "Action",
+        "action_type" : "msg",
+        "value" : "Content-Type header missing from request with body"
+      }, {
+        "type" : "Action",
+        "action_type" : "tag",
+        "value" : "application-multi"
+      }, {
+        "type" : "Action",
+        "action_type" : "tag",
+        "value" : "language-multi"
+      }, {
+        "type" : "Action",
+        "action_type" : "tag",
+        "value" : "platform-multi"
+      }, {
+        "type" : "Action",
+        "action_type" : "tag",
+        "value" : "attack-protocol"
+      }, {
+        "type" : "Action",
+        "action_type" : "tag",
+        "value" : "paranoia-level/1"
+      }, {
+        "type" : "Action",
+        "action_type" : "tag",
+        "value" : "OWASP_CRS"
+      }, {
+        "type" : "Action",
+        "action_type" : "tag",
+        "value" : "OWASP_CRS/PROTOCOL-ENFORCEMENT"
+      }, {
+        "type" : "Action",
+        "action_type" : "tag",
+        "value" : "capec/1000/210/272"
+      }, {
+        "type" : "Action",
+        "action_type" : "ver",
+        "value" : "OWASP_CRS/4.23.0-dev"
+      }, {
+        "type" : "Action",
+        "action_type" : "severity",
+        "value" : "Critical"
+      }, {
+        "type" : "Action",
+        "action_type" : "chain"
+      } ]
+    },
+    "raw" : "SecRule REQUEST_BODY_LENGTH \"@gt 0\" \"id:920640,\\\n  phase:2,\\\n  block,\\\n  t:none,\\\n  msg:'Content-Type header missing from request with body',\\\n  tag:'application-multi',\\\n  tag:'language-multi',\\\n  tag:'platform-multi',\\\n  tag:'attack-protocol',\\\n  tag:'paranoia-level/1',\\\n  tag:'OWASP_CRS',\\\n  tag:'OWASP_CRS/PROTOCOL-ENFORCEMENT',\\\n  tag:'capec/1000/210/272',\\\n  ver:'OWASP_CRS/4.23.0-dev',\\\n  severity:'CRITICAL',\\\n  chain\""
+  }, {
+    "type" : "SecRule",
+    "id" : null,
+    "phase" : 2,
+    "chain" : false,
+    "comment_block" : null,
+    "variables" : {
+      "type" : "Variables",
+      "negated" : true,
+      "count" : true,
+      "variables" : [ {
+        "type" : "CollectionVariable",
+        "collection" : "REQUEST_HEADERS",
+        "key" : "Content-Type"
+      } ],
+      "negated_variables" : [ ]
+    },
+    "operator" : {
+      "type" : "Operator",
+      "operator_type" : "eq",
+      "value" : "0"
+    },
+    "actions" : {
+      "type" : "Actions",
+      "actions" : [ {
+        "type" : "Action",
+        "action_type" : "transform",
+        "name" : "none"
+      }, {
+        "type" : "Action",
+        "action_type" : "set_var",
+        "expr" : "tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}"
+      } ]
+    },
+    "raw" : "SecRule &REQUEST_HEADERS:Content-Type \"@eq 0\" \"t:none,\\\n  setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}'\""
   }, {
     "type" : "SecRule",
     "id" : 920430,
@@ -74986,5 +75190,5 @@
       } ]
     }
   } ],
-  "hash" : "e055ed6eed4b8c9939ec7ede942c76c3139d9559a7b4b78e15b5fc28d9a26136c1ec14d8c08c0ff7254acd3d2ebd349b53d9943ab7901ac633fe1593c7fd6494"
+  "hash" : "5cb81adb7311ec56f90c9ab6b49aee880cded7fd6515e64b6744d1a3260052ac1b7c22ef84ed3d2c00b6c81566518b85f5c089ad05b7aa808d6ccfe9fdea8aac"
 }

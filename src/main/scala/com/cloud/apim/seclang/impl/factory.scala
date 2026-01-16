@@ -17,32 +17,54 @@ class SecLangEngineFactory(
 ) {
 
   def engine(configs: List[String]): SecLangEngine = {
-    val programsAndFiles: List[(CompiledProgram, Map[String, String])] = configs.flatMap {
+    engineE(configs).fold(err => throw err.head.throwable, identity)
+  }
+  def engineE(configs: List[String]): Either[List[SecLangError], SecLangEngine] = {
+    val programsAndFilesE: List[Either[SecLangError, (CompiledProgram, Map[String, String])]] = configs.flatMap {
       case line if line.trim.startsWith("@import_preset ") => {
         val presetName = line.replaceFirst("@import_preset ", "").trim
-        presets.get(presetName).orElse(integration.getExternalPreset(presetName)).map(p => (p.program, p.files))
+        presets.get(presetName).orElse(integration.getExternalPreset(presetName)).map(p => Right((p.program, p.files)))
       }
       case line => {
         val hash = HashUtilsFast.sha512Hex(line)
         integration.getCachedProgram(hash) match {
-          case Some(p) => Some((p, Map.empty[String, String]))
+          case Some(p) => Some(Right((p, Map.empty[String, String])))
           case None => {
             val parsed = AntlrParser.parse(line).right.get
-            val compiled = Compiler.compile(parsed)
-            integration.putCachedProgram(hash, compiled, cacheTtl)
-            Some((compiled, Map.empty[String, String]))
+            Compiler.compile(parsed) match {
+              case Left(err) => Some(Left(err))
+              case Right(compiled) => {
+                integration.putCachedProgram(hash, compiled, cacheTtl)
+                Some(Right((compiled, Map.empty[String, String])))
+              }
+            }
           }
         }
       }
     }
-    val programs = programsAndFiles.map(_._1)
-    val files = programsAndFiles.map(_._2).flatMap(_.toList).toMap
-    val program = ComposedCompiledProgram(programs)
-    val txMap = new TrieMap[String, String]()
-    new SecLangEngine(program, config: SecLangEngineConfig, files, Some(txMap), integration)
+    val (errors, programsAndFiles) = programsAndFilesE.partition(_.isLeft)
+    if (errors.nonEmpty) {
+      Left(errors.map(_.left.get))
+    } else {
+      val pafs = programsAndFiles.map(_.right.get)
+      val programs = pafs.map(_._1)
+      val files = pafs.map(_._2).flatMap(_.toList).toMap
+      val program = ComposedCompiledProgram(programs)
+      val txMap = new TrieMap[String, String]()
+      Right(new SecLangEngine(program, config: SecLangEngineConfig, files, Some(txMap), integration))
+    }
   }
 
   def evaluate(configs: List[String], ctx: RequestContext, phases: List[Int] = List(1, 2), txMap: Option[TrieMap[String, String]] = None): EngineResult = {
-    engine(configs).evaluate(ctx, phases, txMap)
+    evaluateE(configs, ctx, phases, txMap).fold(err => throw err.head.throwable, identity)
+  }
+  def evaluateE(configs: List[String], ctx: RequestContext, phases: List[Int] = List(1, 2), txMap: Option[TrieMap[String, String]] = None): Either[List[SecLangError], EngineResult] = {
+    engineE(configs) match {
+      case Left(err) => Left(err)
+      case Right(engine) => engine.evaluateE(ctx, phases, txMap) match {
+        case Left(err) => Left(List(err))
+        case Right(r) => Right(r)
+      }
+    }
   }
 }

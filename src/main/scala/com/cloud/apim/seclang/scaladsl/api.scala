@@ -10,9 +10,15 @@ import play.api.libs.json.{JsPath, Json, JsonValidationError}
 import scala.collection.concurrent.TrieMap
 
 object SecLang {
-  def parse(input: String): Either[String, Configuration] = AntlrParser.parse(input)
+
+  def parse(input: String): Either[SecLangError, Configuration] = AntlrParser.parse(input)
+
   def parseJson(input: String): Either[Seq[(JsPath, Seq[JsonValidationError])], Configuration] = Configuration.format.reads(Json.parse(input)).asEither
-  def compile(configuration: Configuration): CompiledProgram = Compiler.compile(configuration)
+
+  def compile(configuration: Configuration): CompiledProgram = compileE(configuration).fold(err => throw err.throwable, identity)
+
+  def compileE(configuration: Configuration): Either[SecLangError, CompiledProgram] = Compiler.compile(configuration)
+
   def engine(
     program: CompiledProgram,
     config: SecLangEngineConfig = SecLangEngineConfig.default,
@@ -22,6 +28,7 @@ object SecLang {
   ): SecLangEngine = {
     new SecLangEngine(program, config, files, txMap, integration)
   }
+
   def factory(presets: Map[String, SecLangPreset], config: SecLangEngineConfig = SecLangEngineConfig.default, integration: SecLangIntegration = DefaultSecLangIntegration.default): SecLangEngineFactory = {
     new SecLangEngineFactory(
       presets = presets,
