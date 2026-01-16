@@ -257,9 +257,9 @@ object EngineVariables {
         }
       }
       case "MATCHED_VAR" => state.txMap.get("matched_var").toList
-      case "MATCHED_VARS" =>  state.txMap.get("matched_vars").flatMap(v => Json.parse(v).asOpt[List[String]]).getOrElse(List.empty)
+      case "MATCHED_VARS" => state.matchedVarsLists.get("matched_vars").map(_.toList).getOrElse(List.empty)
       case "MATCHED_VAR_NAME" => state.txMap.get("matched_var_name").toList
-      case "MATCHED_VARS_NAMES" => state.txMap.get("matched_var_names").flatMap(v => Json.parse(v).asOpt[List[String]]).getOrElse(List.empty)
+      case "MATCHED_VARS_NAMES" => state.matchedVarsLists.get("matched_var_names").map(_.toList).getOrElse(List.empty)
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       case "AUTH_TYPE" => unimplementedVariable("AUTH_TYPE", integration) // TODO: implement it
       case "FULL_REQUEST" => unimplementedVariable("FULL_REQUEST", integration) // TODO: implement it

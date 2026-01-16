@@ -1813,66 +1813,27 @@ final case class EngineResult(
 }
 
 object RuntimeState {
-  // (?i) => case-insensitive
-  private val TxExpr: Regex = RegexPool.regex("""(?i)%\{tx\.([a-z0-9_.-]+)\}""")
-  private val RequestHeadersExpr: Regex = RegexPool.regex("""(?i)%\{request_headers\.([a-z0-9_.-]+)\}""")
-  private val ArgsExpr: Regex = RegexPool.regex("""(?i)%\{args\.([a-z0-9_.-]+)\}""")
-  private val MetaExpr: Regex = RegexPool.regex("""(?i)%\{([a-z0-9_.-]+)\}""")
+  // Single pattern to capture all %{...} expressions - O(n) single pass
+  private val AllExpr: Regex = RegexPool.regex("""(?i)%\{([a-z0-9_.:-]+)\}""")
 }
-final case class RuntimeState(mode: EngineMode, disabledIds: Set[Int], events: List[MatchEvent], txMap: TrieMap[String, String], envMap: TrieMap[String, String], uidRef: AtomicReference[String], logs: List[String], removedTargetsByTag: Map[String, Set[String]] = Map.empty) {
+final case class RuntimeState(mode: EngineMode, disabledIds: Set[Int], events: List[MatchEvent], txMap: TrieMap[String, String], envMap: TrieMap[String, String], uidRef: AtomicReference[String], logs: List[String], removedTargetsByTag: Map[String, Set[String]] = Map.empty, matchedVarsLists: TrieMap[String, Seq[String]] = new TrieMap[String, Seq[String]]()) {
 
   def evalTxExpressions(input: String): String = {
-    if (input.contains("%{")) {
-      //try {
-      //  RuntimeState.MetaExpr.replaceAllIn(input, m => {
-      //    val key = m.group(1).toLowerCase
-      //    val finalKey = if (key.startsWith("tx.")) key.substring(3) else key
-      //    txMap.getOrElse(finalKey, m.matched)
-      //  })
-      //} catch {
-      //  case t: Throwable => input
-      //}
-      val finalInput: String = if (input.toLowerCase.contains("%{matched_var}") || input.toLowerCase.contains("%{matched_var_name}")) {
-        try {
-          input
-            .replaceAll("%\\{MATCHED_VAR\\}", txMap.getOrElse("matched_var", "--"))
-            .replaceAll("%\\{MATCHED_VAR_NAME\\}", txMap.getOrElse("matched_var_name", "--"))
-            .replaceAll("%\\{matched_var_name\\}", txMap.getOrElse("matched_var_name", "--"))
-            .replaceAll("%\\{matched_var\\}", txMap.getOrElse("matched_var", "--"))
-        } catch {
-          case t: Throwable => input
+    if (!input.contains("%{")) return input
+    try {
+      RuntimeState.AllExpr.replaceAllIn(input, m => {
+        val fullKey = m.group(1).toLowerCase
+        fullKey match {
+          case "matched_var" => java.util.regex.Matcher.quoteReplacement(txMap.getOrElse("matched_var", "--"))
+          case "matched_var_name" => java.util.regex.Matcher.quoteReplacement(txMap.getOrElse("matched_var_name", "--"))
+          case key if key.startsWith("tx.") => java.util.regex.Matcher.quoteReplacement(txMap.getOrElse(key.substring(3), m.matched))
+          case key if key.startsWith("request_headers.") => java.util.regex.Matcher.quoteReplacement(txMap.getOrElse(key, m.matched))
+          case key if key.startsWith("args.") => java.util.regex.Matcher.quoteReplacement(txMap.getOrElse(key, m.matched))
+          case _ => m.matched
         }
-      } else {
-        input
-      }
-      val afterTx = try {
-        RuntimeState.TxExpr.replaceAllIn(finalInput, m => {
-          val key = m.group(1).toLowerCase
-          txMap.getOrElse(key, m.matched)
-        })
-      } catch {
-        case t: Throwable => finalInput
-      }
-      // Handle %{request_headers.xxx} expressions
-      val afterHeaders = try {
-        RuntimeState.RequestHeadersExpr.replaceAllIn(afterTx, m => {
-          val headerName = m.group(1).toLowerCase
-          txMap.getOrElse(s"request_headers.$headerName", m.matched)
-        })
-      } catch {
-        case t: Throwable => afterTx
-      }
-      // Handle %{ARGS.xxx} expressions
-      try {
-        RuntimeState.ArgsExpr.replaceAllIn(afterHeaders, m => {
-          val argName = m.group(1).toLowerCase
-          txMap.getOrElse(s"args.$argName", m.matched)
-        })
-      } catch {
-        case t: Throwable => afterHeaders
-      }
-    } else {
-      input
+      })
+    } catch {
+      case _: Throwable => input
     }
   }
 }

@@ -370,22 +370,27 @@ final class SecLangEngine(
     val negatedTransformed = negatedVariables.map {
       case (name, values) => (name, values.flatMap(v => applyTransformsWithMultiMatch(v, name, transforms)))
     }
+    // Pre-index for O(1) lookups instead of O(n²)
+    val negatedNamesSet = negatedVariables.map(_._1).toSet
+    val negatedTransformedMap = negatedTransformed.toMap
+    // Pre-compute negated values as Sets for O(1) contains check
+    val negatedValuesSets: Map[String, Set[String]] = negatedTransformedMap.map { case (k, v) => k -> v.toSet }
+
     // 3) operator match on ANY extracted value
     val matched_vars = ArrayBuffer.empty[String]
     val matched_var_names = ArrayBuffer.empty[String]
     val matched = transformed.map {
       case (name, values) => {
-        val strict = negatedVariables.exists(_._1 == name)
-        if (strict) {
+        if (negatedNamesSet.contains(name)) {
           (name, List.empty[String])
         } else {
-          var currentValues = values
-          negatedVariables.filter(v => v._1.startsWith(name)).foreach { nameStartingWithNegatedVariableName =>
-            val (nname, _) = nameStartingWithNegatedVariableName
-            val nvalues = negatedTransformed.find(_._1 == nname).get._2
-            currentValues = currentValues.filterNot(v => nvalues.contains(v))
-          }
-          (name, currentValues)
+          // Find negated variables that start with this name and collect their values
+          val negatedValuesToExclude = negatedVariables
+            .filter(_._1.startsWith(name))
+            .flatMap(nv => negatedValuesSets.getOrElse(nv._1, Set.empty))
+            .toSet
+          val filteredValues = if (negatedValuesToExclude.isEmpty) values else values.filterNot(negatedValuesToExclude.contains)
+          (name, filteredValues)
         }
       }
     }.filterNot(_._2.isEmpty).filter {
@@ -407,8 +412,9 @@ final class SecLangEngine(
         }.nonEmpty
     }.nonEmpty
     if (matched_vars.nonEmpty) {
-      st.txMap.put("matched_vars", Json.stringify(JsArray(matched_vars.map(v => JsString(v)))))
-      st.txMap.put("matched_var_names", Json.stringify(JsArray(matched_var_names.map(v => JsString(v)))))
+      // Store directly in matchedVarsLists to avoid JSON serialization overhead
+      st.matchedVarsLists.put("matched_vars", matched_vars.toSeq)
+      st.matchedVarsLists.put("matched_var_names", matched_var_names.toSeq)
     }
     if (debug) {
       println("---------------------------------------------------------")
