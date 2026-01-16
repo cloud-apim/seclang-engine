@@ -193,14 +193,18 @@ final class SecLangEngine(
     val sk = actionsList.collectFirst { case Action.SkipAfter(m) => m }
     if (sk.nonEmpty) skipAfter = sk
 
-    // runtime ctl disable
-    actionsList.collect { case CtlAction.RuleRemoveById(id) => id }.foreach { id =>
-      st = st.copy(disabledIds = st.disabledIds + id)
+    // runtime ctl disable - batch all IDs in one copy
+    val idsToDisable = actionsList.collect { case CtlAction.RuleRemoveById(id) => id }
+    if (idsToDisable.nonEmpty) {
+      st = st.copy(disabledIds = st.disabledIds ++ idsToDisable)
     }
 
     st = EngineActions.performActions(action.id.getOrElse(0), actionsList, phase, ctx, st, integration, collectedMsg, addLogData, isLast = true)
-    st = st.copy(events = MatchEvent(action.id, msg, st.logs, phase, Json.stringify(action.json)) :: st.events)
-    st = st.copy(logs = List.empty)
+    // Batch events and logs update in single copy
+    st = st.copy(
+      events = MatchEvent(action.id, msg, st.logs, phase, Json.stringify(action.json)) :: st.events,
+      logs = List.empty
+    )
     val disp =
       disruptive match {
         case Some(Action.Deny) | Some(Action.Drop) | Some(Action.Block()) =>
@@ -274,18 +278,23 @@ final class SecLangEngine(
           val sk = actionsList.collectFirst { case Action.SkipAfter(m) => m }
           if (sk.nonEmpty) skipAfter = sk
 
-          // runtime ctl disable
-          actionsList.collect { case CtlAction.RuleRemoveById(id) => id }.foreach { id =>
-            st = st.copy(disabledIds = st.disabledIds + id)
+          // runtime ctl disable - batch all IDs in one copy
+          val idsToDisable = actionsList.collect { case CtlAction.RuleRemoveById(id) => id }
+          if (idsToDisable.nonEmpty) {
+            st = st.copy(disabledIds = st.disabledIds ++ idsToDisable)
           }
 
           st = EngineActions.performActions(lastRuleId.getOrElse(0), actionsList, phase, ctx, st, integration, collectedMsg, addLogData, isLast)
           if (isLast) {
-            st = st.copy(events = MatchEvent(lastRuleId, msg, st.logs, phase, Json.stringify(r.json)) :: events.toList ++ st.events)
+            // Batch events and logs update in single copy
+            st = st.copy(
+              events = MatchEvent(lastRuleId, msg, st.logs, phase, Json.stringify(r.json)) :: events.toList ++ st.events,
+              logs = List.empty
+            )
           } else {
             events += MatchEvent(lastRuleId, msg, st.logs, phase, Json.stringify(r.json))
+            st = st.copy(logs = List.empty)
           }
-          st = st.copy(logs = List.empty)
         }
         if (!matched) {
           allMatched = false
