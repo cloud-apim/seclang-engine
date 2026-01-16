@@ -43,7 +43,7 @@ lazy val root = (project in file("."))
       "com.comcast" %% "ip4s-core" % "3.2.0",
       "org.antlr" % "antlr4" % "4.13.2",
       "com.typesafe.play" %% "play-json" % "2.9.3",
-      "com.cloud-apim" % "libinjection-jvm" % "1.1.0",
+      "com.cloud-apim" % "libinjection-jvm" % "1.2.0",
       "com.github.blemale" %% "scaffeine" % "4.0.2",
       "org.apache.commons" % "commons-text" % "1.15.0",
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
