@@ -63,8 +63,7 @@ object EngineVariables {
       case "REQUEST_HEADERS" | "RESPONSE_HEADERS" => {
         key match {
           case None =>
-            //ctx.headers.toList.flatMap { case (k, vs) => vs.map(v => s"$k: $v") }
-            ctx.headers.toList.flatMap(_._2)
+            ctx.headers.underlying.values.flatten.toList
           case Some(h) if h.startsWith("/") && h.endsWith("/") =>
             val r = RegexPool.regex(h.substring(1, h.length - 1))
             ctx.headers.underlying.collect {
@@ -91,7 +90,7 @@ object EngineVariables {
             }.flatten.toList
         }
       }
-      case "ARGS_NAMES" => ctx.args.toList.flatMap { case (name, values) => values.map(_ => name) }
+      case "ARGS_NAMES" => ctx.args.flatMap { case (name, values) => values.map(_ => name) }.toList
       case "ARGS_COMBINED_SIZE" => List(ctx.flatArgs.map(_.length).sum.toString)
       case "TX" => {
         key match {
@@ -133,7 +132,7 @@ object EngineVariables {
       case "REQUEST_BASENAME" => path.split("/").lastOption.orElse(Some("")).toList
       case "REQUEST_COOKIES" => key match {
         case None =>
-          ctx.cookies.toList.flatMap { case (k, vs) => vs }//.map(v => s"$k: $v") }
+          ctx.cookies.values.flatten.toList
         case Some(h) if h.startsWith("/") && h.endsWith("/") =>
           val r = RegexPool.regex(h.substring(1, h.length - 1))
           ctx.cookies.collect {
@@ -211,7 +210,7 @@ object EngineVariables {
         val headers = ctx.query
         key match {
           case None =>
-            headers.toList.flatMap(_._2)
+            headers.values.flatten.toList
           case Some(h) if h.startsWith("/") && h.endsWith("/") =>
             val r = RegexPool.regex(h.substring(1, h.length - 1))
             headers.collect {
@@ -223,14 +222,14 @@ object EngineVariables {
             }.flatten.toList
         }
       }
-      case "ARGS_GET_NAMES" => ctx.query.toList.flatMap { case (name, values) => values.map(_ => name) }
+      case "ARGS_GET_NAMES" => ctx.query.flatMap { case (name, values) => values.map(_ => name) }.toList
       case "ARGS_POST" => {
         ctx.body match {
           case Some(_) if ctx.isXwwwFormUrlEncoded => {
             val headers = ctx.wwwFormEncodedBody.getOrElse(Map.empty)
             key match {
               case None =>
-                headers.toList.flatMap(_._2)
+                headers.values.flatten.toList
               case Some(h) if h.startsWith("/") && h.endsWith("/") =>
                 val r = RegexPool.regex(h.substring(1, h.length - 1))
                 headers.collect {
@@ -247,7 +246,7 @@ object EngineVariables {
       }
       case "ARGS_POST_NAMES" => {
         ctx.body match {
-          case Some(_) if ctx.isXwwwFormUrlEncoded => ctx.wwwFormEncodedBody.map(_.toList.flatMap { case (name, values) => values.map(_ => name) }).getOrElse(List.empty)
+          case Some(_) if ctx.isXwwwFormUrlEncoded => ctx.wwwFormEncodedBody.map(_.flatMap { case (name, values) => values.map(_ => name) }.toList).getOrElse(List.empty)
           case _ => List.empty
         }
       }

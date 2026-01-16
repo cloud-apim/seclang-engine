@@ -7,6 +7,7 @@ import play.api.libs.json._
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.collection.concurrent.TrieMap
+import scala.collection.mutable.ArrayBuffer
 
 final class SecLangEngine(
   val program: CompiledProgram,
@@ -69,7 +70,13 @@ final class SecLangEngine(
           (d2, st2)
         }
       }
-      EngineResult(disp, st.events.distinct.reverse)
+      // O(n) deduplication instead of O(n²) .distinct
+      val seen = scala.collection.mutable.Set.empty[MatchEvent]
+      val uniqueEvents = st.events.filter { e =>
+        if (seen.contains(e)) false
+        else { seen += e; true }
+      }
+      EngineResult(disp, uniqueEvents.reverse)
     }
   }
 
@@ -83,7 +90,7 @@ final class SecLangEngine(
 
     var i = 0
     var st = st0
-    var disps = List.empty[Disposition]
+    val disps = ArrayBuffer.empty[Disposition]
 
     while (i < items.length) {
       items(i) match {
@@ -117,7 +124,7 @@ final class SecLangEngine(
             dispOpt match {
               case Some(d) if !st.mode.isDetectionOnly => return (d, st)
               case Some(d) if st.mode.isDetectionOnly => {
-                disps = disps :+ d
+                disps += d
                 skipToIdxOpt match {
                   case Some(j) => i = j
                   case None    => i += 1
@@ -225,7 +232,7 @@ final class SecLangEngine(
     var disruptive: Option[Action] = None
     var skipAfter: Option[String] = None
     var lastRuleId: Option[Int] = None
-    var events = List.empty[MatchEvent]
+    val events = ArrayBuffer.empty[MatchEvent]
     var addLogData = List.empty[String]
 
     val isChain = rules.size > 1
@@ -274,9 +281,9 @@ final class SecLangEngine(
 
           st = EngineActions.performActions(lastRuleId.getOrElse(0), actionsList, phase, ctx, st, integration, collectedMsg, addLogData, isLast)
           if (isLast) {
-            st = st.copy(events = MatchEvent(lastRuleId, msg, st.logs, phase, Json.stringify(r.json)) :: events ++ st.events)
+            st = st.copy(events = MatchEvent(lastRuleId, msg, st.logs, phase, Json.stringify(r.json)) :: events.toList ++ st.events)
           } else {
-            events = events :+ MatchEvent(lastRuleId, msg, st.logs, phase, Json.stringify(r.json))
+            events += MatchEvent(lastRuleId, msg, st.logs, phase, Json.stringify(r.json))
           }
           st = st.copy(logs = List.empty)
         }
@@ -364,8 +371,8 @@ final class SecLangEngine(
       case (name, values) => (name, values.flatMap(v => applyTransformsWithMultiMatch(v, name, transforms)))
     }
     // 3) operator match on ANY extracted value
-    var matched_vars = List.empty[String]
-    var matched_var_names = List.empty[String]
+    val matched_vars = ArrayBuffer.empty[String]
+    val matched_var_names = ArrayBuffer.empty[String]
     val matched = transformed.map {
       case (name, values) => {
         val strict = negatedVariables.exists(_._1 == name)
@@ -392,8 +399,8 @@ final class SecLangEngine(
             st.txMap.put("matched_var_name", fullName)
             st.txMap.put("matched_var", v)//values.mkString(" "))
             st.txMap.put("0", v)//values.mkString(" "))
-            matched_vars = matched_vars :+ v//values.mkString(" ")
-            matched_var_names = matched_var_names :+ fullName
+            matched_vars += v
+            matched_var_names += fullName
             f(fullName, v)
           }
           m

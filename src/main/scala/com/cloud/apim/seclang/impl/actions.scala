@@ -41,74 +41,64 @@ object EngineActions {
       case Action.SetUid(expr) => {
         state.uidRef.set(expr)
       }
-      case Action.SetVar(expr) => {
-        state.evalTxExpressions(expr) match {
-          case expr if expr.startsWith("!") => {
-            val name = expr.substring(1).replace("tx.", "").replace("TX.", "").toLowerCase()
-            state.txMap.remove(name)
+      case Action.SetVar(rawExpr) => {
+        val expr = state.evalTxExpressions(rawExpr)
+        val isDelete = expr.startsWith("!")
+        val baseExpr = if (isDelete) expr.substring(1) else expr
+        // Normalize once: remove tx./TX. prefix and lowercase
+        val normalized = baseExpr.replace("tx.", "").replace("TX.", "").toLowerCase()
+
+        if (isDelete) {
+          state.txMap.remove(normalized)
+        } else if (expr.contains("+=")) {
+          val parts = normalized.split("=")
+          val name = parts(0)
+          try {
+            val incr = parts(1).toInt
+            val value = state.txMap.get(name).map(_.toInt).getOrElse(0)
+            state.txMap.put(name, (value + incr).toString)
+          } catch {
+            case _: Throwable => ()
           }
-          case expr if expr.contains("+=") => {
-            val ex = expr.replace("tx.", "").replace("TX.", "").toLowerCase()
-            val parts = ex.split("=")
-            val name = parts(0)
-            try {
-              val incr = parts(1).toInt
-              val value = state.txMap.get(name).map(_.toInt).getOrElse(0)
-              state.txMap.put(name, (value + incr).toString)
-            } catch {
-              case e: Throwable => ()
-            }
+        } else if (expr.contains("-=")) {
+          val parts = normalized.split("=")
+          val name = parts(0)
+          try {
+            val decr = parts(1).toInt
+            val value = state.txMap.get(name).map(_.toInt).getOrElse(0)
+            state.txMap.put(name, (value - decr).toString)
+          } catch {
+            case _: Throwable => ()
           }
-          case expr if expr.contains("-=") => {
-            val ex = expr.replace("tx.", "").replace("TX.", "").toLowerCase()
-            val parts = ex.split("=")
-            val name = parts(0)
-            try {
-              val decr = parts(1).toInt
-              val value = state.txMap.get(name).map(_.toInt).getOrElse(0)
-              state.txMap.put(name, (value - decr).toString)
-            } catch {
-              case e: Throwable => ()
-            }
+        } else if (expr.contains("=+")) {
+          // ModSecurity syntax: setvar:'TX.var=+1' means add 1 to the variable
+          val parts = normalized.split("=\\+")
+          val name = parts(0)
+          try {
+            val incr = parts(1).toInt
+            val value = state.txMap.get(name).map(v => state.evalTxExpressions(v)).map(_.toInt).getOrElse(0)
+            state.txMap.put(name, (value + incr).toString)
+          } catch {
+            case _: Throwable => ()
           }
-          case expr if expr.contains("=+") => {
-            // ModSecurity syntax: setvar:'TX.var=+1' means add 1 to the variable
-            val ex = expr.replace("tx.", "").replace("TX.", "").toLowerCase()
-            val parts = ex.split("=\\+")
-            val name = parts(0)
-            try {
-              val incr = parts(1).toInt
-              val value = state.txMap.get(name).map(v => state.evalTxExpressions(v)).map(_.toInt).getOrElse(0)
-              state.txMap.put(name, (value + incr).toString)
-            } catch {
-              case e: Throwable => ()
-            }
+        } else if (expr.contains("=-")) {
+          // ModSecurity syntax: setvar:'TX.var=-1' means subtract 1 from the variable
+          val parts = normalized.split("=-")
+          val name = parts(0)
+          try {
+            val decr = parts(1).toInt
+            val value = state.txMap.get(name).map(_.toInt).getOrElse(0)
+            state.txMap.put(name, (value - decr).toString)
+          } catch {
+            case _: Throwable => ()
           }
-          case expr if expr.contains("=-") => {
-            // ModSecurity syntax: setvar:'TX.var=-1' means subtract 1 from the variable
-            val ex = expr.replace("tx.", "").replace("TX.", "").toLowerCase()
-            val parts = ex.split("=-")
-            val name = parts(0)
-            try {
-              val decr = parts(1).toInt
-              val value = state.txMap.get(name).map(_.toInt).getOrElse(0)
-              state.txMap.put(name, (value - decr).toString)
-            } catch {
-              case e: Throwable => ()
-            }
-          }
-          case expr if expr.contains("=") => {
-            val ex = expr.replace("tx.", "").replace("TX.", "").toLowerCase()
-            val parts = ex.split("=", 2) // Only split on first '=' to preserve '=' in value
-            val name = parts(0)
-            val value = parts(1)
-            state.txMap.put(name, value)
-          }
-          case expr if !expr.contains("=") => {
-            val name = expr.replace("tx.", "").replace("TX.", "").toLowerCase()
-            state.txMap.put(name, "0")
-          }
-          case expr => integration.logError("invalid setvar expression: " + expr)
+        } else if (expr.contains("=")) {
+          val parts = normalized.split("=", 2) // Only split on first '=' to preserve '=' in value
+          val name = parts(0)
+          val value = parts(1)
+          state.txMap.put(name, value)
+        } else {
+          state.txMap.put(normalized, "0")
         }
       }
       case Action.CtlAction.AuditEngine(id) => println("AuditEngine not implemented yet")

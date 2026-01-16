@@ -5,8 +5,6 @@ import com.cloud.apim.seclang.impl.utils.{ByteRangeValidator, EncodingHelper, Ip
 import com.cloud.apim.seclang.model.{Operator, RuntimeState, SecLangIntegration}
 import play.api.libs.json.{JsArray, JsString, Json}
 
-import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.Duration
 import scala.util.matching.Regex
 
 object EngineOperators {
@@ -39,12 +37,12 @@ object EngineOperators {
       }
       try {
         val r: Regex = RegexPool.regex(state.evalTxExpressions(pattern))
-        val s = System.nanoTime()
+        val startNanos = System.nanoTime()
         val rs = r.findFirstMatchIn(value)
-        val d = Duration(System.nanoTime() - s, TimeUnit.NANOSECONDS)
-        if (d.toMillis > 10000) {
+        val elapsedMs = (System.nanoTime() - startNanos) / 1000000L
+        if (elapsedMs > 10000) {
           integration.logError("------------------------------------------------------------------------------------>")
-          integration.logError(s"rule ${ruleId} match took: ${d.toMillis} ms for value length of ${value.length}")
+          integration.logError(s"rule ${ruleId} match took: ${elapsedMs} ms for value length of ${value.length}")
           integration.logError("------------------------------------------------------------------------------------>")
         }
         rs.foreach { m =>
