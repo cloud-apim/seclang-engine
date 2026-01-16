@@ -1702,34 +1702,29 @@ final case class RequestContext(
       case _ => None
     }
   }
-  lazy val files: List[String] = {
+  // Parse files and filesNames in a single pass to avoid double body parsing
+  private lazy val filesAndNames: (List[String], List[String]) = {
     body match {
-      case Some(body) if isMultipartFormData => {
-        body.utf8String.linesIterator
-          .collect {
-            case line if line.toLowerCase.startsWith("content-disposition:") && line.toLowerCase.contains("filename=") =>
-              RegexPool.regex("""filename="([^"]+)"""")
-                .findFirstMatchIn(line)
-                .map(_.group(1))
-          }.flatten.toList
-      }
-      case _ => List.empty
+      case Some(body) if isMultipartFormData =>
+        val filenamePattern = RegexPool.regex("""filename="([^"]+)"""")
+        val namePattern = RegexPool.regex("""(?:^|[;\s])name="([^"]+)"""")
+        val (files, names) = body.utf8String.linesIterator.foldLeft((List.empty[String], List.empty[String])) {
+          case ((fileAcc, nameAcc), line) =>
+            val lowerLine = line.toLowerCase
+            if (lowerLine.startsWith("content-disposition:") && lowerLine.contains("filename=")) {
+              val file = filenamePattern.findFirstMatchIn(line).map(_.group(1))
+              val name = namePattern.findFirstMatchIn(line).map(_.group(1))
+              (file.toList ::: fileAcc, name.toList ::: nameAcc)
+            } else {
+              (fileAcc, nameAcc)
+            }
+        }
+        (files.reverse, names.reverse)
+      case _ => (List.empty, List.empty)
     }
   }
-  lazy val filesNames: List[String] = {
-    body match {
-      case Some(body) if isMultipartFormData => {
-        body.utf8String.linesIterator
-          .collect {
-            case line if line.toLowerCase.startsWith("content-disposition:") && line.toLowerCase.contains("filename=") =>
-              RegexPool.regex("""(?:^|[;\s])name="([^"]+)"""")
-                .findFirstMatchIn(line)
-                .map(_.group(1))
-          }.flatten.toList
-      }
-      case _ => List.empty
-    }
-  }
+  lazy val files: List[String] = filesAndNames._1
+  lazy val filesNames: List[String] = filesAndNames._2
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   lazy val requestBodyProcessor: List[String] = contentType
     .map(_.toLowerCase)

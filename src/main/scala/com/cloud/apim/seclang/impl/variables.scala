@@ -56,7 +56,8 @@ object EngineVariables {
     val rawPath = ctx.rawPath
     val path = ctx.path
     val rawQuery = ctx.rawQuery
-    val datetime = LocalDateTime.now()
+    // Lazy evaluation: only compute datetime if TIME_* variables are accessed
+    lazy val datetime = LocalDateTime.now()
     val res: List[String] = col match {
       case "REQUEST_URI" => List(ctx.uri)
       case "REQUEST_METHOD" => List(ctx.method)
