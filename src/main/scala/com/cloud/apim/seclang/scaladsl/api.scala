@@ -15,7 +15,7 @@ object SecLang {
 
   def parseJson(input: String): Either[Seq[(JsPath, Seq[JsonValidationError])], Configuration] = Configuration.format.reads(Json.parse(input)).asEither
 
-  def compile(configuration: Configuration): CompiledProgram = compileSafe(configuration).fold(err => throw err.throwable, identity)
+  def compile(configuration: Configuration): CompiledProgram = Compiler.compileUnsafe(configuration)
 
   def compileSafe(configuration: Configuration): Either[SecLangError, CompiledProgram] = Compiler.compile(configuration)
 

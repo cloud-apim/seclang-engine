@@ -10,7 +10,7 @@ object Compiler {
     println("unimplemented statement " + name)
   }
 
-  def compile(configuration: Configuration): Either[SecLangError, CompiledProgram] = try {
+  def compileUnsafe(configuration: Configuration): CompiledProgram = {
     val statements = configuration.statements
     val removed = statements.collect { case SecRuleRemoveById(_, ids) => ids }.flatten.toSet
     val removedRuleTags: Set[String] = statements.collect { case SecRuleRemoveByTag(_, tag) => tag }.toSet
@@ -119,10 +119,13 @@ object Compiler {
         byPhase(2) = byPhase(2) :+ m
         byPhase(1) = byPhase(1) :+ m
       case _ =>
-        // TODO: support all statements here
+      // TODO: support all statements here
     }
 
-    Right(SimpleCompiledProgram(byPhase.toMap, removed, mode, configuration.hash))
+    SimpleCompiledProgram(byPhase.toMap, removed, mode, configuration.hash)
+  }
+  def compile(configuration: Configuration): Either[SecLangError, CompiledProgram] = try {
+    Right(compileUnsafe(configuration))
   } catch {
     case t: Throwable => Left(CompileError(t))
   }

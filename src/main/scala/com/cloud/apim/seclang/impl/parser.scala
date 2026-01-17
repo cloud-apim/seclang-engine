@@ -350,35 +350,36 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
 }
 
 object AntlrParser {
-  def parse(in: String): Either[SecLangError, Configuration] = {
+  def parseUnsafe(in: String): Configuration = {
     import org.antlr.v4.runtime._
-    
-    try {
-      val hash = HashUtilsFast.sha512Hex(in)
-      val input = CharStreams.fromString(in)
-      val lexer = new SecLangLexer(input)
-      val tokens = new CommonTokenStream(lexer)
-      val parser = new SecLangParser(tokens)
-      
-      parser.removeErrorListeners()
-      val errorListener = new BaseErrorListener {
-        override def syntaxError(
-            recognizer: Recognizer[_, _],
-            offendingSymbol: Any,
-            line: Int,
-            charPositionInLine: Int,
-            msg: String,
-            e: RecognitionException
-        ): Unit = {
-          throw new RuntimeException(s"Parse error at line $line:$charPositionInLine - $msg")
-        }
+    val hash = HashUtilsFast.sha512Hex(in)
+    val input = CharStreams.fromString(in)
+    val lexer = new SecLangLexer(input)
+    val tokens = new CommonTokenStream(lexer)
+    val parser = new SecLangParser(tokens)
+
+    parser.removeErrorListeners()
+    val errorListener = new BaseErrorListener {
+      override def syntaxError(
+        recognizer: Recognizer[_, _],
+        offendingSymbol: Any,
+        line: Int,
+        charPositionInLine: Int,
+        msg: String,
+        e: RecognitionException
+      ): Unit = {
+        throw new RuntimeException(s"Parse error at line $line:$charPositionInLine - $msg")
       }
-      parser.addErrorListener(errorListener)
-      
-      val tree = parser.configuration()
-      val visitor = new AstBuilderVisitor()
-      val result = visitor.visitConfiguration(tree).copy(hash = hash)
-      Right(result)
+    }
+    parser.addErrorListener(errorListener)
+
+    val tree = parser.configuration()
+    val visitor = new AstBuilderVisitor()
+    visitor.visitConfiguration(tree).copy(hash = hash)
+  }
+  def parse(in: String): Either[SecLangError, Configuration] = {
+    try {
+      Right(parseUnsafe(in))
     } catch {
       case e: Exception => Left(ParseError(e))
     }

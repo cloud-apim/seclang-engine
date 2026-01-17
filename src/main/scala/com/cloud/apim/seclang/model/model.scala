@@ -1948,7 +1948,21 @@ final case class SecLangPreset(name: String, program: CompiledProgram, files: Ma
 
 object SecLangPreset {
   def withNoFiles(name: String, rules: String): SecLangPreset = {
-    withNoFilesSafe(name, rules).fold(err => throw err.throwable, identity)
+    val parsed = AntlrParser.parse(rules).right.get
+    val program = Compiler.compileUnsafe(parsed)
+    SecLangPreset(name, program, Map.empty)
+  }
+  def withFiles(name: String, rules: String, files: Map[String, String]): SecLangPreset = {
+    val parsed = AntlrParser.parse(rules).right.get
+    val program = Compiler.compileUnsafe(parsed)
+    SecLangPreset(name, program, files)
+  }
+  def fromSource(name: String, rulesSource: ConfigurationSourceList = ConfigurationSourceList.empty, filesSource: FilesSourceList): SecLangPreset = {
+    SecLangPreset(
+      name = name,
+      program = Compiler.compileUnsafe(Configuration.fromList(rulesSource)),
+      files = filesSource.sources.map(_.getFiles()).reduce((a, b) => a ++ b)
+    )
   }
   def withNoFilesSafe(name: String, rules: String): Either[SecLangError, SecLangPreset] = {
     val parsed = AntlrParser.parse(rules).right.get
@@ -1957,18 +1971,12 @@ object SecLangPreset {
       case Right(program) => Right(SecLangPreset(name, program, Map.empty))
     }
   }
-  def withFiles(name: String, rules: String, files: Map[String, String]): SecLangPreset = {
-    withFilesSafe(name, rules, files).fold(err => throw err.throwable, identity)
-  }
   def withFilesSafe(name: String, rules: String, files: Map[String, String]): Either[SecLangError, SecLangPreset] = {
     val parsed = AntlrParser.parse(rules).right.get
     Compiler.compile(parsed) match {
       case Left(err) => Left(err)
       case Right(program) => Right(SecLangPreset(name, program, files))
     }
-  }
-  def fromSource(name: String, rulesSource: ConfigurationSourceList = ConfigurationSourceList.empty, filesSource: FilesSourceList): SecLangPreset = {
-    fromSourceSafe(name, rulesSource, filesSource).fold(err => throw err.throwable, identity)
   }
   def fromSourceSafe(name: String, rulesSource: ConfigurationSourceList = ConfigurationSourceList.empty, filesSource: FilesSourceList): Either[SecLangError, SecLangPreset] = {
     Compiler.compile(Configuration.fromList(rulesSource)) match {
@@ -1984,14 +1992,17 @@ object SecLangPreset {
 
 sealed trait SecLangError {
   def msg: String
-  def throwable: Throwable
+  def throwable: Throwable = new RuntimeException(msg)
 }
-case class ParseError(throwable: Throwable) extends SecLangError {
+case class ParseError(t: Throwable) extends SecLangError {
   override def msg: String = throwable.getMessage
+  override def throwable: Throwable = t
 }
-case class CompileError(throwable: Throwable) extends SecLangError {
+case class CompileError(t: Throwable) extends SecLangError {
   override def msg: String = throwable.getMessage
+  override def throwable: Throwable = t
 }
-case class EvaluationError(throwable: Throwable) extends SecLangError {
+case class EvaluationError(t: Throwable) extends SecLangError {
   override def msg: String = throwable.getMessage
+  override def throwable: Throwable = t
 }
