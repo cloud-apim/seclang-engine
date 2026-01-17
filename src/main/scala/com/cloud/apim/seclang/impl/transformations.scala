@@ -65,8 +65,22 @@ object EngineTransformations {
       case (v, "none") => v
       case (v, "normalisePath") => v.split("/").filterNot(_.isEmpty).mkString("/")
       case (v, "normalizePath") => v.split("/").filterNot(_.isEmpty).mkString("/")
-      case (v, "normalisePathWin") => v.split("[/\\\\]+").filterNot(_.isEmpty).mkString("/")
-      case (v, "normalizePathWin") => v.split("[/\\\\]+").filterNot(_.isEmpty).mkString("/")
+      case (v, "normalisePathWin") => {
+        val r = v.split("[/\\\\]+").filterNot(_.isEmpty).mkString("/")
+        if (v.startsWith("/")) {
+          s"/${r}"
+        } else {
+          r
+        }
+      }
+      case (v, "normalizePathWin") => {
+        val r = v.split("[/\\\\]+").filterNot(_.isEmpty).mkString("/")
+        if (v.startsWith("/")) {
+          s"/${r}"
+        } else {
+          r
+        }
+      }
       case (v, "removeNulls") => v.replaceAll("\u0000", "")
       case (v, "removeWhitespace") => v.replaceAll("\\s+", "")
       case (v, "removeCommentsChar") => v.replaceAll("--[^\r\n]*", "").replaceAll("/\\*", "").replaceAll("\\*/", "").replaceAll("#", "")

@@ -362,7 +362,7 @@ object CRSTestUtils {
 
 class SecLangCRSTest extends munit.FunSuite {
 
-  //private val testOnly: List[(String, Int)] = List(("921150", 1))
+  //private val testOnly: List[(String, Int)] = List(("930130", 4))
   private val testOnly: List[(String, Int)] = List.empty
   private val ignoreTests: List[(String, Int)] = List(
     ("920230", 3), // weird double urlencoding issue that cant be solved botch ways
