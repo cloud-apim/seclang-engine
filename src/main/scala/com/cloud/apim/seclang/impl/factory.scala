@@ -16,6 +16,22 @@ class SecLangEngineFactory(
   cacheTtl: FiniteDuration = 10.minutes,
 ) {
 
+  def precompileAndCache(configs: List[String]): Unit = {
+    configs.foreach {
+      case line if line.trim.startsWith("@import_preset ") => ()
+      case line => {
+        val hash = HashUtilsFast.sha512Hex(line)
+        integration.getCachedProgram(hash) match {
+          case Some(p) => Some((p, Map.empty[String, String]))
+          case None => {
+            val compiled = Compiler.compileUnsafe(AntlrParser.parse(line).right.get)
+            integration.putCachedProgram(hash, compiled, cacheTtl)
+          }
+        }
+      }
+    }
+  }
+
   def engine(configs: List[String]): SecLangEngine = {
     val programsAndFiles: List[(CompiledProgram, Map[String, String])] = configs.flatMap {
       case line if line.trim.startsWith("@import_preset ") => {

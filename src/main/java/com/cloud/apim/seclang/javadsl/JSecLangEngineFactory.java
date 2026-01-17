@@ -57,6 +57,12 @@ public final class JSecLangEngineFactory {
         this.underlying = underlying;
     }
 
+    public void precompileAndCache(List<String> configs) {
+        scala.collection.immutable.List<String> scalaConfigs =
+                JavaConverters.asScalaBufferConverter(configs).asScala().toList();
+        underlying.precompileAndCache(scalaConfigs);
+    }
+
     public JSecLangEngine engine(List<String> configs) {
         scala.collection.immutable.List<String> scalaConfigs =
                 JavaConverters.asScalaBufferConverter(configs).asScala().toList();
