@@ -372,20 +372,20 @@ class SecLangCRSTest extends munit.FunSuite {
     ("932207", 7), // this one works but doesn't log what's expected. Needs to evaluate ARGS with separate named values
     ("933120", 2), // this one works but doesn't log what's expected. Needs to evaluate ARGS with separate named values
   )
-  private val engine = CRSTestUtils.setupCRSEngine(testOnly.map(_._1.toInt))
+  private lazy val engine = CRSTestUtils.setupCRSEngine(testOnly.map(_._1.toInt))
   private val counter = new AtomicLong(0L)
   private val failures = new AtomicLong(0L)
   private val dev = true
   private var failingTests = List.empty[JsObject]
   private var times = List.empty[Long]
-  private val items: Seq[CompiledItem] = (
+  private lazy val items: Seq[CompiledItem] = (
     engine.program.itemsForPhase(1) ++
       engine.program.itemsForPhase(2) ++
       engine.program.itemsForPhase(3) ++
       engine.program.itemsForPhase(4) ++
       engine.program.itemsForPhase(5)
   )
-  private val allRules = items.collect {
+  private lazy val allRules = items.collect {
     case rc @ RuleChain(rules) => rc
   }
   val rootDir = new File("test-data/crs-failing-tests")
@@ -589,6 +589,25 @@ class SecLangCRSTest extends munit.FunSuite {
   }
 
   test("setup") {
+    val crsDir = new File("test-data/coreruleset")
+    // Try to run setuptest.sh to clone the CRS repository
+    if (!crsDir.exists()) {
+      println("The test-data/coreruleset directory does not exist. Attempting to run ./setuptest.sh ...")
+    }
+    Try {
+      import scala.sys.process._
+      val exitCode = "sh ./setuptest.sh".!
+      println(s"setuptest.sh finished with exit code: $exitCode")
+    } match {
+      case Failure(e) => println(s"setuptest.sh failed: ${e.getMessage}")
+      case Success(_) => ()
+    }
+    // Check again after attempting to run the script
+    if (!crsDir.exists()) {
+      fail("The test-data/coreruleset directory does not exist. Please run ./setuptest.sh to clone the OWASP CRS.")
+    }
+    // Force engine initialization now that we know the CRS directory exists
+    val _ = engine
     if (!rootDir.exists()) {
       rootDir.mkdir()
     }
