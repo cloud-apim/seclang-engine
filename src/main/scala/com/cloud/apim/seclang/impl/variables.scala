@@ -146,7 +146,7 @@ object EngineVariables {
       }
       case "REQUEST_COOKIES_NAMES" => ctx.cookies.keySet.toList
       case "REQUEST_FILENAME" => List(path)
-      case "REQUEST_LINE" => List(s"${ctx.method.toUpperCase()} ${ctx.uri} ${ctx.protocol}")
+      case "REQUEST_LINE" => List(ctx.requestLine)
       case "REQUEST_PROTOCOL" | "RESPONSE_PROTOCOL" => List(ctx.protocol)
       case "REQUEST_URI_RAW" => List(ctx.uriRaw)
       case "REQUEST_CONTENT_TYPE" | "RESPONSE_CONTENT_TYPE" => ctx.contentType.toList
@@ -261,29 +261,29 @@ object EngineVariables {
       case "MATCHED_VARS" => state.matchedVarsLists.get("matched_vars").map(_.toList).getOrElse(List.empty)
       case "MATCHED_VAR_NAME" => state.txMap.get("matched_var_name").toList
       case "MATCHED_VARS_NAMES" => state.matchedVarsLists.get("matched_var_names").map(_.toList).getOrElse(List.empty)
+      case "AUTH_TYPE" => ctx.authType.toList
+      case "FULL_REQUEST" => List(ctx.fullRequest)
+      case "FULL_REQUEST_LENGTH" => List(ctx.fullRequest.length.toString)
+      case "MULTIPART_FILENAME" => ctx.files
+      case "MULTIPART_NAME" => ctx.filesNames
+      case "REQBODY_ERROR" => List.empty
+      case "REQBODY_ERROR_MSG" => List.empty
+      case "WEBAPPID" => state.webAppId.toList
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      case "AUTH_TYPE" => unimplementedVariable("AUTH_TYPE", integration) // TODO: implement it
-      case "FULL_REQUEST" => unimplementedVariable("FULL_REQUEST", integration) // TODO: implement it
-      case "FULL_REQUEST_LENGTH" => unimplementedVariable("FULL_REQUEST_LENGTH", integration) // TODO: implement it
       case "HIGHEST_SEVERITY" => unimplementedVariable("HIGHEST_SEVERITY", integration) // TODO: implement it
       case "INBOUND_DATA_ERROR" => unimplementedVariable("INBOUND_DATA_ERROR", integration) // TODO: implement it
       case "MODSEC_BUILD" => unimplementedVariable("MODSEC_BUILD", integration) // TODO: implement it
       case "MSC_PCRE_LIMITS_EXCEEDED" => unimplementedVariable("MSC_PCRE_LIMITS_EXCEEDED", integration) // TODO: implement it
       case "MULTIPART_CRLF_LF_LINES" => unimplementedVariable("MULTIPART_CRLF_LF_LINES", integration) // TODO: implement it
-      case "MULTIPART_FILENAME" => unimplementedVariable("MULTIPART_FILENAME", integration) // TODO: implement it
-      case "MULTIPART_NAME" => unimplementedVariable("MULTIPART_NAME", integration) // TODO: implement it
       case "MULTIPART_STRICT_ERROR" => unimplementedVariable("MULTIPART_STRICT_ERROR", integration) // TODO: implement it
       case "MULTIPART_UNMATCHED_BOUNDARY" => unimplementedVariable("MULTIPART_UNMATCHED_BOUNDARY", integration) // TODO: implement it
       case "OUTBOUND_DATA_ERROR" => unimplementedVariable("OUTBOUND_DATA_ERROR", integration) // TODO: implement it
-      case "REQBODY_ERROR" => unimplementedVariable("REQBODY_ERROR", integration) // TODO: implement it
-      case "REQBODY_ERROR_MSG" => unimplementedVariable("REQBODY_ERROR_MSG", integration) // TODO: implement it
       case "RULE" => unimplementedVariable("RULE", integration) // TODO: implement it
-      case "SDBM_DELETE_ERROR" => unimplementedVariable("SDBM_DELETE_ERROR", integration) // TODO: implement it
       case "SESSION" => unimplementedVariable("SESSION", integration) // TODO: implement it
       case "SESSIONID" => unimplementedVariable("SESSIONID", integration) // TODO: implement it
       case "URLENCODED_ERROR" => unimplementedVariable("URLENCODED_ERROR", integration) // TODO: implement it
-      case "WEBAPPID" => unimplementedVariable("WEBAPPID", integration) // TODO: implement it
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      case "SDBM_DELETE_ERROR" => unsupportedV3Variable("SDBM_DELETE_ERROR", integration)
       case "GEO" => unsupportedVariable("GEO", integration)
       case "PERF_ALL" => unsupportedV3Variable("PERF_ALL", integration)
       case "PERF_COMBINED" => unsupportedV3Variable("PERF_COMBINED", integration)

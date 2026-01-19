@@ -81,6 +81,7 @@ final class SecLangEngine(
       val uidRef = new AtomicReference[String](null)
       val init = RuntimeState(
         mode = pmode,
+        webAppId = program.webAppId,
         disabledIds = Set.empty,
         events = Nil,
         logs = Nil,

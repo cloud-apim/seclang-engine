@@ -1595,6 +1595,13 @@ final case class RequestContext(
 ) {
   lazy val isResponse: Boolean = status.isDefined
   lazy val isRequest: Boolean = !isResponse
+  lazy val requestLine: String = s"${method.toUpperCase()} ${uri} ${protocol}"
+  lazy val hasBody: Boolean = body.isDefined
+  lazy val fullRequest: String = {
+    val headersLines = headers.underlying.toSeq.flatMap(k => k._2.map(v => s"${k._1}: ${v}")).mkString("\n")
+    val bodyLines = if (hasBody) s"\n\n${body.get.utf8String}" else ""
+    s"""${requestLine}\n${headersLines}${bodyLines}""".stripMargin
+  }
   lazy val uriRaw: String = {
     val host = headers.getOne("Host").orElse(headers.getOne("host")).getOrElse("")
     s"${if (secure) "https" else "http"}://$host$uri"
@@ -1648,6 +1655,12 @@ final case class RequestContext(
   }
   lazy val contentLength: Option[String] = {
     headers.getOne("Content-Length").orElse(headers.getOne("content-length"))
+  }
+  lazy val auth: Option[String] = {
+    headers.getOne("Authorization").orElse(headers.getOne("authorization"))
+  }
+  lazy val authType: Option[String] = {
+    auth.filter(_.contains(" ")).flatMap(_.split(" ").headOption)
   }
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   lazy val isXwwwFormUrlEncoded: Boolean = {
@@ -1811,7 +1824,7 @@ object RuntimeState {
   // Single pattern to capture all %{...} expressions - O(n) single pass
   private val AllExpr: Regex = RegexPool.regex("""(?i)%\{([a-z0-9_.:-]+)\}""")
 }
-final case class RuntimeState(mode: EngineMode, disabledIds: Set[Int], events: List[MatchEvent], txMap: TrieMap[String, String], envMap: TrieMap[String, String], uidRef: AtomicReference[String], logs: List[String], removedTargetsByTag: Map[String, Set[String]] = Map.empty, matchedVarsLists: TrieMap[String, Seq[String]] = new TrieMap[String, Seq[String]]()) {
+final case class RuntimeState(mode: EngineMode, webAppId: Option[String], disabledIds: Set[Int], events: List[MatchEvent], txMap: TrieMap[String, String], envMap: TrieMap[String, String], uidRef: AtomicReference[String], logs: List[String], removedTargetsByTag: Map[String, Set[String]] = Map.empty, matchedVarsLists: TrieMap[String, Seq[String]] = new TrieMap[String, Seq[String]]()) {
 
   def evalTxExpressions(input: String): String = {
     if (!input.contains("%{")) return input
@@ -1872,6 +1885,7 @@ object EngineMode {
 
 sealed trait CompiledProgram {
   def mode: Option[EngineMode]
+  def webAppId: Option[String]
   def hash: String
   def itemsForPhase(phase: Int): Vector[CompiledItem]
   def containsRemovedRuleId(id: Int): Boolean
@@ -1881,6 +1895,7 @@ final case class SimpleCompiledProgram(
   itemsByPhase: Map[Int, Vector[CompiledItem]],
   removedRuleIds: Set[Int],
   mode: Option[EngineMode],
+  webAppId: Option[String],
   hash: String,
 ) extends CompiledProgram {
   def itemsForPhase(phase: Int): Vector[CompiledItem] = itemsByPhase.getOrElse(phase, Vector.empty)
@@ -1889,6 +1904,7 @@ final case class SimpleCompiledProgram(
 
 final case class ComposedCompiledProgram(programs: List[CompiledProgram]) extends CompiledProgram {
   def mode: Option[EngineMode] = programs.flatMap(_.mode).lastOption
+  def webAppId: Option[String] = programs.flatMap(_.webAppId).lastOption
   def hash: String = HashUtilsFast.sha512Hex(programs.map(_.hash).mkString("."))
   def itemsForPhase(phase: Int): Vector[CompiledItem] = programs.flatMap(_.itemsForPhase(phase)).toVector
   def containsRemovedRuleId(id: Int): Boolean = programs.exists(_.containsRemovedRuleId(id))

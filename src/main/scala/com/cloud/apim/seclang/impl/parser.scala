@@ -119,6 +119,9 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
     } else if (stmt == "SecRuleEngine") {
       val param = ctx.values().getText.replaceAll("\"", "")
       ConfigDirective.RuleEngine(param)
+    } else if (stmt == "SecWebAppId") {
+      val param = ctx.values().getText.replaceAll("\"", "")
+      ConfigDirective.WebAppId(param)
     } else if (stmt == "SecRuleEngineDetectionOnly" || stmt == "SecRuleEngineOn" || stmt == "SecRuleEngineOff") {
       val param = stmt.replaceFirst("SecRuleEngine", "")
       ConfigDirective.RuleEngine(param)

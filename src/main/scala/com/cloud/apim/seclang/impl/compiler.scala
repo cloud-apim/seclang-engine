@@ -44,6 +44,7 @@ object Compiler {
     val items = scala.collection.mutable.ArrayBuffer.empty[CompiledItem]
     val it = statements.iterator
     var mode: Option[EngineMode] = None
+    var webAppId: Option[String] = None
 
     while (it.hasNext) {
       it.next() match {
@@ -103,6 +104,11 @@ object Compiler {
         case EngineConfigDirective(_, ConfigDirective.RuleEngine(expr)) => {
           mode = Some(EngineMode(expr))
         }
+        case EngineConfigDirective(_, ConfigDirective.DataDir(_)) => ()
+        case EngineConfigDirective(_, ConfigDirective.TmpDir(_)) => ()
+        case EngineConfigDirective(_, ConfigDirective.WebAppId(id)) => {
+          webAppId = Some(id)
+        }
         case s: EngineConfigDirective => {
           // println(s.directive.getClass.getSimpleName)
           unimplementedStatement("EngineConfigDirective")
@@ -136,7 +142,7 @@ object Compiler {
       // TODO: support all statements here
     }
 
-    SimpleCompiledProgram(byPhase.toMap, removed, mode, configuration.hash)
+    SimpleCompiledProgram(byPhase.toMap, removed, mode, webAppId, configuration.hash)
   }
   def compile(configuration: Configuration): Either[SecLangError, CompiledProgram] = try {
     Right(compileUnsafe(configuration))
