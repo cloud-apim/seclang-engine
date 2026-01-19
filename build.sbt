@@ -46,6 +46,7 @@ lazy val root = (project in file("."))
       "com.cloud-apim" % "libinjection-jvm" % "1.2.0",
       "com.github.blemale" %% "scaffeine" % "4.0.2",
       "org.apache.commons" % "commons-text" % "1.15.0",
+      "com.idealista" % "tlsh" % "1.0.0",
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % "2.13.4" % Test,
       munit % Test

@@ -3,8 +3,11 @@ package com.cloud.apim.seclang.impl.engine
 import com.cloud.apim.libinjection.LibInjection
 import com.cloud.apim.seclang.impl.utils.{ByteRangeValidator, EncodingHelper, IpMatch, RegexPool}
 import com.cloud.apim.seclang.model.{Operator, RuntimeState, SecLangIntegration}
+import com.idealista.tlsh.TLSH
+import com.idealista.tlsh.digests.DigestBuilder
 import play.api.libs.json.{JsArray, JsString, Json}
 
+import scala.util.Try
 import scala.util.matching.Regex
 
 object EngineOperators {
@@ -111,16 +114,55 @@ object EngineOperators {
     case Operator.DetectSQLi(x) => LibInjection.isSQLi(state.evalTxExpressions(value))
     case Operator.ValidateUrlEncoding(x) => !EncodingHelper.validateUrlEncoding(value)
     case Operator.ValidateUtf8Encoding(x) => !EncodingHelper.validateUtf8Encoding(value)
-
+    case Operator.FuzzyHash(xs) => {
+      val parts = xs.split(" ")
+      val score = parts(1).toInt
+      val fileName = state.evalTxExpressions(parts(0))
+      files.get(fileName) match {
+        case None => false
+        case Some(file) => {
+          val tlsh1 = new TLSH(value).hash()
+          val dg1 = new DigestBuilder().withHash(tlsh1).build()
+          val tlsh2 = new TLSH(file).hash()
+          val dg2 = new DigestBuilder().withHash(tlsh2).build()
+          val difference = dg2.calculateDifference(dg1, true)
+          difference <= score
+        }
+      }
+    }
+    case Operator.RxGlobal(pattern) => {
+      if ((ruleId == 932240 || ruleId == 941170) && value.length > (10*1024)) { // TODO: find a way to avoid that ?
+        return false
+      }
+      try {
+        val r: Regex = RegexPool.regex(state.evalTxExpressions(pattern))
+        val startNanos = System.nanoTime()
+        val rs = r.findAllMatchIn(value)
+        val elapsedMs = (System.nanoTime() - startNanos) / 1000000L
+        if (elapsedMs > 10000) {
+          integration.logError("------------------------------------------------------------------------------------>")
+          integration.logError(s"rule ${ruleId} match took: ${elapsedMs} ms for value length of ${value.length}")
+          integration.logError("------------------------------------------------------------------------------------>")
+        }
+        rs.foreach { m =>
+          val str = m.group(0)
+          state.txMap.put("MATCHED_VAR".toLowerCase, str)
+          state.txMap.put("MATCHED_VAR".toUpperCase, str)
+          val list = JsArray((1 to m.groupCount).map { idx =>
+            JsString(m.group(idx))
+          })
+          state.txMap.put("MATCHED_LIST", Json.stringify(list))
+        }
+        rs.nonEmpty
+      } catch {
+        case _: Throwable => false
+      }
+    }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    case Operator.VerifyCC(x) => unimplementedOperator("verifyCC", integration) // TODO: implement it
-    case Operator.VerifyCPF(x) => unimplementedOperator("verifyCPF", integration) // TODO: implement it
-    case Operator.VerifySSN(x) => unimplementedOperator("verifySSN", integration) // TODO: implement it
-    // case Operator.NoMatch(x) => unimplementedOperator("noMatch")
-    case Operator.Rbl(x) => unimplementedOperator("rbl", integration) // TODO: implement it
-    case Operator.RxGlobal(x) => unimplementedOperator("rxGlobal", integration) // TODO: implement it
-    case Operator.FuzzyHash(x) => unimplementedOperator("fuzzyHash", integration) // TODO: implement it
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    case Operator.Rbl(x) => unsupportedOperator("rbl", integration)
+    case Operator.VerifyCC(x) => unsupportedOperator("verifyCC", integration)
+    case Operator.VerifyCPF(x) => unsupportedOperator("verifyCPF", integration)
+    case Operator.VerifySSN(x) => unsupportedOperator("verifySSN", integration)
     case Operator.ValidateDTD(x) => unsupportedOperator("validateDTD", integration)
     case Operator.ValidateSchema(x) => unsupportedOperator("validateSchema", integration)
     case Operator.GeoLookup(x) => unsupportedOperator("geoLookup", integration)
