@@ -57,7 +57,7 @@ object Compiler {
             while (!done && it.hasNext) {
               it.next() match {
                 case rr: SecRule =>
-                  chain += rr.copy(commentBlock = None)
+                  chain += rr
                   done = !rr.isChain
                 case m: SecMarker =>
                   // chain interrupted by marker -> still close chain
@@ -88,7 +88,7 @@ object Compiler {
           if (removed.contains(s.id.getOrElse(-1)) || s.tags.exists(t => removedRuleTags.contains(t)) || s.msgs.exists(t => removedRuleMsgs.contains(t))) {
             // skip removed (if no id, can't remove)
           } else {
-            items += ActionItem(s.copy(commentBlock = None, actions = s.actions.copy(actions = s.actions.actions ++ defaultActions.get(s.phase).toList.flatten)))
+            items += ActionItem(s.copy(actions = s.actions.copy(actions = s.actions.actions ++ defaultActions.get(s.phase).toList.flatten)))
           }
         }
         case s: SecRuleScript => unimplementedStatement("SecRuleScript")

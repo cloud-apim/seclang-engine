@@ -1948,13 +1948,33 @@ class DefaultSecLangIntegration(maxCacheItems: Int = 1000, externalPresets: Map[
   }
 }
 
+class DefaultNoCacheSecLangIntegration(maxCacheItems: Int = 10, externalPresets: Map[String, SecLangPreset] = Map.empty) extends SecLangIntegration {
+
+  private val cache = new TrieMap[String, (CompiledProgram, FiniteDuration)]()
+
+  def logDebug(msg: String): Unit = println(s"[Debug]: $msg")
+  def logInfo(msg: String): Unit = println(s"[Info]: $msg")
+  def logAudit(msg: String): Unit = println(s"[Audit]: $msg")
+  def logError(msg: String): Unit = println(s"[Error]: $msg")
+  def getEnv(): Map[String, String] = sys.env
+
+  def getExternalPreset(name: String): Option[SecLangPreset] = externalPresets.get(name)
+  def getCachedProgram(key: String): Option[CompiledProgram] = cache.get(key).map(_._1)
+  def putCachedProgram(key: String, program: CompiledProgram, ttl: FiniteDuration): Unit = cache.put(key, (program, ttl))
+  def removeCachedProgram(key: String): Unit = cache.remove(key)
+  def audit(ruleId: Int, context: RequestContext, state: RuntimeState, phase: Int, msg: String, logdata: List[String]): Unit = {
+  }
+}
+
 class NoLogSecLangIntegration(maxCacheItems: Int = 1000) extends DefaultSecLangIntegration(maxCacheItems) {
   override def logDebug(msg: String): Unit = ()
   override def logInfo(msg: String): Unit = ()
   override def logAudit(msg: String): Unit = ()
   override def logError(msg: String): Unit = ()
 }
-
+object DefaultNoCacheSecLangIntegration {
+  val default = new DefaultNoCacheSecLangIntegration()
+}
 object DefaultSecLangIntegration {
   val default = new DefaultSecLangIntegration()
   def apply(maxCacheItems: Int = 1000): DefaultSecLangIntegration = new DefaultSecLangIntegration(maxCacheItems)

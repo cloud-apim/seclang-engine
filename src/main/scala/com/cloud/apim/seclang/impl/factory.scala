@@ -57,6 +57,7 @@ class SecLangEngineFactory(
     val txMap = new TrieMap[String, String]()
     new SecLangEngine(program, config: SecLangEngineConfig, files, Some(txMap), integration)
   }
+
   def engineSafe(configs: List[String]): Either[List[SecLangError], SecLangEngine] = {
     val programsAndFilesE: List[Either[SecLangError, (CompiledProgram, Map[String, String])]] = configs.flatMap {
       case line if line.trim.startsWith("@import_preset ") => {

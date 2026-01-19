@@ -1,37 +1,41 @@
 package com.cloud.apim.seclang.test
 
+import com.cloud.apim.seclang.impl.engine.SecLangEngine
 import com.cloud.apim.seclang.model.Disposition._
 import com.cloud.apim.seclang.model._
 import com.cloud.apim.seclang.scaladsl.{SecLang, SecLangPresets}
+import squants.information.Bytes
 
 class SecLangFactoryTest extends munit.FunSuite {
 
   test("simple factory test") {
     val presets = Map(
-      "no_firefox" -> SecLangPreset.withNoFiles("no_firefox", """
-           |SecRule REQUEST_HEADERS:User-Agent "@pm firefox" \
-           |   "id:00001,\
-           |   phase:1,\
-           |   block,\
-           |   t:none,t:lowercase,\
-           |   msg:'someone used firefox to access',\
-           |   logdata:'someone used firefox to access',\
-           |   tag:'test',\
-           |   ver:'0.0.0-dev',\
-           |   status:403,\
-           |   severity:'CRITICAL'"
-           |""".stripMargin),
-      "health_check" -> SecLangPreset.withNoFiles("health_check", """
-           |SecRule REQUEST_URI "@contains /health" \
-           |   "id:00002,\
-           |   phase:1,\
-           |   pass,\
-           |   t:none,t:lowercase,\
-           |   msg:'someone called /health',\
-           |   logdata:'someone called /health',\
-           |   tag:'test',\
-           |   ver:'0.0.0-dev'"
-           |""".stripMargin)
+      "no_firefox" -> SecLangPreset.withNoFiles("no_firefox",
+        """
+          |SecRule REQUEST_HEADERS:User-Agent "@pm firefox" \
+          |   "id:00001,\
+          |   phase:1,\
+          |   block,\
+          |   t:none,t:lowercase,\
+          |   msg:'someone used firefox to access',\
+          |   logdata:'someone used firefox to access',\
+          |   tag:'test',\
+          |   ver:'0.0.0-dev',\
+          |   status:403,\
+          |   severity:'CRITICAL'"
+          |""".stripMargin),
+      "health_check" -> SecLangPreset.withNoFiles("health_check",
+        """
+          |SecRule REQUEST_URI "@contains /health" \
+          |   "id:00002,\
+          |   phase:1,\
+          |   pass,\
+          |   t:none,t:lowercase,\
+          |   msg:'someone called /health',\
+          |   logdata:'someone called /health',\
+          |   tag:'test',\
+          |   ver:'0.0.0-dev'"
+          |""".stripMargin)
     )
     val factory = SecLang.factory(presets)
     val rulesConfig = List(
@@ -152,5 +156,51 @@ class SecLangFactoryTest extends munit.FunSuite {
     )
     val failing_res = factory.evaluate(rulesConfig, failing_ctx, phases = List(1, 2)).displayPrintln()
     assertEquals(failing_res.disposition, Block(400, Some("Potential Remote Command Execution: Log4j / Log4shell"), Some(944150)))
+  }
+}
+class SecLangFactorySizeTest extends munit.FunSuite {
+  test("factory size") {
+    val crs = SecLangPreset.fromSource(
+      name = "crs",
+      rulesSource = ConfigurationSourceList(
+        List(
+          RawConfigurationSource(
+            """SecAction \
+              |    "id:900990,\
+              |    phase:1,\
+              |    pass,\
+              |    t:none,\
+              |    nolog,\
+              |    tag:'OWASP_CRS',\
+              |    ver:'OWASP_CRS/4.22.0',\
+              |    setvar:tx.crs_setup_version=4220"
+              |""".stripMargin),
+          FileScanConfigurationSource("./test-data/coreruleset/rules", """.*\.conf""")
+        )
+      ),
+      filesSource = FilesSourceList(
+        List(
+          FsScanFilesSource("./test-data/coreruleset/rules", """.*\.data""")
+        )
+      ),
+    )
+    val factory = SecLang.factory(Map("crs" -> crs), integration = DefaultNoCacheSecLangIntegration.default)
+    val rulesConfig = List(
+      "@import_preset crs",
+      "SecRuleEngine On"
+    )
+
+    println(s"factory preset: ${Bytes(org.openjdk.jol.info.GraphLayout.parseInstance(crs).totalSize()).toMegabytes} Mb")
+    println(s"factory 1: ${Bytes(org.openjdk.jol.info.GraphLayout.parseInstance(factory).totalSize()).toMegabytes} Mb")
+    var engines = List.empty[SecLangEngine]
+    for (i <- 1 to 10000) {
+      val e = factory.engine(rulesConfig)
+      engines = engines :+ e
+    }
+    println(s"factory 2: ${Bytes(org.openjdk.jol.info.GraphLayout.parseInstance(factory).totalSize()).toMegabytes} Mb")
+    println(s"enginesSize size: ${Bytes(org.openjdk.jol.info.GraphLayout.parseInstance(engines).totalSize()).toMegabytes} Mb")
+
+    val e = SecLang.engine(SecLang.compile(SecLang.parse("SecRuleEngine On").right.get), integration = DefaultNoCacheSecLangIntegration.default)
+    println(s"simple engine size: ${Bytes(org.openjdk.jol.info.GraphLayout.parseInstance(e).totalSize()).toKilobytes} Kb")
   }
 }

@@ -36,6 +36,12 @@ ThisBuild / publishTo := {
 
 usePgpKeyHex("235E536BA3E43419FD649B903C82DD5C11569EF6")
 
+lazy val excludesJackson         = Seq(
+  ExclusionRule(organization = "com.fasterxml.jackson.core"),
+  ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
+  ExclusionRule(organization = "com.fasterxml.jackson.dataformat")
+)
+
 lazy val root = (project in file("."))
   .settings(
     name := "seclang-engine",
@@ -49,10 +55,13 @@ lazy val root = (project in file("."))
       "com.idealista" % "tlsh" % "1.0.0",
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % "2.13.4" % Test,
+      "org.openjdk.jol"                  % "jol-core"                % "0.17"   % Test,
+      "org.typelevel"                   %% "squants"                 % "1.8.3"  % Test excludeAll (excludesJackson: _*) ,
       munit % Test
     ),
     Compile / doc / scalacOptions ++= Seq(
       "-doc-title", "SecLang Engine",
       "-doc-version", version.value
-    )
+    ),
+    Test / javaOptions += "-Djol.magicFieldOffset=true"
   )

@@ -21,7 +21,7 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
   }
   
   override def visitStmt(ctx: SecLangParser.StmtContext): Statement = {
-    val commentBlock = Option(ctx.comment_block()).map(visitCommentBlock)
+    // val commentBlock = Option(ctx.comment_block()).map(visitCommentBlock)
     
     if (ctx.engine_config_rule_directive() != null && ctx.variables() != null && ctx.operator() != null) {
       val variables = visitVariables(ctx.variables())
@@ -30,29 +30,29 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
       val actionRaw = Option(ctx.actions()).map(_.getText).getOrElse("--").split(",").mkString(",\\\n  ")
       val operatorRaw = s"${Option(ctx.operator().operator_not()).map(_.getText).getOrElse("")}@${ctx.operator().operator_name().getText} ${Option(ctx.operator().operator_value()).map(_.getText).getOrElse("")}"
       val raw = s"""SecRule ${ctx.variables().getText} \"${operatorRaw}\" ${actionRaw}"""
-      SecRule(commentBlock, variables, operator, actions, raw)
+      SecRule(None, variables, operator, actions, raw)
 
     } else if (ctx.rule_script_directive() != null && ctx.file_path() != null) {
       val filePath = ctx.file_path().getText
       val actions = Option(ctx.actions()).map(visitActions)
-      SecRuleScript(commentBlock, filePath, actions)
+      SecRuleScript(None, filePath, actions)
       
     } else if (ctx.remove_rule_by_id() != null) {
       val ids = ctx.remove_rule_by_id_values().asScala.toList.map {
         case idCtx: Remove_rule_by_id_intContext if idCtx.INT() != null => idCtx.INT().getText.toInt
         case _ => 0
       }
-      SecRuleRemoveById(commentBlock, ids)
+      SecRuleRemoveById(None, ids)
     } else if (ctx.string_remove_rules() != null && ctx.string_remove_rules_values() != null) {
       val directive = ctx.string_remove_rules()
       val value = ctx.string_remove_rules_values().getText.replaceAll("\"", "")
       directive match {
         case d: Remove_rule_by_msgContext if d.CONFIG_SEC_RULE_REMOVE_BY_MSG() != null =>
-          SecRuleRemoveByMsg(commentBlock, value)
+          SecRuleRemoveByMsg(None, value)
         case d: Remove_rule_by_tagContext if d.CONFIG_SEC_RULE_REMOVE_BY_TAG() != null =>
-          SecRuleRemoveByTag(commentBlock, value)
+          SecRuleRemoveByTag(None, value)
         case _ =>
-          SecRuleRemoveByMsg(commentBlock, value)
+          SecRuleRemoveByMsg(None, value)
       }
     } else if (ctx.update_target_rules() != null && ctx.update_variables() != null) {
       val updateRules = ctx.update_target_rules()
@@ -61,36 +61,36 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
         val value = ctx.update_target_rules_values().getText.replaceAll("\"", "")
         updateRules match {
           case ur: Update_target_by_idContext if ur.CONFIG_SEC_RULE_UPDATE_TARGET_BY_ID() != null =>
-            SecRuleUpdateTargetById(commentBlock, value.toInt, variables)
+            SecRuleUpdateTargetById(None, value.toInt, variables)
           case ur: Update_target_by_msgContext if ur.CONFIG_SEC_RULE_UPDATE_TARGET_BY_MSG() != null =>
-            SecRuleUpdateTargetByMsg(commentBlock, value, variables)
+            SecRuleUpdateTargetByMsg(None, value, variables)
           case ur: Update_target_by_tagContext if ur.CONFIG_SEC_RULE_UPDATE_TARGET_BY_TAG() != null =>
-            SecRuleUpdateTargetByTag(commentBlock, value, variables)
+            SecRuleUpdateTargetByTag(None, value, variables)
           case _ =>
-            SecRuleUpdateTargetByMsg(commentBlock, value, variables)
+            SecRuleUpdateTargetByMsg(None, value, variables)
         }
       } else {
-        SecRuleUpdateTargetByMsg(commentBlock, "", variables)
+        SecRuleUpdateTargetByMsg(None, "", variables)
       }
     } else if (ctx.update_action_rule() != null && ctx.id() != null && ctx.actions() != null) {
       val id = ctx.id().INT().getText.toInt
       val actions = visitActions(ctx.actions())
-      SecRuleUpdateActionById(commentBlock, id, actions)
+      SecRuleUpdateActionById(None, id, actions)
     } else if (ctx.engine_config_directive() != null && ctx.engine_config_directive().sec_marker_directive() != null) {
       val name = ctx.getText.split("SecMarker").tail.mkString("SecMarker").replaceAll("\"", "").replaceAll("'", "")
-      SecMarker(commentBlock, name)
+      SecMarker(None, name)
     } else if (ctx.engine_config_directive() != null) {
       val ctxDir = ctx.engine_config_directive()
       val stmt = ctxDir.getText.split("\"").headOption.getOrElse("--")
       if (stmt == "SecAction") {
         val actions = visitActions(ctxDir.actions())
-        SecAction(commentBlock, actions, s"SecAction ${Option(ctx.actions()).map(_.getText).getOrElse("--")}")
+        SecAction(None, actions, s"SecAction ${Option(ctx.actions()).map(_.getText).getOrElse("--")}")
       } else {
         val directive = visitEngineConfigDirective(ctx.engine_config_directive())
-        EngineConfigDirective(commentBlock, directive)
+        EngineConfigDirective(None, directive)
       }
     } else {
-      SecMarker(commentBlock, "unknown")
+      SecMarker(None, "unknown")
     }
   }
   

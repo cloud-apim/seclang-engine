@@ -8,10 +8,10 @@
   },
   "time_stats" : {
     "calls" : 4138,
-    "total_time_ms" : 28067,
-    "min_time_ns" : 1490750,
+    "total_time_ms" : 30582,
+    "min_time_ns" : 1259792,
     "min_time_ms" : 1,
-    "max_time_ms" : 4080,
-    "avg_time_ms" : 6
+    "max_time_ms" : 4286,
+    "avg_time_ms" : 7
   }
 }
