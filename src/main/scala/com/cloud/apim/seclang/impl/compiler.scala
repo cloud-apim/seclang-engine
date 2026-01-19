@@ -20,11 +20,25 @@ object Compiler {
         .filterNot(_.isMetaData)
         .map(a => (actions.phase.get, a))
     }.flatten.groupBy(_._1).mapValues(_.map(_._2))
-    statements.collect {
-      case SecRule(_, _, Operator.Rx(pattern), _, _) => pattern
-    }.foreach { pattern =>
-      RegexPool.regex(pattern)
+    statements.foreach {
+      case SecRule(_, variables, op, _, _) => {
+        op match {
+          case Operator.Rx(pattern) => RegexPool.regex(pattern)
+          case _ => ()
+        }
+        variables.variables.foreach {
+          case Variable.Collection(_, Some(key)) if key.startsWith("/") && key.endsWith("/") =>
+            RegexPool.regex(key.substring(1, key.length - 1))
+          case _ => ()
+        }
+      }
+      case _ => ()
     }
+    // statements.collect {
+    //   case SecRule(_, _, Operator.Rx(pattern), _, _) => pattern
+    // }.foreach { pattern =>
+    //   RegexPool.regex(pattern)
+    // }
 
     // flatten into CompiledItem with chain logic
     val items = scala.collection.mutable.ArrayBuffer.empty[CompiledItem]
