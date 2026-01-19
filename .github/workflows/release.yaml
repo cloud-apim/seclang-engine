@@ -29,7 +29,8 @@ jobs:
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
         run: |
-          sbt ';compile;package;publishSigned;sonaRelease'
+          # sbt ';compile;package;publishSigned;sonaRelease'
+          sbt ';compile;package'
       - name: Generate SHA-256
         run: |
           shasum -a 256 ./target/scala-2.12/seclang-engine_2.12-${{ inputs.version }}.jar | cut -d ' ' -f 1 > ./target/scala-2.12/seclang-engine_2.12-${{ inputs.version }}.jar.sha256
