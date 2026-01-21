@@ -304,7 +304,7 @@ class SecLangFactoryTest extends munit.FunSuite {
 Add the following dependency to your `build.sbt`:
 
 ```scala
-libraryDependencies += "com.cloud-apim" %% "seclang-engine" % "1.0.0"
+libraryDependencies += "com.cloud-apim" %% "seclang-engine" % "1.2.0"
 ```
 
 The library is compiled for Scala 2.12
@@ -327,7 +327,7 @@ For Maven projects, add to your `pom.xml`:
 <dependency>
   <groupId>com.cloud-apim</groupId>
   <artifactId>seclang-engine_2.12</artifactId>
-  <version>1.0.0</version>
+  <version>1.2.0</version>
 </dependency>
 ```
 
@@ -336,7 +336,7 @@ For Maven projects, add to your `pom.xml`:
 For Gradle projects:
 
 ```gradle
-implementation 'com.cloud-apim:seclang-engine_2.12:1.0.0'
+implementation 'com.cloud-apim:seclang-engine_2.12:1.2.0'
 ```
 
 ## Build
