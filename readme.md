@@ -29,7 +29,7 @@ rule language, providing full compatibility with the [OWASP Core Rule Set (CRS) 
 
 This project is a work in progress. 
 
-We are currently [passing **100%**](./crs-tests-status.json) of the [CRS test suite](https://github.com/coreruleset/coreruleset/tree/main/tests/regression/tests)-
+We are currently [passing **100%**](./crs-tests-status.json) of the [CRS test suite](https://github.com/coreruleset/coreruleset/tree/main/tests/regression/tests)
 
 ## Simple usage
 
