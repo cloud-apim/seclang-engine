@@ -11,7 +11,7 @@ import scala.collection.concurrent.TrieMap
 
 object SecLang {
 
-  def parse(input: String): Either[SecLangError, Configuration] = AntlrParser.parse(input)
+  def parse(input: String, includeRawRule: Boolean = false, includeComments: Boolean = false): Either[SecLangError, Configuration] = AntlrParser.parse(input, includeRawRule, includeComments)
 
   def parseJson(input: String): Either[Seq[(JsPath, Seq[JsonValidationError])], Configuration] = Configuration.format.reads(Json.parse(input)).asEither
 

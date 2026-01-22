@@ -128,9 +128,9 @@ object CRSTestUtils {
         |# DetectionOnly mode
         |SecRuleEngine DetectionOnly
         |""".stripMargin
-    val config = SecLang.parse(finalRules).right.get
+    val config = SecLang.parse(finalRules, true, false).right.get
     val program = SecLang.compile(config)
-    SecLang.engine(program, SecLangEngineConfig.default.copy(debugRules = debugRules), files = files, integration = new NoLogSecLangIntegration())
+    SecLang.engine(program, SecLangEngineConfig.test.copy(debugRules = debugRules), files = files, integration = new NoLogSecLangIntegration())
   }
 
   private def parseQueryString(qs: String): Map[String, List[String]] = {

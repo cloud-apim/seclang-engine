@@ -68,13 +68,13 @@ object Configuration {
     def writes(config: Configuration): JsValue = config.json
   }
 
-  def fromSource(source: ConfigurationSource): Configuration = {
-    AntlrParser.parse(source.getRules()).right.get
+  def fromSource(source: ConfigurationSource, includeRawRule: Boolean = false, includeComments: Boolean = false): Configuration = {
+    AntlrParser.parse(source.getRules(), includeRawRule, includeComments).right.get
   }
 
-  def fromList(source: ConfigurationSourceList): Configuration = {
+  def fromList(source: ConfigurationSourceList, includeRawRule: Boolean = false, includeComments: Boolean = false): Configuration = {
     val src = source.sources.map(_.getRules()).mkString("\n")
-    AntlrParser.parse(src).right.get
+    AntlrParser.parse(src, includeRawRule, includeComments).right.get
   }
 }
 
@@ -1846,10 +1846,11 @@ final case class RuntimeState(mode: EngineMode, webAppId: Option[String], disabl
   }
 }
 
-final case class SecLangEngineConfig(debugRules: List[Int])
+final case class SecLangEngineConfig(debugRules: List[Int], includeRawRule: Boolean = false, includeComments: Boolean = false)
 
 object SecLangEngineConfig {
-  val default = SecLangEngineConfig(debugRules = List.empty)
+  val default = SecLangEngineConfig(debugRules = List.empty, false, false)
+  val test = SecLangEngineConfig(debugRules = List.empty, true, false)
 }
 
 sealed trait CompiledItem
@@ -1983,39 +1984,39 @@ object DefaultSecLangIntegration {
 final case class SecLangPreset(name: String, program: CompiledProgram, files: Map[String, String])
 
 object SecLangPreset {
-  def withNoFiles(name: String, rules: String): SecLangPreset = {
-    val parsed = AntlrParser.parse(rules).right.get
+  def withNoFiles(name: String, rules: String, includeRawRule: Boolean = false, includeComments: Boolean = false): SecLangPreset = {
+    val parsed = AntlrParser.parse(rules, includeRawRule, includeComments).right.get
     val program = Compiler.compileUnsafe(parsed)
     SecLangPreset(name, program, Map.empty)
   }
-  def withFiles(name: String, rules: String, files: Map[String, String]): SecLangPreset = {
-    val parsed = AntlrParser.parse(rules).right.get
+  def withFiles(name: String, rules: String, files: Map[String, String], includeRawRule: Boolean = false, includeComments: Boolean = false): SecLangPreset = {
+    val parsed = AntlrParser.parse(rules, includeRawRule, includeComments).right.get
     val program = Compiler.compileUnsafe(parsed)
     SecLangPreset(name, program, files)
   }
-  def fromSource(name: String, rulesSource: ConfigurationSourceList = ConfigurationSourceList.empty, filesSource: FilesSourceList): SecLangPreset = {
+  def fromSource(name: String, rulesSource: ConfigurationSourceList = ConfigurationSourceList.empty, filesSource: FilesSourceList, includeRawRule: Boolean = false, includeComments: Boolean = false): SecLangPreset = {
     SecLangPreset(
       name = name,
-      program = Compiler.compileUnsafe(Configuration.fromList(rulesSource)),
+      program = Compiler.compileUnsafe(Configuration.fromList(rulesSource, includeRawRule, includeComments)),
       files = filesSource.sources.map(_.getFiles()).reduce((a, b) => a ++ b)
     )
   }
-  def withNoFilesSafe(name: String, rules: String): Either[SecLangError, SecLangPreset] = {
-    val parsed = AntlrParser.parse(rules).right.get
+  def withNoFilesSafe(name: String, rules: String, includeRawRule: Boolean = false, includeComments: Boolean = false): Either[SecLangError, SecLangPreset] = {
+    val parsed = AntlrParser.parse(rules, includeRawRule, includeComments).right.get
     Compiler.compile(parsed) match {
       case Left(err) => Left(err)
       case Right(program) => Right(SecLangPreset(name, program, Map.empty))
     }
   }
-  def withFilesSafe(name: String, rules: String, files: Map[String, String]): Either[SecLangError, SecLangPreset] = {
-    val parsed = AntlrParser.parse(rules).right.get
+  def withFilesSafe(name: String, rules: String, files: Map[String, String], includeRawRule: Boolean = false, includeComments: Boolean = false): Either[SecLangError, SecLangPreset] = {
+    val parsed = AntlrParser.parse(rules, includeRawRule, includeComments).right.get
     Compiler.compile(parsed) match {
       case Left(err) => Left(err)
       case Right(program) => Right(SecLangPreset(name, program, files))
     }
   }
-  def fromSourceSafe(name: String, rulesSource: ConfigurationSourceList = ConfigurationSourceList.empty, filesSource: FilesSourceList): Either[SecLangError, SecLangPreset] = {
-    Compiler.compile(Configuration.fromList(rulesSource)) match {
+  def fromSourceSafe(name: String, rulesSource: ConfigurationSourceList = ConfigurationSourceList.empty, filesSource: FilesSourceList, includeRawRule: Boolean = false, includeComments: Boolean = false): Either[SecLangError, SecLangPreset] = {
+    Compiler.compile(Configuration.fromList(rulesSource, includeRawRule, includeComments)) match {
       case Left(err) => Left(err)
       case Right(program) => Right(SecLangPreset(
         name = name,

@@ -101,7 +101,7 @@ public final class SecLang {
      * @return a ParseResult containing either the Configuration or an error message
      */
     public static ParseResult parse(String input) {
-        Either<SecLangError, Configuration> result = com.cloud.apim.seclang.scaladsl.SecLang.parse(input);
+        Either<SecLangError, Configuration> result = com.cloud.apim.seclang.scaladsl.SecLang.parse(input, false, false);
         if (result.isRight()) {
             return ParseResult.success(result.right().get());
         } else {

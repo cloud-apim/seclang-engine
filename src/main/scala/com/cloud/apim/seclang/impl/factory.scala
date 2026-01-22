@@ -24,7 +24,7 @@ class SecLangEngineFactory(
         integration.getCachedProgram(hash) match {
           case Some(p) => Some((p, Map.empty[String, String]))
           case None => {
-            val compiled = Compiler.compileUnsafe(AntlrParser.parse(line).right.get)
+            val compiled = Compiler.compileUnsafe(AntlrParser.parse(line, config.includeRawRule, config.includeComments).right.get)
             integration.putCachedProgram(hash, compiled, cacheTtl)
           }
         }
@@ -43,7 +43,7 @@ class SecLangEngineFactory(
         integration.getCachedProgram(hash) match {
           case Some(p) => Some((p, Map.empty[String, String]))
           case None => {
-            val parsed = AntlrParser.parse(line).right.get
+            val parsed = AntlrParser.parse(line, config.includeRawRule, config.includeComments).right.get
             val compiled = Compiler.compileUnsafe(parsed)
             integration.putCachedProgram(hash, compiled, cacheTtl)
             Some((compiled, Map.empty[String, String]))
@@ -69,7 +69,7 @@ class SecLangEngineFactory(
         integration.getCachedProgram(hash) match {
           case Some(p) => Some(Right((p, Map.empty[String, String])))
           case None => {
-            val parsed = AntlrParser.parse(line).right.get
+            val parsed = AntlrParser.parse(line, config.includeRawRule, config.includeComments).right.get
             Compiler.compile(parsed) match {
               case Left(err) => Some(Left(err))
               case Right(compiled) => {

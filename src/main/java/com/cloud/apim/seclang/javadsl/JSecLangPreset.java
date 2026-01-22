@@ -45,7 +45,7 @@ public final class JSecLangPreset {
      * @return a new preset
      */
     public static JSecLangPreset withNoFiles(String name, String rules) {
-        return new JSecLangPreset(SecLangPreset.withNoFiles(name, rules));
+        return new JSecLangPreset(SecLangPreset.withNoFiles(name, rules, false, false));
     }
 
     /**
@@ -61,7 +61,7 @@ public final class JSecLangPreset {
             JavaConverters.mapAsScalaMapConverter(files).asScala().toMap(
                 scala.Predef.<scala.Tuple2<String, String>>conforms()
             );
-        return new JSecLangPreset(SecLangPreset.withFiles(name, rules, scalaFiles));
+        return new JSecLangPreset(SecLangPreset.withFiles(name, rules, scalaFiles, false, false));
     }
 
     /**

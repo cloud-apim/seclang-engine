@@ -58,7 +58,7 @@ public final class JSecLangEngineConfig {
         scala.collection.mutable.Buffer<Object> buffer =
             (scala.collection.mutable.Buffer<Object>)(Object)JavaConverters.asScalaBufferConverter(debugRules).asScala();
         scala.collection.immutable.List<Object> scalaList = buffer.toList();
-        return new SecLangEngineConfig((scala.collection.immutable.List<Object>)(Object)scalaList);
+        return new SecLangEngineConfig((scala.collection.immutable.List<Object>)(Object)scalaList, false, false);
     }
 
     /**

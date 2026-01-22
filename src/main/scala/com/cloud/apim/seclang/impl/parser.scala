@@ -9,7 +9,7 @@ import scala.collection.JavaConverters._
 import scala.util.hashing.Hashing
 
 // https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29
-class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
+class AstBuilderVisitor(includeRawRule: Boolean, includeComments: Boolean) extends SecLangParserBaseVisitor[AstNode] {
 
   import com.cloud.apim.seclang.impl.utils.Implicits._
   
@@ -21,7 +21,7 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
   }
   
   override def visitStmt(ctx: SecLangParser.StmtContext): Statement = {
-    // val commentBlock = Option(ctx.comment_block()).map(visitCommentBlock)
+    val commentBlock = if (includeComments) Option(ctx.comment_block()).map(visitCommentBlock) else None
     
     if (ctx.engine_config_rule_directive() != null && ctx.variables() != null && ctx.operator() != null) {
       val variables = visitVariables(ctx.variables())
@@ -29,30 +29,30 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
       val actions = Option(ctx.actions()).map(visitActions)
       val actionRaw = Option(ctx.actions()).map(_.getText).getOrElse("--").split(",").mkString(",\\\n  ")
       val operatorRaw = s"${Option(ctx.operator().operator_not()).map(_.getText).getOrElse("")}@${ctx.operator().operator_name().getText} ${Option(ctx.operator().operator_value()).map(_.getText).getOrElse("")}"
-      val raw = s"""SecRule ${ctx.variables().getText} \"${operatorRaw}\" ${actionRaw}"""
-      SecRule(None, variables, operator, actions, raw)
+      val raw = if (includeRawRule) s"""SecRule ${ctx.variables().getText} \"${operatorRaw}\" ${actionRaw}""" else ""
+      SecRule(commentBlock, variables, operator, actions, raw)
 
     } else if (ctx.rule_script_directive() != null && ctx.file_path() != null) {
       val filePath = ctx.file_path().getText
       val actions = Option(ctx.actions()).map(visitActions)
-      SecRuleScript(None, filePath, actions)
+      SecRuleScript(commentBlock, filePath, actions)
       
     } else if (ctx.remove_rule_by_id() != null) {
       val ids = ctx.remove_rule_by_id_values().asScala.toList.map {
         case idCtx: Remove_rule_by_id_intContext if idCtx.INT() != null => idCtx.INT().getText.toInt
         case _ => 0
       }
-      SecRuleRemoveById(None, ids)
+      SecRuleRemoveById(commentBlock, ids)
     } else if (ctx.string_remove_rules() != null && ctx.string_remove_rules_values() != null) {
       val directive = ctx.string_remove_rules()
       val value = ctx.string_remove_rules_values().getText.replaceAll("\"", "")
       directive match {
         case d: Remove_rule_by_msgContext if d.CONFIG_SEC_RULE_REMOVE_BY_MSG() != null =>
-          SecRuleRemoveByMsg(None, value)
+          SecRuleRemoveByMsg(commentBlock, value)
         case d: Remove_rule_by_tagContext if d.CONFIG_SEC_RULE_REMOVE_BY_TAG() != null =>
-          SecRuleRemoveByTag(None, value)
+          SecRuleRemoveByTag(commentBlock, value)
         case _ =>
-          SecRuleRemoveByMsg(None, value)
+          SecRuleRemoveByMsg(commentBlock, value)
       }
     } else if (ctx.update_target_rules() != null && ctx.update_variables() != null) {
       val updateRules = ctx.update_target_rules()
@@ -61,33 +61,34 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
         val value = ctx.update_target_rules_values().getText.replaceAll("\"", "")
         updateRules match {
           case ur: Update_target_by_idContext if ur.CONFIG_SEC_RULE_UPDATE_TARGET_BY_ID() != null =>
-            SecRuleUpdateTargetById(None, value.toInt, variables)
+            SecRuleUpdateTargetById(commentBlock, value.toInt, variables)
           case ur: Update_target_by_msgContext if ur.CONFIG_SEC_RULE_UPDATE_TARGET_BY_MSG() != null =>
-            SecRuleUpdateTargetByMsg(None, value, variables)
+            SecRuleUpdateTargetByMsg(commentBlock, value, variables)
           case ur: Update_target_by_tagContext if ur.CONFIG_SEC_RULE_UPDATE_TARGET_BY_TAG() != null =>
-            SecRuleUpdateTargetByTag(None, value, variables)
+            SecRuleUpdateTargetByTag(commentBlock, value, variables)
           case _ =>
-            SecRuleUpdateTargetByMsg(None, value, variables)
+            SecRuleUpdateTargetByMsg(commentBlock, value, variables)
         }
       } else {
-        SecRuleUpdateTargetByMsg(None, "", variables)
+        SecRuleUpdateTargetByMsg(commentBlock, "", variables)
       }
     } else if (ctx.update_action_rule() != null && ctx.id() != null && ctx.actions() != null) {
       val id = ctx.id().INT().getText.toInt
       val actions = visitActions(ctx.actions())
-      SecRuleUpdateActionById(None, id, actions)
+      SecRuleUpdateActionById(commentBlock, id, actions)
     } else if (ctx.engine_config_directive() != null && ctx.engine_config_directive().sec_marker_directive() != null) {
       val name = ctx.getText.split("SecMarker").tail.mkString("SecMarker").replaceAll("\"", "").replaceAll("'", "")
-      SecMarker(None, name)
+      SecMarker(commentBlock, name)
     } else if (ctx.engine_config_directive() != null) {
       val ctxDir = ctx.engine_config_directive()
       val stmt = ctxDir.getText.split("\"").headOption.getOrElse("--")
       if (stmt == "SecAction") {
         val actions = visitActions(ctxDir.actions())
-        SecAction(None, actions, s"SecAction ${Option(ctx.actions()).map(_.getText).getOrElse("--")}")
+        val raw = if (includeRawRule) s"SecAction ${Option(ctx.actions()).map(_.getText).getOrElse("--")}" else ""
+        SecAction(commentBlock, actions, raw)
       } else {
         val directive = visitEngineConfigDirective(ctx.engine_config_directive())
-        EngineConfigDirective(None, directive)
+        EngineConfigDirective(commentBlock, directive)
       }
     } else {
       SecMarker(None, "unknown")
@@ -353,7 +354,7 @@ class AstBuilderVisitor extends SecLangParserBaseVisitor[AstNode] {
 }
 
 object AntlrParser {
-  def parseUnsafe(in: String): Configuration = {
+  def parseUnsafe(in: String, includeRawRule: Boolean = false, includeComments: Boolean = false): Configuration = {
     import org.antlr.v4.runtime._
     val hash = HashUtilsFast.sha512Hex(in)
     val input = CharStreams.fromString(in)
@@ -377,12 +378,12 @@ object AntlrParser {
     parser.addErrorListener(errorListener)
 
     val tree = parser.configuration()
-    val visitor = new AstBuilderVisitor()
+    val visitor = new AstBuilderVisitor(includeRawRule, includeComments)
     visitor.visitConfiguration(tree).copy(hash = hash)
   }
-  def parse(in: String): Either[SecLangError, Configuration] = {
+  def parse(in: String, includeRawRule: Boolean = false, includeComments: Boolean = false): Either[SecLangError, Configuration] = {
     try {
-      Right(parseUnsafe(in))
+      Right(parseUnsafe(in, includeRawRule, includeComments))
     } catch {
       case e: Exception => Left(ParseError(e))
     }
