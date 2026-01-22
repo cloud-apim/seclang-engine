@@ -27,27 +27,7 @@ rule language, providing full compatibility with the [OWASP Core Rule Set (CRS) 
 
 ## Status
 
-This project is a work in progress. We are currently passing **100%** of the [CRS test suite](https://github.com/coreruleset/coreruleset/tree/main/tests/regression/tests)
-
-```json
-{
-  "global_stats" : {
-    "failure_percentage" : 0,
-    "passing_percentage" : 100,
-    "total_tests" : 4135,
-    "success_tests" : 4135,
-    "failure_tests" : 0
-  },
-  "time_stats" : {
-    "calls" : 4135,
-    "total_time_ms" : 35945,
-    "min_time_ns" : 1727500,
-    "min_time_ms" : 1,
-    "max_time_ms" : 4242,
-    "avg_time_ms" : 8
-  }
-}
-```
+This project is a work in progress. We are currently (passing **100%**)[./crs-tests-status.json] of the [CRS test suite](https://github.com/coreruleset/coreruleset/tree/main/tests/regression/tests)-
 
 ## Simple usage
 
