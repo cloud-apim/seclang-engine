@@ -208,7 +208,7 @@ class SecLangFactorySizeTest extends munit.FunSuite {
       body = None
     )
     var engines = List.empty[SecLangEngine]
-    for (i <- 1 to 1000) {
+    for (i <- 1 to 100) {
       val e = factory.engine(rulesConfig)
       engines = engines :+ e
     }

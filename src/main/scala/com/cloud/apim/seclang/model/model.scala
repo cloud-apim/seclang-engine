@@ -599,11 +599,13 @@ final case class SecRuleRemoveByTag(
 final case class SecRuleUpdateTargetById(
     commentBlock: Option[CommentBlock],
     id: Int,
-    variables: UpdateVariables
+    variables: UpdateVariables,
+    negatedVariables: UpdateVariables,
 ) extends Statement {
   def json: JsValue = Json.obj(
     "id" -> id,
     "variables" -> variables.json,
+    "negated_variables" -> negatedVariables.json,
     "comment_block" -> commentBlock.map(_.json).getOrElse(JsNull).as[JsValue],
   )
 }
@@ -611,12 +613,14 @@ final case class SecRuleUpdateTargetById(
 final case class SecRuleUpdateTargetByMsg(
     commentBlock: Option[CommentBlock],
     value: String,
-    variables: UpdateVariables
+    variables: UpdateVariables,
+    negatedVariables: UpdateVariables,
 ) extends Statement {
   def json: JsValue = Json.obj(
     "type" -> "SecRuleUpdateTargetByMsg",
     "value" -> value,
     "variables" -> variables.json,
+    "negated_variables" -> negatedVariables.json,
     "comment_block" -> commentBlock.map(_.json).getOrElse(JsNull).as[JsValue],
   )
 }
@@ -624,12 +628,14 @@ final case class SecRuleUpdateTargetByMsg(
 final case class SecRuleUpdateTargetByTag(
     commentBlock: Option[CommentBlock],
     value: String,
-    variables: UpdateVariables
+    variables: UpdateVariables,
+    negatedVariables: UpdateVariables,
 ) extends Statement {
   def json: JsValue = Json.obj(
     "type" -> "SecRuleUpdateTargetByTag",
     "value" -> value,
     "variables" -> variables.json,
+    "negated_variables" -> negatedVariables.json,
     "comment_block" -> commentBlock.map(_.json).getOrElse(JsNull).as[JsValue],
   )
 }

@@ -12,9 +12,15 @@ object Compiler {
 
   def compileUnsafe(configuration: Configuration): CompiledProgram = {
     val statements = configuration.statements
+
     val removed = statements.collect { case SecRuleRemoveById(_, ids) => ids }.flatten.toSet
     val removedRuleTags: Set[String] = statements.collect { case SecRuleRemoveByTag(_, tag) => tag }.toSet
     val removedRuleMsgs: Set[String] = statements.collect { case SecRuleRemoveByMsg(_, msg) => msg }.toSet
+
+    val updatedTargetsById = statements.collect  { case u @ SecRuleUpdateTargetById(_, id, _, _) => (id, u) }.toMap
+    val updatedTargetsByMsg = statements.collect { case u @ SecRuleUpdateTargetByMsg(_, msg, _, _) => (msg, u) }.toMap
+    val updatedTargetsByTag = statements.collect { case u @ SecRuleUpdateTargetByTag(_, tag, _, _) => (tag, u) }.toMap
+
     val defaultActions: Map[Int, List[Action]] = statements.collect {
       case EngineConfigDirective(_, DefaultAction(actions)) if actions.hasPhase => actions.actions
         .filterNot(_.isMetaData)
@@ -48,7 +54,34 @@ object Compiler {
 
     while (it.hasNext) {
       it.next() match {
-        case r: SecRule => {
+        case _r: SecRule => {
+          val rid = _r.id.getOrElse(-1)
+          val r = _r match {
+            case rule if updatedTargetsById.contains(rid) => {
+              val t = updatedTargetsById(rid)
+              rule.copy(variables = rule.variables.copy(
+                variables = rule.variables.variables ++ t.variables.variables,
+                negatedVariables = rule.variables.negatedVariables ++ t.negatedVariables.variables,
+              ))
+            }
+            case rule if rule.msgs.exists(m => updatedTargetsByMsg.contains(m)) => {
+              rule.msgs.flatMap(m => updatedTargetsByMsg.get(m)).foldLeft(rule) {
+                case (rule, t) => rule.copy(variables = rule.variables.copy(
+                  variables = rule.variables.variables ++ t.variables.variables,
+                  negatedVariables = rule.variables.negatedVariables ++ t.negatedVariables.variables,
+                ))
+              }
+            }
+            case rule if rule.tags.exists(m => updatedTargetsByTag.contains(m)) => {
+              rule.msgs.flatMap(m => updatedTargetsByTag.get(m)).foldLeft(rule) {
+                case (rule, t) => rule.copy(variables = rule.variables.copy(
+                  variables = rule.variables.variables ++ t.variables.variables,
+                  negatedVariables = rule.variables.negatedVariables ++ t.negatedVariables.variables,
+                ))
+              }
+            }
+            case _ => _r
+          }
           if (removed.contains(r.id.getOrElse(-1)) || r.tags.exists(t => removedRuleTags.contains(t)) || r.msgs.exists(t => removedRuleMsgs.contains(t))) {
             // skip removed (if no id, can't remove)
           } else if (r.isChain) {
@@ -95,9 +128,9 @@ object Compiler {
         case s: SecRuleRemoveById => () // already implemented in remove
         case s: SecRuleRemoveByMsg => () // already implemented in remove
         case s: SecRuleRemoveByTag => () // already implemented in remove
-        case s: SecRuleUpdateTargetById => unimplementedStatement("SecRuleUpdateTargetById")
-        case s: SecRuleUpdateTargetByMsg => unimplementedStatement("SecRuleUpdateTargetByMsg")
-        case s: SecRuleUpdateTargetByTag => unimplementedStatement("SecRuleUpdateTargetByTag")
+        case s: SecRuleUpdateTargetById => ()
+        case s: SecRuleUpdateTargetByMsg => ()
+        case s: SecRuleUpdateTargetByTag => ()
         case s: SecRuleUpdateActionById => unimplementedStatement("SecRuleUpdateActionById")
         case EngineConfigDirective(_, DefaultAction(_)) => () // already handled
         case EngineConfigDirective(_, ComponentSignature(_)) => () // already handled

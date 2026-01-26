@@ -56,21 +56,21 @@ class AstBuilderVisitor(includeRawRule: Boolean, includeComments: Boolean) exten
       }
     } else if (ctx.update_target_rules() != null && ctx.update_variables() != null) {
       val updateRules = ctx.update_target_rules()
-      val variables = visitUpdateVariables(ctx.update_variables())
+      val (variables, nvariables) = visitUpdateVariables(ctx.update_variables())
       if (ctx.update_target_rules_values() != null) {
         val value = ctx.update_target_rules_values().getText.replaceAll("\"", "")
         updateRules match {
           case ur: Update_target_by_idContext if ur.CONFIG_SEC_RULE_UPDATE_TARGET_BY_ID() != null =>
-            SecRuleUpdateTargetById(commentBlock, value.toInt, variables)
+            SecRuleUpdateTargetById(commentBlock, value.toInt, variables, nvariables)
           case ur: Update_target_by_msgContext if ur.CONFIG_SEC_RULE_UPDATE_TARGET_BY_MSG() != null =>
-            SecRuleUpdateTargetByMsg(commentBlock, value, variables)
+            SecRuleUpdateTargetByMsg(commentBlock, value, variables, nvariables)
           case ur: Update_target_by_tagContext if ur.CONFIG_SEC_RULE_UPDATE_TARGET_BY_TAG() != null =>
-            SecRuleUpdateTargetByTag(commentBlock, value, variables)
+            SecRuleUpdateTargetByTag(commentBlock, value, variables, nvariables)
           case _ =>
-            SecRuleUpdateTargetByMsg(commentBlock, value, variables)
+            SecRuleUpdateTargetByMsg(commentBlock, value, variables, nvariables)
         }
       } else {
-        SecRuleUpdateTargetByMsg(commentBlock, "", variables)
+        SecRuleUpdateTargetByMsg(commentBlock, "", variables, nvariables)
       }
     } else if (ctx.update_action_rule() != null && ctx.id() != null && ctx.actions() != null) {
       val id = ctx.id().INT().getText.toInt
@@ -152,11 +152,30 @@ class AstBuilderVisitor(includeRawRule: Boolean, includeComments: Boolean) exten
 
   }
   
-  def visitUpdateVariables(ctx: SecLangParser.Update_variablesContext): UpdateVariables = {
+  def visitUpdateVariables(ctx: SecLangParser.Update_variablesContext): (UpdateVariables, UpdateVariables) = {
     val negated = ctx.var_not().asScala.nonEmpty
     val count = ctx.var_count() != null
     val variables = ctx.var_stmt().asScala.toList.map(visitVarStmt)
-    UpdateVariables(negated, count, variables)
+    if (negated && ctx.var_not().size > 0) {
+      val shouldRemoveN = ctx.var_not().size()
+      val nvars = ctx.getText.split("\\|").toList.filter(s => s.startsWith("!") || s.startsWith("\"!")).map { name =>
+        val raw = if (name.startsWith("\"!")) {
+          name.substring(2)
+        } else {
+          name.substring(1)
+        }
+        if (raw.contains(":")) {
+          val parts = raw.split(":").toList
+          Variable.Collection(parts.head, Some(parts.tail.mkString(":")))
+        } else {
+          Variable.Simple(raw)
+        }
+      }
+      assert(shouldRemoveN == nvars.size, s"actual negated variables does not match announced count (${shouldRemoveN} != ${nvars.size})")
+      (UpdateVariables(negated, count, variables), UpdateVariables(negated, count, nvars))
+    } else {
+      (UpdateVariables(negated, count, variables), UpdateVariables(negated, count, List.empty))
+    }
   }
   
   def visitVarStmt(ctx: SecLangParser.Var_stmtContext): Variable = {
