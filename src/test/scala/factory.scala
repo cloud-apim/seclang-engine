@@ -161,6 +161,43 @@ class SecLangFactoryTest extends munit.FunSuite {
     assertEquals(failing_res.disposition, Block(400, Some("Potential Remote Command Execution: Log4j / Log4shell"), Some(944150)))
   }
 }
+
+class SecLangFactoryRemoveTest extends munit.FunSuite {
+  test("remove rule id across presets") {
+    val program1 = SecLang.compile(SecLang.parse(
+      """
+        |SecRule REQUEST_URI "@rx ^/admin" \
+        |    "id:00001,\
+        |    phase:1,\
+        |    block,\
+        |    t:none,t:lowercase,\
+        |    msg:'someone tried to access /admin',\
+        |    logdata:'someone tried to access /admin',\
+        |    tag:'test',\
+        |    ver:'0.0.0-dev',\
+        |    severity:'CRITICAL'"
+        |""".stripMargin).right.get)
+    val factory = SecLang.factory(Map("preset1" -> SecLangPreset("preset1", program1, Map.empty)))
+
+    val reqCtx = RequestContext(
+      method = "GET",
+      uri = "/admin",
+      headers = Headers(Map("User-Agent" -> List("chrome/8.0"))),
+      query = Map("q" -> List("test")),
+      body = None
+    )
+
+    val engine1 = factory.engine(List( "@import_preset preset1", "SecRuleEngine On"))
+    val res1 = engine1.evaluate(reqCtx)
+
+    val engine2 = factory.engine(List( "@import_preset preset1", "SecRuleRemoveById 00001", "SecRuleEngine On"))
+    val res2 = engine2.evaluate(reqCtx)
+
+    assertEquals(res1.disposition, Block(400, Some("someone tried to access /admin"), Some(1)))
+    assertEquals(res2.disposition, Continue)
+  }
+}
+
 class SecLangFactorySizeTest extends munit.FunSuite {
   test("factory size") {
     val crs = SecLangPreset.fromSource(
