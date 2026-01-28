@@ -13,21 +13,25 @@ object Compiler {
   def compileUnsafe(configuration: Configuration): CompiledProgram = {
     val statements = configuration.statements
 
-    val removed = statements.collect { case SecRuleRemoveById(_, ids) => ids }.flatten.toSet
-    val removedRuleTags: Set[String] = statements.collect { case SecRuleRemoveByTag(_, tag) => tag }.toSet
-    val removedRuleMsgs: Set[String] = statements.collect { case SecRuleRemoveByMsg(_, msg) => msg }.toSet
+    // Single pass to collect all metadata
+    val removedBuilder = Set.newBuilder[Int]
+    val removedRuleTagsBuilder = Set.newBuilder[String]
+    val removedRuleMsgsBuilder = Set.newBuilder[String]
+    val updatedTargetsByIdBuilder = Map.newBuilder[Int, SecRuleUpdateTargetById]
+    val updatedTargetsByMsgBuilder = Map.newBuilder[String, SecRuleUpdateTargetByMsg]
+    val updatedTargetsByTagBuilder = Map.newBuilder[String, SecRuleUpdateTargetByTag]
+    val defaultActionsBuilder = scala.collection.mutable.ListBuffer.empty[(Int, Action)]
 
-    val updatedTargetsById = statements.collect  { case u @ SecRuleUpdateTargetById(_, id, _, _) => (id, u) }.toMap
-    val updatedTargetsByMsg = statements.collect { case u @ SecRuleUpdateTargetByMsg(_, msg, _, _) => (msg, u) }.toMap
-    val updatedTargetsByTag = statements.collect { case u @ SecRuleUpdateTargetByTag(_, tag, _, _) => (tag, u) }.toMap
-
-    val defaultActions: Map[Int, List[Action]] = statements.collect {
-      case EngineConfigDirective(_, DefaultAction(actions)) if actions.hasPhase => actions.actions
-        .filterNot(_.isMetaData)
-        .map(a => (actions.phase.get, a))
-    }.flatten.groupBy(_._1).mapValues(_.map(_._2))
     statements.foreach {
-      case SecRule(_, variables, op, _, _) => {
+      case SecRuleRemoveById(_, ids) => removedBuilder ++= ids
+      case SecRuleRemoveByTag(_, tag) => removedRuleTagsBuilder += tag
+      case SecRuleRemoveByMsg(_, msg) => removedRuleMsgsBuilder += msg
+      case u @ SecRuleUpdateTargetById(_, id, _, _) => updatedTargetsByIdBuilder += (id -> u)
+      case u @ SecRuleUpdateTargetByMsg(_, msg, _, _) => updatedTargetsByMsgBuilder += (msg -> u)
+      case u @ SecRuleUpdateTargetByTag(_, tag, _, _) => updatedTargetsByTagBuilder += (tag -> u)
+      case EngineConfigDirective(_, DefaultAction(actions)) if actions.hasPhase =>
+        actions.actions.filterNot(_.isMetaData).foreach(a => defaultActionsBuilder += ((actions.phase.get, a)))
+      case SecRule(_, variables, op, _, _) =>
         op match {
           case Operator.Rx(pattern) => RegexPool.regex(pattern)
           case _ => ()
@@ -37,14 +41,16 @@ object Compiler {
             RegexPool.regex(key.substring(1, key.length - 1))
           case _ => ()
         }
-      }
       case _ => ()
     }
-    // statements.collect {
-    //   case SecRule(_, _, Operator.Rx(pattern), _, _) => pattern
-    // }.foreach { pattern =>
-    //   RegexPool.regex(pattern)
-    // }
+
+    val removed = removedBuilder.result()
+    val removedRuleTags = removedRuleTagsBuilder.result()
+    val removedRuleMsgs = removedRuleMsgsBuilder.result()
+    val updatedTargetsById = updatedTargetsByIdBuilder.result()
+    val updatedTargetsByMsg = updatedTargetsByMsgBuilder.result()
+    val updatedTargetsByTag = updatedTargetsByTagBuilder.result()
+    val defaultActions: Map[Int, List[Action]] = defaultActionsBuilder.toList.groupBy(_._1).mapValues(_.map(_._2)).toMap
 
     // flatten into CompiledItem with chain logic
     val items = scala.collection.mutable.ArrayBuffer.empty[CompiledItem]
