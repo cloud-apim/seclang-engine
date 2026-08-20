@@ -29,15 +29,20 @@ jobs:
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
         run: |
-          # sbt ';compile;package;publishSigned;sonaRelease'
-          sbt ';compile;package'
+          # sbt ';+compile;+package;+publishSigned;sonaRelease'
+          sbt ';+compile;+package'
       - name: Generate SHA-256
         run: |
-          shasum -a 256 ./target/scala-2.12/seclang-engine_2.12-${{ inputs.version }}.jar | cut -d ' ' -f 1 > ./target/scala-2.12/seclang-engine_2.12-${{ inputs.version }}.jar.sha256
-      - name: Release binary and SHA-256 checksum to GitHub
+          for scala_version in 2.12 2.13; do
+            jar="./target/scala-${scala_version}/seclang-engine_${scala_version}-${{ inputs.version }}.jar"
+            shasum -a 256 "$jar" | cut -d ' ' -f 1 > "${jar}.sha256"
+          done
+      - name: Release binaries and SHA-256 checksums to GitHub
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ inputs.version }}
           files: |
             ./target/scala-2.12/seclang-engine_2.12-${{ inputs.version }}.jar
             ./target/scala-2.12/seclang-engine_2.12-${{ inputs.version }}.jar.sha256
+            ./target/scala-2.13/seclang-engine_2.13-${{ inputs.version }}.jar
+            ./target/scala-2.13/seclang-engine_2.13-${{ inputs.version }}.jar.sha256

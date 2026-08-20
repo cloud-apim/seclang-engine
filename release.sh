@@ -57,11 +57,11 @@ echo_info "Updating version in build.sbt..."
 sed -i.bak "s/ThisBuild \/ version.*:= \".*\"/ThisBuild \/ version          := \"$VERSION\"/" build.sbt
 rm -f build.sbt.bak
 
-echo_info "Running tests..."
-sbt clean test
+echo_info "Running tests for every scala version..."
+sbt clean +test
 
 echo_info "Building documentation..."
-sbt doc
+sbt +doc
 
 echo_info "Committing version bump..."
 git add build.sbt
@@ -70,8 +70,8 @@ git commit -m "Release version $VERSION"
 echo_info "Creating git tag v$VERSION..."
 git tag -a "v$VERSION" -m "Release version $VERSION"
 
-echo_info "Publishing signed artifacts to Sonatype..."
-sbt publishSigned
+echo_info "Publishing signed artifacts to Sonatype (scala 2.12 and 2.13)..."
+sbt +publishSigned
 
 echo_info "Releasing to Maven Central..."
 sbt sonaRelease
@@ -95,10 +95,12 @@ echo_info "=========================================="
 echo_info ""
 echo_info "Next steps:"
 echo_info "1. Wait 10-30 minutes for sync to Maven Central"
-echo_info "2. Verify at: https://repo1.maven.org/maven2/com/cloud-apim/seclang-engine_2.12/$VERSION/"
+echo_info "2. Verify at:"
+echo_info "   https://repo1.maven.org/maven2/com/cloud-apim/seclang-engine_2.12/$VERSION/"
+echo_info "   https://repo1.maven.org/maven2/com/cloud-apim/seclang-engine_2.13/$VERSION/"
 echo_info "3. Create GitHub release at: https://github.com/cloud-apim/seclang-engine/releases/new?tag=v$VERSION"
 echo_info ""
 echo_info "Artifact coordinates:"
 echo_info "  groupId: com.cloud-apim"
-echo_info "  artifactId: seclang-engine_2.12"
+echo_info "  artifactId: seclang-engine_2.12 / seclang-engine_2.13"
 echo_info "  version: $VERSION"

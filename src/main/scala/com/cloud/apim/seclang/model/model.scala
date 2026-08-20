@@ -1548,7 +1548,7 @@ object SeverityValue {
       case "notice" | "5" => SeverityValue.Notice
       case "info" | "6" => SeverityValue.Info
       case "debug" | "7" => SeverityValue.Debug
-      case n => SeverityValue.Numeric(n.toIntOption.getOrElse(0))
+      case n => SeverityValue.Numeric(n.toIntOpt.getOrElse(0))
     }
   }
 }
@@ -1705,7 +1705,7 @@ final case class RequestContext(
     if (body.isDefined && isJson) {
       try {
         val map: Map[String, JsValue] = jsonBody.flatMap(_.asOpt[Map[String, JsValue]]).getOrElse(Map.empty)
-        map.mapValues(RequestContext.jsToStr)
+        map.map { case (key, value) => (key, RequestContext.jsToStr(value)) }
       } catch {
         case t: Throwable => Map.empty
       }

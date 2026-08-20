@@ -2,6 +2,9 @@
 
 This document describes how to publish the seclang-engine library to Maven Central.
 
+The library is cross-built for Scala 2.12 and Scala 2.13 (see `crossScalaVersions` in `build.sbt`),
+so every publishing command must be prefixed with `+` to run it for each Scala version.
+
 ## Prerequisites
 
 1. **Sonatype Account**: Create an account at https://s01.oss.sonatype.org/
@@ -48,7 +51,7 @@ useGpgAgent := true
 
 ### 1. Update Version
 
-Edit `build.sbt` and update the version:
+Edit `version.sbt` and update the version:
 
 ```scala
 ThisBuild / version := "1.0.0"  // Remove -dev suffix for release
@@ -64,7 +67,7 @@ sbt +test
 ### 3. Publish to Sonatype
 
 ```bash
-# Publish signed artifacts to staging repository
+# Publish signed artifacts (scala 2.12 and 2.13) to the staging repository
 sbt +publishSigned
 
 # Release to Maven Central
@@ -79,9 +82,10 @@ sbt +publishSigned sonatypeBundleRelease
 
 ### 4. Verify Publication
 
-After 10-30 minutes, verify the artifact is available:
+After 10-30 minutes, verify both artifacts are available:
 - Staging: https://s01.oss.sonatype.org/content/repositories/releases/
-- Maven Central: https://repo1.maven.org/maven2/com/cloud-apim/seclang-engine_2.12/
+- Maven Central (Scala 2.12): https://repo1.maven.org/maven2/com/cloud-apim/seclang-engine_2.12/
+- Maven Central (Scala 2.13): https://repo1.maven.org/maven2/com/cloud-apim/seclang-engine_2.13/
 
 ### 5. Tag the Release
 
@@ -92,7 +96,7 @@ git push origin v1.0.0
 
 ## Snapshot Releases
 
-For snapshot releases:
+For snapshot releases, in `version.sbt`:
 
 ```scala
 ThisBuild / version := "1.1.0-SNAPSHOT"

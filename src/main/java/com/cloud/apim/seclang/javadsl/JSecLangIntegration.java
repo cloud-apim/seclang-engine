@@ -1,7 +1,6 @@
 package com.cloud.apim.seclang.javadsl;
 
 import com.cloud.apim.seclang.model.*;
-import scala.Function1;
 import scala.Option;
 import scala.collection.JavaConverters;
 import scala.concurrent.duration.FiniteDuration;
@@ -142,9 +141,7 @@ public abstract class JSecLangIntegration {
 
         @Override
         public scala.collection.immutable.Map<String, String> getEnv() {
-            return JavaConverters.mapAsScalaMapConverter(self.getEnv()).asScala().toMap(
-                    scala.Predef.<scala.Tuple2<String, String>>conforms()
-            );
+            return JavaCompat.toScalaMap(self.getEnv());
         }
 
         @Override
@@ -198,13 +195,11 @@ public abstract class JSecLangIntegration {
         private final DefaultSecLangIntegration underlying;
 
         DefaultJSecLangIntegration(int maxCacheItems, Map<String, JSecLangPreset> presets) {
-            scala.collection.immutable.Map<String, SecLangPreset> spresets = JavaConverters.mapAsScalaMapConverter(presets).asScala().toMap(
-                    scala.Predef.<scala.Tuple2<String, JSecLangPreset>>conforms()
-            ).mapValues(new Function1<JSecLangPreset, SecLangPreset>() {
-                public SecLangPreset apply(JSecLangPreset preset) {
-                    return preset.toScala();
-                }
-            });
+            Map<String, SecLangPreset> converted = new java.util.HashMap<>();
+            if (presets != null) {
+                presets.forEach((name, preset) -> converted.put(name, preset.toScala()));
+            }
+            scala.collection.immutable.Map<String, SecLangPreset> spresets = JavaCompat.toScalaMap(converted);
             this.underlying = new DefaultSecLangIntegration(maxCacheItems, spresets);
         }
 

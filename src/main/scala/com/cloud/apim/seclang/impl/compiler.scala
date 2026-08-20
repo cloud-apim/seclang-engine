@@ -50,7 +50,7 @@ object Compiler {
     val updatedTargetsById = updatedTargetsByIdBuilder.result()
     val updatedTargetsByMsg = updatedTargetsByMsgBuilder.result()
     val updatedTargetsByTag = updatedTargetsByTagBuilder.result()
-    val defaultActions: Map[Int, List[Action]] = defaultActionsBuilder.toList.groupBy(_._1).mapValues(_.map(_._2)).toMap
+    val defaultActions: Map[Int, List[Action]] = defaultActionsBuilder.toList.groupBy(_._1).map { case (phase, actions) => (phase, actions.map(_._2)) }
 
     // flatten into CompiledItem with chain logic
     val items = scala.collection.mutable.ArrayBuffer.empty[CompiledItem]

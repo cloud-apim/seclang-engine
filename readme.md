@@ -8,7 +8,7 @@
   <a href="https://github.com/cloud-apim/seclang-engine/actions/workflows/ci.yaml"><img src="https://github.com/cloud-apim/seclang-engine/actions/workflows/ci.yaml/badge.svg" alt="CI"></a>
   <a href="https://central.sonatype.com/artifact/com.cloud-apim/seclang-engine_2.12"><img src="https://img.shields.io/maven-central/v/com.cloud-apim/seclang-engine_2.12?color=blue" alt="Maven Central"></a>
   <a href="https://github.com/cloud-apim/seclang-engine/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License"></a>
-  <img src="https://img.shields.io/badge/Scala-2.12-red.svg" alt="Scala 2.12">
+  <img src="https://img.shields.io/badge/Scala-2.12%20%7C%202.13-red.svg" alt="Scala 2.12 | 2.13">
   <a href="https://coreruleset.org/"><img src="https://img.shields.io/badge/CRS%20v4-100%25-brightgreen" alt="CRS v4 Compatibility"></a>
 </p>
 
@@ -19,7 +19,7 @@ rule language, providing full compatibility with the [OWASP Core Rule Set (CRS) 
 
 - **CRS Compatibility** - Runs the OWASP Core Rule Set v4 out of the box, protecting your applications against SQL Injection, Cross-Site Scripting (XSS), Remote Code Execution, and other threats from the OWASP Top Ten.
 - **Multi-Tenant by Design** - Built from the ground up for multi-tenant environments, allowing different rule configurations per tenant with isolated execution contexts and shared rule presets.
-- **JVM Native** - Runs natively on the JVM with Scala 2.12 support. Easily integrates with existing Java/Scala applications, API gateways, and reverse proxies.
+- **JVM Native** - Runs natively on the JVM with Scala 2.12 and 2.13 support. Easily integrates with existing Java/Scala applications, API gateways, and reverse proxies.
 - **High Performance** - Optimized for high-throughput scenarios with compiled rule programs, regex caching, and efficient variable resolution. Handles thousands of requests per second with minimal latency overhead.
 - **Library-First** - Designed as an embeddable library, not a standalone server. Integrate WAF capabilities directly into your application, gateway, or proxy with a simple API.
 - **Extensible** - Customize logging, caching, and integration points through the `SecLangIntegration` trait. Compose rule presets and configurations dynamically at runtime.
@@ -289,7 +289,8 @@ Add the following dependency to your `build.sbt`:
 libraryDependencies += "com.cloud-apim" %% "seclang-engine" % "1.5.0"
 ```
 
-The library is compiled for Scala 2.12
+The library is cross-compiled for Scala 2.12 and Scala 2.13, so `%%` picks the right artifact
+(`seclang-engine_2.12` or `seclang-engine_2.13`) for your project.
 
 ### Using Snapshots
 
@@ -313,12 +314,24 @@ For Maven projects, add to your `pom.xml`:
 </dependency>
 ```
 
+or, for Scala 2.13:
+
+```xml
+<dependency>
+  <groupId>com.cloud-apim</groupId>
+  <artifactId>seclang-engine_2.13</artifactId>
+  <version>1.5.0</version>
+</dependency>
+```
+
 ### Gradle
 
 For Gradle projects:
 
 ```gradle
 implementation 'com.cloud-apim:seclang-engine_2.12:1.5.0'
+// or, for Scala 2.13
+implementation 'com.cloud-apim:seclang-engine_2.13:1.5.0'
 ```
 
 ## Build
@@ -330,11 +343,17 @@ To build the project from source:
 git clone https://github.com/cloud-apim/seclang-engine.git
 cd seclang-engine
 
-# Compile
+# Compile (default scala version, 2.12)
 sbt compile
+
+# Compile for every supported scala version (2.12 and 2.13)
+sbt +compile
 
 # Package
 sbt package
+
+# Package for every supported scala version
+sbt +package
 ```
 
 ## Testing
@@ -356,6 +375,9 @@ This script clones the CRS repository into `test-data/coreruleset/`.
 ```bash
 # Run all tests
 sbt test
+
+# Run all tests for every supported scala version (2.12 and 2.13)
+sbt +test
 
 # Run a specific test suite
 sbt "testOnly *SecLangBasicTest"

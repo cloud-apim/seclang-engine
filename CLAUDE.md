@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 SecLang Engine is a Scala library implementing a subset of the OWASP/ModSecurity SecLang language for the JVM. It parses, compiles, and evaluates SecLang rules, primarily designed to run the OWASP Core Rule Set (CRS) in multi-tenant environments.
 
-Project is built on JDK 17 using SBT (Simple Build Tool) for scala.
+Project is built on JDK 17 using SBT (Simple Build Tool) for scala, and is cross-compiled for Scala 2.12 and 2.13.
 
 ## Build Commands
 
@@ -29,9 +29,13 @@ sbt "testOnly *SecLangCRSTest"
 # Generate documentation
 sbt doc
 
-# Compile for Scala 2.12
-sbt compile
-sbt test
+# Cross build : run the task for every scala version listed in crossScalaVersions (2.12 and 2.13)
+sbt +compile
+sbt +test
+sbt +publishLocal
+
+# Build for one specific scala version
+sbt ++2.13.18 compile
 ```
 
 ## Regenerating ANTLR Parser
@@ -89,6 +93,9 @@ This generates Java parser code in `src/main/scala/com/cloud/apim/seclang/antlr/
 ## Conventions
 
 - Uses Scala 2.12 idiomatic style with immutable data structures
+- Code must cross-compile on Scala 2.12 and 2.13: no `mapValues` (returns a `MapView` on 2.13), no
+  `Predef.conforms()` from java (use `javadsl.JavaCompat` instead), and beware of `scala.Seq` meaning
+  `scala.collection.Seq` on 2.12 but `scala.collection.immutable.Seq` on 2.13
 - Tests use MUnit
 - Parse errors return `Either[String, Configuration]` rather than throwing exceptions
 - All model types extend `AstNode` with JSON serialization via play-json

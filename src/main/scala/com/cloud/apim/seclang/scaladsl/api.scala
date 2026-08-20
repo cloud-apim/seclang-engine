@@ -13,7 +13,12 @@ object SecLang {
 
   def parse(input: String, includeRawRule: Boolean = false, includeComments: Boolean = false): Either[SecLangError, Configuration] = AntlrParser.parse(input, includeRawRule, includeComments)
 
-  def parseJson(input: String): Either[Seq[(JsPath, Seq[JsonValidationError])], Configuration] = Configuration.format.reads(Json.parse(input)).asEither
+  def parseJson(input: String): Either[Seq[(JsPath, Seq[JsonValidationError])], Configuration] = Configuration.format
+    .reads(Json.parse(input))
+    .asEither
+    // play-json exposes scala.collection.Seq here, which is not scala.Seq on 2.13
+    .left
+    .map(_.map { case (path, errors) => (path, errors.toList) }.toList)
 
   def compile(configuration: Configuration): CompiledProgram = Compiler.compileUnsafe(configuration)
 

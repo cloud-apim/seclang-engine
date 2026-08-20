@@ -230,7 +230,8 @@ object HashUtilsFast {
 
 object Implicits {
   implicit class BetterString(val obj: String) extends AnyVal {
-    def toIntOption: Option[Int] = {
+    // named toIntOpt (not toIntOption) to avoid an ambiguous implicit with scala 2.13 StringOps.toIntOption
+    def toIntOpt: Option[Int] = {
       Try(obj.toInt).toOption
     }
   }
@@ -390,12 +391,12 @@ object FormUrlEncoded {
       }
       .toList
       .groupBy(_._1)
-      .mapValues(_.map(_._2))
+      .map { case (key, values) => (key, values.map(_._2)) }
   }
 
   /** Convenience: keep only the last value for each key */
   def parseLast(body: String, charset: String = "UTF-8"): Map[String, String] =
-    parse(body, charset).mapValues(_.lastOption.getOrElse("")).toMap
+    parse(body, charset).map { case (key, values) => (key, values.lastOption.getOrElse("")) }
 }
 
 object XmlXPathParser {

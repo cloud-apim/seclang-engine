@@ -267,10 +267,7 @@ public final class JRequestContext {
             scala.collection.immutable.Map<String, scala.collection.immutable.List<String>> scalaHeaders = javaMapToScala(headers);
             scala.collection.immutable.Map<String, scala.collection.immutable.List<String>> scalaCookies = javaMapToScala(cookies);
             scala.collection.immutable.Map<String, scala.collection.immutable.List<String>> scalaQuery = javaMapToScala(query);
-            scala.collection.immutable.Map<String, String> scalaVariables =
-                scala.collection.JavaConverters.mapAsScalaMapConverter(variables).asScala().toMap(
-                    scala.Predef.<scala.Tuple2<String, String>>conforms()
-                );
+            scala.collection.immutable.Map<String, String> scalaVariables = JavaCompat.toScalaMap(variables);
 
             Option<ByteString> scalaBody = body != null ? new Some<>(new ByteString(body)) : Option.empty();
             Option<Object> scalaStatus = status != null ? new Some<>(status) : Option.empty();
@@ -298,13 +295,7 @@ public final class JRequestContext {
         }
 
         private static scala.collection.immutable.Map<String, scala.collection.immutable.List<String>> javaMapToScala(Map<String, List<String>> javaMap) {
-            Map<String, scala.collection.immutable.List<String>> converted = new HashMap<>();
-            javaMap.forEach((key, value) -> {
-                converted.put(key, scala.collection.JavaConverters.asScalaBufferConverter(value).asScala().toList());
-            });
-            return scala.collection.JavaConverters.mapAsScalaMapConverter(converted).asScala().toMap(
-                scala.Predef.<scala.Tuple2<String, scala.collection.immutable.List<String>>>conforms()
-            );
+            return JavaCompat.toScalaMapOfLists(javaMap);
         }
     }
 }

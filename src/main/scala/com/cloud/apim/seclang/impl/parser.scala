@@ -295,13 +295,13 @@ class AstBuilderVisitor(includeRawRule: Boolean, includeComments: Boolean) exten
     } else */if (ctx.metadata_action_with_params() != null) {
       val meta = ctx.metadata_action_with_params()
       meta match {
-        case m: SecLangParser.ACTION_IDContext if m.ACTION_ID() != null => Some(Action.Id(value.toIntOption.getOrElse(0)))
-        case m: SecLangParser.ACTION_PHASEContext if m.ACTION_PHASE() != null => Some(Action.Phase(value.toIntOption.getOrElse(2)))
+        case m: SecLangParser.ACTION_IDContext if m.ACTION_ID() != null => Some(Action.Id(value.toIntOpt.getOrElse(0)))
+        case m: SecLangParser.ACTION_PHASEContext if m.ACTION_PHASE() != null => Some(Action.Phase(value.toIntOpt.getOrElse(2)))
         case m: SecLangParser.ACTION_MSGContext if m.ACTION_MSG() != null => Some(Action.Msg(value))
         case m: SecLangParser.ACTION_TAGContext if m.ACTION_TAG() != null => Some(Action.Tag(value))
         case m: SecLangParser.ACTION_REVContext if m.ACTION_REV() != null => Some(Action.Rev(value))
         case m: SecLangParser.ACTION_VERContext if m.ACTION_VER() != null => Some(Action.Ver(value))
-        case m: SecLangParser.ACTION_MATURITYContext if m.ACTION_MATURITY() != null => Some(Action.Maturity(value.toIntOption.getOrElse(0)))
+        case m: SecLangParser.ACTION_MATURITYContext if m.ACTION_MATURITY() != null => Some(Action.Maturity(value.toIntOpt.getOrElse(0)))
         case m: SecLangParser.ACTION_SEVERITYContext if m.ACTION_SEVERITY() != null => Some(Action.Severity(SeverityValue(value)))
         case _ => None
       }
@@ -334,11 +334,11 @@ class AstBuilderVisitor(includeRawRule: Boolean, includeComments: Boolean) exten
     } else if (ctx.data_action_with_params() != null) {
       val data = ctx.data_action_with_params()
       if (data.ACTION_XMLNS() != null) Some(Action.Xmlns(value))
-      else if (data.ACTION_STATUS() != null) Some(Action.Status(value.toIntOption.getOrElse(0)))
+      else if (data.ACTION_STATUS() != null) Some(Action.Status(value.toIntOpt.getOrElse(0)))
       else None
     } else if (ctx.flow_action_with_params() != null) {
       val flow = ctx.flow_action_with_params()
-      if (flow.ACTION_SKIP() != null) Some(Action.Skip(value.toIntOption.getOrElse(0)))
+      if (flow.ACTION_SKIP() != null) Some(Action.Skip(value.toIntOpt.getOrElse(0)))
       else if (flow.ACTION_SKIP_AFTER() != null) Some(Action.SkipAfter(value))
       else None
     } else {
@@ -351,11 +351,11 @@ class AstBuilderVisitor(includeRawRule: Boolean, includeComments: Boolean) exten
     if (ctx.ACTION_CTL_FORCE_REQ_BODY_VAR() != null) Some(Action.CtlAction.ForceRequestBodyVariable(value))
     else if (ctx.ACTION_CTL_REQUEST_BODY_ACCESS() != null) Some(Action.CtlAction.RequestBodyAccess(value))
     else if (ctx.ACTION_CTL_RULE_ENGINE() != null) Some(Action.CtlAction.RuleEngine(value))
-    else if (ctx.ACTION_CTL_RULE_REMOVE_BY_ID() != null) Some(Action.CtlAction.RuleRemoveById(value.toIntOption.getOrElse(0)))
+    else if (ctx.ACTION_CTL_RULE_REMOVE_BY_ID() != null) Some(Action.CtlAction.RuleRemoveById(value.toIntOpt.getOrElse(0)))
     else if (ctx.ACTION_CTL_RULE_REMOVE_BY_TAG() != null) Some(Action.CtlAction.RuleRemoveByTag(value))
     else if (ctx.ACTION_CTL_RULE_REMOVE_TARGET_BY_ID() != null) {
       val parts = value.split(";")
-      val id = parts.headOption.flatMap(_.toIntOption).getOrElse(0)
+      val id = parts.headOption.flatMap(_.toIntOpt).getOrElse(0)
       val target  = parts.lastOption.getOrElse("--")
       Some(Action.CtlAction.RuleRemoveTargetById(id, target))
     }

@@ -174,7 +174,7 @@ object CRSTestUtils {
               if (name.nonEmpty) Some(name -> "") else None
             }
           }
-      }.groupBy(_._1).mapValues(_.map(_._2))
+      }.groupBy(_._1).map { case (name, values) => (name, values.map(_._2)) }
   }
 
   def parseRawHttpRequest(raw: String): JsObject = {
@@ -240,8 +240,8 @@ object CRSTestUtils {
     val respStruct = if (isResponse) Try(Json.parse(body.map(_.utf8String).getOrElse("{}"))).getOrElse(Json.obj("body" -> body.getOrElse(ByteString.empty).utf8String)) else Json.obj()
     val respStatus = if (isResponse) Some((respStruct \ "status").asOpt[Int].getOrElse(200)) else None
     val respStatusTxt = if (isResponse) StatusCodes.get((respStruct \ "status").asOpt[Int].getOrElse(200)) else None
-    val headers: Map[String, List[String]] = (json \ "headers").asOpt[JsObject].map(_.value.mapValues(v => List(jsToStr(v))).toMap).getOrElse(Map.empty)
-    val respHeaders: Map[String, List[String]] = (respStruct \ "headers").asOpt[JsObject].map(_.value.mapValues(v => List(jsToStr(v))).toMap).getOrElse(Map.empty)
+    val headers: Map[String, List[String]] = (json \ "headers").asOpt[JsObject].map(_.value.map { case (name, value) => (name, List(jsToStr(value))) }.toMap).getOrElse(Map.empty)
+    val respHeaders: Map[String, List[String]] = (respStruct \ "headers").asOpt[JsObject].map(_.value.map { case (name, value) => (name, List(jsToStr(value))) }.toMap).getOrElse(Map.empty)
     val encBody = (respStruct \ "encodedBody").asOpt[String].map(s => ByteString(s).decodeBase64)
     val respBody = encBody.orElse((respStruct \ "body").asOpt[String].map(s => ByteString(s)))
     val finalBody = if (isResponse) respBody else body

@@ -11,11 +11,11 @@ object EngineActions {
     }.mkString(". ")
     var hasLog = false
     val executableActions: List[NeedRunAction] = actions.collect {
-      case a @ Action.Log =>
+      case Action.Log =>
         hasLog = true
-        a
+        Action.Log
       case a: NeedRunAction => a
-    } ++ (if (!hasLog && rawLogdata.nonEmpty) List(Action.Log) else Nil)
+    } ++ (if (!hasLog && rawLogdata.nonEmpty) List[NeedRunAction](Action.Log) else Nil)
 
     // First pass: run SetVar and other non-log actions to populate TX variables
     executableActions.foreach {

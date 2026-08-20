@@ -57,10 +57,7 @@ public final class JSecLangPreset {
      * @return a new preset
      */
     public static JSecLangPreset withFiles(String name, String rules, Map<String, String> files) {
-        scala.collection.immutable.Map<String, String> scalaFiles =
-            JavaConverters.mapAsScalaMapConverter(files).asScala().toMap(
-                scala.Predef.<scala.Tuple2<String, String>>conforms()
-            );
+        scala.collection.immutable.Map<String, String> scalaFiles = JavaCompat.toScalaMap(files);
         return new JSecLangPreset(SecLangPreset.withFiles(name, rules, scalaFiles, false, false));
     }
 

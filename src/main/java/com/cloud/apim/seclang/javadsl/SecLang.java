@@ -8,7 +8,6 @@ import com.cloud.apim.seclang.model.CompiledProgram;
 import com.cloud.apim.seclang.model.Configuration;
 import com.cloud.apim.seclang.model.SecLangError;
 import com.cloud.apim.seclang.model.SecLangPreset;
-import scala.collection.JavaConverters;
 import scala.collection.concurrent.TrieMap;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
@@ -133,10 +132,7 @@ public final class SecLang {
             JSecLangEngineConfig config,
             Map<String, String> files,
             JSecLangIntegration integration) {
-        scala.collection.immutable.Map<String, String> scalaFiles =
-            JavaConverters.mapAsScalaMapConverter(files != null ? files : new HashMap<>()).asScala().toMap(
-                scala.Predef.<scala.Tuple2<String, String>>conforms()
-            );
+        scala.collection.immutable.Map<String, String> scalaFiles = JavaCompat.toScalaMap(files);
         SecLangEngine engine = new SecLangEngine(
             program,
             config.toScala(),
@@ -153,10 +149,7 @@ public final class SecLang {
             Map<String, String> files,
             TrieMap<String, String> txMap,
             JSecLangIntegration integration) {
-        scala.collection.immutable.Map<String, String> scalaFiles =
-                JavaConverters.mapAsScalaMapConverter(files != null ? files : new HashMap<>()).asScala().toMap(
-                        scala.Predef.<scala.Tuple2<String, String>>conforms()
-                );
+        scala.collection.immutable.Map<String, String> scalaFiles = JavaCompat.toScalaMap(files);
         SecLangEngine engine = new SecLangEngine(
                 program,
                 config.toScala(),
@@ -207,10 +200,7 @@ public final class SecLang {
             long cacheTtlMs) {
         Map<String, SecLangPreset> scalaPresets = new HashMap<>();
         presets.forEach((name, preset) -> scalaPresets.put(name, preset.toScala()));
-        scala.collection.immutable.Map<String, SecLangPreset> scalaPresetsMap =
-            JavaConverters.mapAsScalaMapConverter(scalaPresets).asScala().toMap(
-                scala.Predef.<scala.Tuple2<String, SecLangPreset>>conforms()
-            );
+        scala.collection.immutable.Map<String, SecLangPreset> scalaPresetsMap = JavaCompat.toScalaMap(scalaPresets);
         FiniteDuration cacheTtl = Duration.apply(cacheTtlMs, TimeUnit.MILLISECONDS);
         SecLangEngineFactory factory = new SecLangEngineFactory(
             scalaPresetsMap,

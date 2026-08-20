@@ -1,6 +1,10 @@
 import Dependencies._
 
-ThisBuild / scalaVersion     := "2.12.21"
+lazy val scala212 = "2.12.21"
+lazy val scala213 = "2.13.18"
+
+ThisBuild / scalaVersion     := scala212
+ThisBuild / crossScalaVersions := Seq(scala212, scala213)
 ThisBuild / organization     := "com.cloud-apim"
 ThisBuild / organizationName := "Cloud-APIM"
 ThisBuild / description := "SecLang Engine WAF is a ModSecurity-compatible Web Application Firewall (WAF) library for the JVM, written in Scala."
@@ -45,6 +49,7 @@ lazy val excludesJackson         = Seq(
 lazy val root = (project in file("."))
   .settings(
     name := "seclang-engine",
+    crossScalaVersions := Seq(scala212, scala213),
     libraryDependencies ++= Seq(
       "com.comcast" %% "ip4s-core" % "3.2.0",
       "org.antlr" % "antlr4" % "4.13.2",

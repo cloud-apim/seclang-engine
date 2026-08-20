@@ -18,9 +18,9 @@ object Yaml {
     Try {
       val obj = yamlReader.readValue(content, classOf[Object])
       Some(Json.parse(jsonWriter.writeValueAsString(obj)))
-    } recover { case _ =>
+    }.recover { case _: Throwable =>
       None
-    } get
+    }.get
   }
 
   def parseSafe(content: String): Either[Throwable, JsValue] = {
