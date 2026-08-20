@@ -51,15 +51,15 @@ lazy val root = (project in file("."))
     name := "seclang-engine",
     crossScalaVersions := Seq(scala212, scala213),
     libraryDependencies ++= Seq(
-      "com.comcast" %% "ip4s-core" % "3.2.0",
+      "com.comcast" %% "ip4s-core" % "3.8.0",
       "org.antlr" % "antlr4" % "4.13.2",
-      "com.typesafe.play" %% "play-json" % "2.9.3",
+      "org.playframework" %% "play-json" % "3.0.6",
       "com.cloud-apim" % "libinjection-jvm" % "1.2.0",
-      "com.github.blemale" %% "scaffeine" % "4.0.2",
+      "com.github.blemale" %% "scaffeine" % "5.3.0",
       "org.apache.commons" % "commons-text" % "1.15.0",
       "com.idealista" % "tlsh" % "1.0.0",
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % "2.13.4" % Test,
+      "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % "2.22.2" % Test,
       "org.openjdk.jol"                  % "jol-core"                % "0.17"   % Test,
       "org.typelevel"                   %% "squants"                 % "1.8.3"  % Test excludeAll (excludesJackson: _*) ,
       munit % Test
