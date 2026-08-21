@@ -128,7 +128,7 @@ object CRSTestUtils {
         |# DetectionOnly mode
         |SecRuleEngine DetectionOnly
         |""".stripMargin
-    val config = SecLang.parse(finalRules, true, false).right.get
+    val config = SecLang.parse(finalRules, true, false).toOption.get
     val program = SecLang.compile(config)
     SecLang.engine(program, SecLangEngineConfig.test.copy(debugRules = debugRules), files = files, integration = new NoLogSecLangIntegration())
   }

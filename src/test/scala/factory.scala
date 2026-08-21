@@ -176,7 +176,7 @@ class SecLangFactoryRemoveTest extends munit.FunSuite {
         |    tag:'test',\
         |    ver:'0.0.0-dev',\
         |    severity:'CRITICAL'"
-        |""".stripMargin).right.get)
+        |""".stripMargin).toOption.get)
     val factory = SecLang.factory(Map("preset1" -> SecLangPreset("preset1", program1, Map.empty)))
 
     val reqCtx = RequestContext(
@@ -257,7 +257,7 @@ class SecLangFactorySizeTest extends munit.FunSuite {
     }
     println(s"factory 2: ${Bytes(org.openjdk.jol.info.GraphLayout.parseInstance(factory).totalSize()).toMegabytes} Mb")
     println(s"enginesSize size: ${Bytes(org.openjdk.jol.info.GraphLayout.parseInstance(engines).totalSize()).toMegabytes} Mb")
-    val e = SecLang.engine(SecLang.compile(SecLang.parse("SecRuleEngine On").right.get), integration = DefaultNoCacheSecLangIntegration.default)
+    val e = SecLang.engine(SecLang.compile(SecLang.parse("SecRuleEngine On").toOption.get), integration = DefaultNoCacheSecLangIntegration.default)
     println(s"simple engine size: ${Bytes(org.openjdk.jol.info.GraphLayout.parseInstance(e).totalSize()).toKilobytes} Kb")
   }
 }

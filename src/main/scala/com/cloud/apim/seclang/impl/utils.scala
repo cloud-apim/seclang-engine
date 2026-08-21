@@ -43,7 +43,7 @@ object ModSecurityPatternConverterFast {
   private val enclosed2 =
     """\x{e2}(?:\x91[\xa0-\xbf]|\x92[\x80-\xbf]|\x93[\x80-\xa9\xab-\xbf])"""
   private val enclosedRepl =
-    """[\u2460-\u247f\u2480-\u24bf\u24c0-\u24e9\u24eb-\u24ff]"""
+    "[\\u2460-\\u247f\\u2480-\\u24bf\\u24c0-\\u24e9\\u24eb-\\u24ff]"
 
   def convert(pattern: String): String = {
     if (pattern.indexOf("\\x") < 0) return pattern
@@ -54,7 +54,7 @@ object ModSecurityPatternConverterFast {
     if (s.indexOf(enclosed1) >= 0) s = s.replace(enclosed1, enclosedRepl)
     if (s.indexOf(enclosed2) >= 0) s = s.replace(enclosed2, enclosedRepl)
 
-    if (s.indexOf("""\x{e3}\x80\x82""") >= 0) s = s.replace("""\x{e3}\x80\x82""", """\u3002""")
+    if (s.indexOf("""\x{e3}\x80\x82""") >= 0) s = s.replace("""\x{e3}\x80\x82""", "\\u3002")
 
     // Conversion rapide des \xHH / \x{HH} ASCII
     convertAsciiHexEscapes(s)
@@ -164,17 +164,17 @@ object ModSecurityPatternConverter {
     // This matches circled numbers and letters
     result = result.replace(
       """\x{e2}(?:\x91[\xa0-\x{bf}]|\x92[\x80-\x{bf}]|\x93[\x80-\x{a9}\x{ab}-\x{bf}])""",
-      """[\u2460-\u247f\u2480-\u24bf\u24c0-\u24e9\u24eb-\u24ff]"""
+      "[\\u2460-\\u247f\\u2480-\\u24bf\\u24c0-\\u24e9\\u24eb-\\u24ff]"
     )
 
     // Also handle variant without curly braces
     result = result.replace(
       """\x{e2}(?:\x91[\xa0-\xbf]|\x92[\x80-\xbf]|\x93[\x80-\xa9\xab-\xbf])""",
-      """[\u2460-\u247f\u2480-\u24bf\u24c0-\u24e9\u24eb-\u24ff]"""
+      "[\\u2460-\\u247f\\u2480-\\u24bf\\u24c0-\\u24e9\\u24eb-\\u24ff]"
     )
 
     // Convert CJK period \x{e3}\x80\x82 -> U+3002
-    result = result.replace("""\x{e3}\x80\x82""", """\u3002""")
+    result = result.replace("""\x{e3}\x80\x82""", "\\u3002")
 
     // Convert single-byte \x{HH} where HH < 80 to literal characters or \xHH
     // These are ASCII and work the same way

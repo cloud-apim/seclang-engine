@@ -24,7 +24,7 @@ class SecLangEngineFactory(
         integration.getCachedProgram(hash) match {
           case Some(p) => Some((p, Map.empty[String, String]))
           case None => {
-            val compiled = Compiler.compileUnsafe(AntlrParser.parse(line, config.includeRawRule, config.includeComments).right.get)
+            val compiled = Compiler.compileUnsafe(AntlrParser.parse(line, config.includeRawRule, config.includeComments).toOption.get)
             integration.putCachedProgram(hash, compiled, cacheTtl)
           }
         }
@@ -43,7 +43,7 @@ class SecLangEngineFactory(
         integration.getCachedProgram(hash) match {
           case Some(p) => Some((p, Map.empty[String, String]))
           case None => {
-            val parsed = AntlrParser.parse(line, config.includeRawRule, config.includeComments).right.get
+            val parsed = AntlrParser.parse(line, config.includeRawRule, config.includeComments).toOption.get
             val compiled = Compiler.compileUnsafe(parsed)
             integration.putCachedProgram(hash, compiled, cacheTtl)
             Some((compiled, Map.empty[String, String]))
@@ -69,7 +69,7 @@ class SecLangEngineFactory(
         integration.getCachedProgram(hash) match {
           case Some(p) => Some(Right((p, Map.empty[String, String])))
           case None => {
-            val parsed = AntlrParser.parse(line, config.includeRawRule, config.includeComments).right.get
+            val parsed = AntlrParser.parse(line, config.includeRawRule, config.includeComments).toOption.get
             Compiler.compile(parsed) match {
               case Left(err) => Some(Left(err))
               case Right(compiled) => {
@@ -83,9 +83,9 @@ class SecLangEngineFactory(
     }
     val (errors, programsAndFiles) = programsAndFilesE.partition(_.isLeft)
     if (errors.nonEmpty) {
-      Left(errors.map(_.left.get))
+      Left(errors.map(_.swap.toOption.get))
     } else {
-      val pafs = programsAndFiles.map(_.right.get)
+      val pafs = programsAndFiles.map(_.toOption.get)
       val programs = pafs.map(_._1)
       val files = pafs.map(_._2).flatMap(_.toList).toMap
       val program = ComposedCompiledProgram(programs)

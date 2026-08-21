@@ -69,12 +69,12 @@ object Configuration {
   }
 
   def fromSource(source: ConfigurationSource, includeRawRule: Boolean = false, includeComments: Boolean = false): Configuration = {
-    AntlrParser.parse(source.getRules(), includeRawRule, includeComments).right.get
+    AntlrParser.parse(source.getRules(), includeRawRule, includeComments).toOption.get
   }
 
   def fromList(source: ConfigurationSourceList, includeRawRule: Boolean = false, includeComments: Boolean = false): Configuration = {
     val src = source.sources.map(_.getRules()).mkString("\n")
-    AntlrParser.parse(src, includeRawRule, includeComments).right.get
+    AntlrParser.parse(src, includeRawRule, includeComments).toOption.get
   }
 }
 
@@ -1583,7 +1583,7 @@ final case class Headers(underlying: Map[String, List[String]]) {
 }
 
 final case class RequestContext(
-  requestId: String = s"${System.currentTimeMillis}.${scala.util.Random.nextInt(1000000).formatted("%06d")}",
+  requestId: String = s"${System.currentTimeMillis}.${"%06d".format(scala.util.Random.nextInt(1000000))}",
   method: String,
   uri: String,
   headers: Headers = Headers.empty,
@@ -1945,7 +1945,7 @@ class DefaultSecLangIntegration(maxCacheItems: Int = 1000, externalPresets: Map[
   def logInfo(msg: String): Unit = println(s"[Info]: $msg")
   def logAudit(msg: String): Unit = println(s"[Audit]: $msg")
   def logError(msg: String): Unit = println(s"[Error]: $msg")
-  def getEnv(): Map[String, String] = sys.env
+  def getEnv: Map[String, String] = sys.env
 
   def getExternalPreset(name: String): Option[SecLangPreset] = externalPresets.get(name)
   def getCachedProgram(key: String): Option[CompiledProgram] = cache.getIfPresent(key).map(_._1)
@@ -1963,7 +1963,7 @@ class DefaultNoCacheSecLangIntegration(maxCacheItems: Int = 10, externalPresets:
   def logInfo(msg: String): Unit = println(s"[Info]: $msg")
   def logAudit(msg: String): Unit = println(s"[Audit]: $msg")
   def logError(msg: String): Unit = println(s"[Error]: $msg")
-  def getEnv(): Map[String, String] = sys.env
+  def getEnv: Map[String, String] = sys.env
 
   def getExternalPreset(name: String): Option[SecLangPreset] = externalPresets.get(name)
   def getCachedProgram(key: String): Option[CompiledProgram] = cache.get(key).map(_._1)
@@ -1991,12 +1991,12 @@ final case class SecLangPreset(name: String, program: CompiledProgram, files: Ma
 
 object SecLangPreset {
   def withNoFiles(name: String, rules: String, includeRawRule: Boolean = false, includeComments: Boolean = false): SecLangPreset = {
-    val parsed = AntlrParser.parse(rules, includeRawRule, includeComments).right.get
+    val parsed = AntlrParser.parse(rules, includeRawRule, includeComments).toOption.get
     val program = Compiler.compileUnsafe(parsed)
     SecLangPreset(name, program, Map.empty)
   }
   def withFiles(name: String, rules: String, files: Map[String, String], includeRawRule: Boolean = false, includeComments: Boolean = false): SecLangPreset = {
-    val parsed = AntlrParser.parse(rules, includeRawRule, includeComments).right.get
+    val parsed = AntlrParser.parse(rules, includeRawRule, includeComments).toOption.get
     val program = Compiler.compileUnsafe(parsed)
     SecLangPreset(name, program, files)
   }
@@ -2008,14 +2008,14 @@ object SecLangPreset {
     )
   }
   def withNoFilesSafe(name: String, rules: String, includeRawRule: Boolean = false, includeComments: Boolean = false): Either[SecLangError, SecLangPreset] = {
-    val parsed = AntlrParser.parse(rules, includeRawRule, includeComments).right.get
+    val parsed = AntlrParser.parse(rules, includeRawRule, includeComments).toOption.get
     Compiler.compile(parsed) match {
       case Left(err) => Left(err)
       case Right(program) => Right(SecLangPreset(name, program, Map.empty))
     }
   }
   def withFilesSafe(name: String, rules: String, files: Map[String, String], includeRawRule: Boolean = false, includeComments: Boolean = false): Either[SecLangError, SecLangPreset] = {
-    val parsed = AntlrParser.parse(rules, includeRawRule, includeComments).right.get
+    val parsed = AntlrParser.parse(rules, includeRawRule, includeComments).toOption.get
     Compiler.compile(parsed) match {
       case Left(err) => Left(err)
       case Right(program) => Right(SecLangPreset(name, program, files))

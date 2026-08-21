@@ -26,7 +26,7 @@ object Stats {
     val avg = total / rounds
 
     def fmt(ns: Long): String =
-      Duration.fromNanos(ns).toMillis + " ms"
+      s"${Duration.fromNanos(ns).toMillis} ms"
 
     println(s"Runs        : $rounds")
     println(s"Total time  : ${fmt(total)}")
@@ -373,7 +373,7 @@ class SecLangBasicTest extends munit.FunSuite {
         |    ver:'OWASP_CRS/4.22.0-dev',\
         |    severity:'CRITICAL',\
         |    setvar:'tx.inbound_anomaly_score_pl4=+%{tx.critical_anomaly_score}'"
-        |""".stripMargin).right.get
+        |""".stripMargin).toOption.get
     val compiled = SecLang.compile(parsed)
     val engine = SecLang.engine(compiled, SecLangEngineConfig.default.copy(debugRules = List(920274)))
     val ctx = CRSTestUtils.requestContext(Json.parse(
