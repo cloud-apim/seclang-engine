@@ -152,30 +152,25 @@ class AstBuilderVisitor(includeRawRule: Boolean, includeComments: Boolean) exten
 
   }
   
+  /**
+   * The targets a `SecRuleUpdateTargetBy*` adds, split into the ones it adds and the ones it excludes.
+   *
+   * A `!` binds to the variable that follows it, so the two are told apart by token position rather
+   * than by slicing the raw text. Slicing is what used to put the closing quote of `"!ARGS:foo"`
+   * inside the variable name — leaving the exclusion pointing at a parameter called `foo"`, which
+   * never resolves — while the target itself stayed in the positive list, so the directive made the
+   * rule inspect *more* instead of less.
+   */
   def visitUpdateVariables(ctx: SecLangParser.Update_variablesContext): (UpdateVariables, UpdateVariables) = {
-    val negated = ctx.var_not().asScala.nonEmpty
     val count = ctx.var_count() != null
-    val variables = ctx.var_stmt().asScala.toList.map(visitVarStmt)
-    if (negated && ctx.var_not().size > 0) {
-      val shouldRemoveN = ctx.var_not().size()
-      val nvars = ctx.getText.split("\\|").toList.filter(s => s.startsWith("!") || s.startsWith("\"!")).map { name =>
-        val raw = if (name.startsWith("\"!")) {
-          name.substring(2)
-        } else {
-          name.substring(1)
-        }
-        if (raw.contains(":")) {
-          val parts = raw.split(":").toList
-          Variable.Collection(parts.head, Some(parts.tail.mkString(":")))
-        } else {
-          Variable.Simple(raw)
-        }
-      }
-      assert(shouldRemoveN == nvars.size, s"actual negated variables does not match announced count (${shouldRemoveN} != ${nvars.size})")
-      (UpdateVariables(negated, count, variables), UpdateVariables(negated, count, nvars))
-    } else {
-      (UpdateVariables(negated, count, variables), UpdateVariables(negated, count, List.empty))
-    }
+    // the `!` sits immediately before the variable it negates, with no token in between
+    val negatedAt: Set[Int] = ctx.var_not().asScala.map(_.getStop.getTokenIndex + 1).toSet
+    val (nvars, vars) = ctx.var_stmt().asScala.toList.partition(v => negatedAt.contains(v.getStart.getTokenIndex))
+    val negated = negatedAt.nonEmpty
+    (
+      UpdateVariables(negated, count, vars.map(visitVarStmt)),
+      UpdateVariables(negated, count, nvars.map(visitVarStmt))
+    )
   }
   
   def visitVarStmt(ctx: SecLangParser.Var_stmtContext): Variable = {

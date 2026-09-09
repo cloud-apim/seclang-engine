@@ -45,8 +45,15 @@ object EngineActions {
         val expr = state.evalTxExpressions(rawExpr)
         val isDelete = expr.startsWith("!")
         val baseExpr = if (isDelete) expr.substring(1) else expr
-        // Normalize once: remove tx./TX. prefix and lowercase
-        val normalized = baseExpr.replace("tx.", "").replace("TX.", "").toLowerCase()
+        // Normalize once: remove tx./TX. prefix and lowercase — but only over the variable name.
+        // Lowercasing the whole assignment also lowercased the value, so a rule storing
+        // `%{MATCHED_VAR_NAME}` to read back in its logdata — which is how CRS reports what it
+        // matched on — got `request_headers:referer` where it wrote `REQUEST_HEADERS:Referer`.
+        val normalized = baseExpr.indexOf('=') match {
+          case -1  => baseExpr.replace("tx.", "").replace("TX.", "").toLowerCase()
+          case idx =>
+            baseExpr.substring(0, idx).replace("tx.", "").replace("TX.", "").toLowerCase() + baseExpr.substring(idx)
+        }
 
         if (isDelete) {
           state.txMap.remove(normalized)
@@ -109,8 +116,13 @@ object EngineActions {
         localState = localState.copy(mode = EngineMode(value))
       }
       case Action.CtlAction.ForceRequestBodyVariable(id) =>()
-      case Action.CtlAction.RuleRemoveByTag(tag) => println("RuleRemoveByTag not implemented yet")
-      case Action.CtlAction.RuleRemoveTargetById(id, target) => println("RuleRemoveTargetById not implemented yet")
+      case Action.CtlAction.RuleRemoveByTag(tag) => {
+        localState = localState.copy(disabledTags = localState.disabledTags + tag)
+      }
+      case Action.CtlAction.RuleRemoveTargetById(id, target) => {
+        val existing = localState.removedTargetsById.getOrElse(id, Set.empty)
+        localState = localState.copy(removedTargetsById = localState.removedTargetsById + (id -> (existing + target.toUpperCase)))
+      }
       case Action.CtlAction.RuleRemoveTargetByTag(tag, target) => {
         val existing = localState.removedTargetsByTag.getOrElse(tag, Set.empty)
         localState = localState.copy(removedTargetsByTag = localState.removedTargetsByTag + (tag -> (existing + target.toUpperCase)))

@@ -44,6 +44,91 @@ object EngineVariables {
     case a @ JsArray(_) => List(Json.stringify(a))
   }
 
+  /**
+   * The members of a collection, each carrying the name it is known by.
+   *
+   * `ARGS` resolving to a bare list of values is what left `MATCHED_VAR_NAME` reporting `ARGS:` on
+   * every match, and what forced target exclusion to work by comparing *values* — so excluding
+   * `ARGS:comment` also stopped the rule from seeing `ARGS:q` whenever the two happened to carry
+   * the same string. Names travel with the values from here on.
+   */
+  private def namedMembers(col: String, source: Map[String, List[String]], key: Option[String]): List[(String, String)] = {
+    val selected: Iterable[(String, List[String])] = key match {
+      case None => source
+      case Some(k) if k.startsWith("/") && k.endsWith("/") =>
+        val r = RegexPool.regex(k.substring(1, k.length - 1))
+        source.filter { case (n, _) => r.findFirstIn(n).isDefined }
+      case Some(k) =>
+        source.filter { case (n, _) => n.toLowerCase == k }
+    }
+    selected.toList.flatMap { case (n, vs) => vs.map(v => (s"$col:$n", v)) }
+  }
+
+  /** A collection whose members are their own names: `ARGS_NAMES`, `REQUEST_HEADERS_NAMES`, … */
+  private def nameMembers(col: String, names: Iterable[String]): List[(String, String)] =
+    names.toList.map(n => (s"$col:$n", n))
+
+  /**
+   * Resolution that keeps the name of whatever it resolved.
+   *
+   * Only the collections that actually have member names are handled here; everything else falls
+   * back to [[resolveVariable]] and is reported under the name the rule declared, which is what
+   * ModSecurity does for a scalar like `REQUEST_URI`.
+   */
+  def resolveNamedVariable(sel: Variable, count: Boolean, negated: Boolean, ctx: RequestContext, debug: Boolean, state: RuntimeState, integration: SecLangIntegration): List[(String, String)] = {
+    val (col, key) = sel match {
+      case Variable.Simple(name) => (name, None)
+      case Variable.Collection(collection, k) => (collection, k.map {
+        case kk if kk.startsWith("/") && kk.endsWith("/") => kk
+        case kk => kk.toLowerCase()
+      })
+    }
+    val named: Option[List[(String, String)]] = col match {
+      case "ARGS"                                => Some(namedMembers(col, ctx.args, key))
+      case "ARGS_GET"                            => Some(namedMembers(col, ctx.query, key))
+      case "ARGS_POST"                           =>
+        ctx.body match {
+          case Some(_) if ctx.isXwwwFormUrlEncoded => Some(namedMembers(col, ctx.wwwFormEncodedBody.getOrElse(Map.empty), key))
+          case _                                   => Some(List.empty)
+        }
+      case "REQUEST_HEADERS" | "RESPONSE_HEADERS" => Some(namedMembers(col, ctx.headers.underlying, key))
+      case "REQUEST_COOKIES"                     => Some(namedMembers(col, ctx.cookies, key))
+      case "MULTIPART_PART_HEADERS"              =>
+        ctx.body match {
+          case Some(_) if ctx.isMultipartFormData =>
+            val headers = ctx.multipartFormDataBody.getOrElse(Map.empty)
+            key match {
+              // the raw bag is one synthetic entry, so it is reported under the collection itself
+              case None => Some(headers.getOrElse("_all_headers", headers.toList.flatMap(_._2)).map(v => (col, v)))
+              case _    => Some(namedMembers(col, headers.filterKeys(_ != "_all_headers").toMap, key))
+            }
+          case _ => Some(List.empty)
+        }
+      case "ARGS_NAMES"                          => Some(nameMembers(col, ctx.args.flatMap { case (n, vs) => vs.map(_ => n) }))
+      case "ARGS_GET_NAMES"                      => Some(nameMembers(col, ctx.query.flatMap { case (n, vs) => vs.map(_ => n) }))
+      case "ARGS_POST_NAMES"                     =>
+        ctx.body match {
+          case Some(_) if ctx.isXwwwFormUrlEncoded =>
+            Some(nameMembers(col, ctx.wwwFormEncodedBody.map(_.flatMap { case (n, vs) => vs.map(_ => n) }).getOrElse(Nil)))
+          case _ => Some(List.empty)
+        }
+      case "REQUEST_HEADERS_NAMES" | "RESPONSE_HEADERS_NAMES" => Some(nameMembers(col, ctx.headers.keySet))
+      case "REQUEST_COOKIES_NAMES"               => Some(nameMembers(col, ctx.cookies.keySet))
+      case "TX" | "ENV"                          =>
+        // already key-addressed, so the declared name is the member name
+        None
+      case _                                     => None
+    }
+    named.getOrElse {
+      val declared = sel match {
+        case Variable.Simple(name)            => name
+        case Variable.Collection(name, None)  => name
+        case Variable.Collection(name, Some(k)) => s"$name:$k"
+      }
+      resolveVariable(sel, count, negated, ctx, debug, state, integration).map(v => (declared, v))
+    }
+  }
+
   def resolveVariable(sel: Variable, count: Boolean, negated: Boolean, ctx: RequestContext, debug: Boolean, state: RuntimeState, integration: SecLangIntegration): List[String] = {
     // https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29#user-content-Variables
     val (col, key) = sel match {

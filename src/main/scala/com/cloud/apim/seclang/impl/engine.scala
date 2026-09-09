@@ -47,6 +47,9 @@ final class SecLangEngine(
   integration: SecLangIntegration = DefaultSecLangIntegration.default
 ) {
 
+  // resolved once for the life of the engine — a composed program folds its parts to answer it
+  private val exclusions: RuleExclusions = program.exclusions
+
   def evaluate(ctx: RequestContext, phases: List[Int] = List(1, 2), evalTxMap: Option[TrieMap[String, String]] = None): EngineResult = {
     val pmode = program.mode.getOrElse(EngineMode.On)
     if (pmode.isOff) {
@@ -147,7 +150,11 @@ final class SecLangEngine(
         case RuleChain(rules) =>
           // if rule id disabled runtime, skip
           val chainId = rules.last.id.orElse(rules.head.id)
-          val ridDisabled = chainId.exists(st.disabledIds.contains) || chainId.exists(program.containsRemovedRuleId)
+          val ridDisabled = chainId.exists(st.disabledIds.contains) || chainId.exists(program.containsRemovedRuleId) ||
+            // ctl:ruleRemoveByTag, the runtime sibling of SecRuleRemoveByTag
+            (st.disabledTags.nonEmpty && rules.exists(_.tags.exists(st.disabledTags.contains))) ||
+            // SecRuleRemoveByTag / ByMsg declared in another entry of the same configuration
+            (exclusions.hasRemovals && exclusions.removes(chainId, rules.flatMap(_.tags), rules.flatMap(_.msgs)))
 
           if (ridDisabled) {
             i += 1
@@ -293,7 +300,7 @@ final class SecLangEngine(
     }
 
     if (!allMatched) {
-      (false, st0.copy(disabledIds = st.disabledIds, events = st.events), None, None)
+      (false, st0.copy(disabledIds = st.disabledIds, disabledTags = st.disabledTags, events = st.events), None, None)
     } else {
       val disp =
         disruptive match {
@@ -312,36 +319,66 @@ final class SecLangEngine(
     }
   }
 
-  private def evalRule(rule: SecRule, lastRuleId: Option[Int], ctx: RequestContext, debug: Boolean, st: RuntimeState)(f: (String, String) => Unit): Boolean = {
+  private def evalRule(_rule: SecRule, lastRuleId: Option[Int], ctx: RequestContext, debug: Boolean, st: RuntimeState)(f: (String, String) => Unit): Boolean = {
     //println(s"eval rule ${rule.id} - ${lastRuleId} - ${st.mode}")
-    // 0) compute excluded targets for this rule based on its tags
-    val excludedTargets: Set[String] = rule.tags.flatMap(tag => st.removedTargetsByTag.getOrElse(tag, Set.empty))
+    // 0) targets added or excluded by a directive that lives in another compilation unit
+    val rule = if (exclusions.hasTargetUpdates) {
+      exclusions.targetUpdatesFor(_rule.id.orElse(lastRuleId), _rule.tags, _rule.msgs) match {
+        case Nil     => _rule
+        case updates =>
+          updates.foldLeft(_rule) { case (r, u) =>
+            r.copy(variables = r.variables.copy(
+              variables = r.variables.variables ++ u.added,
+              negatedVariables = r.variables.negatedVariables ++ u.excluded
+            ))
+          }
+      }
+    } else _rule
+    // compute excluded targets for this rule, from its tags and from its id
+    val excludedTargets: Set[String] =
+      rule.tags.flatMap(tag => st.removedTargetsByTag.getOrElse(tag, Set.empty)) ++
+        lastRuleId.flatMap(st.removedTargetsById.get).getOrElse(Set.empty)
+    // a target naming a whole collection ("ARGS") drops the variable; one naming a member
+    // ("ARGS:comment") only excludes that member, and rides the same negation the rule's own
+    // `!ARGS:comment` uses. Treating both as "drop the collection" is how an exclusion meant for one
+    // parameter used to stop the rule from looking at any of them.
+    val (excludedCollections, excludedMembers) = excludedTargets.partition(!_.contains(":"))
+    val excludedMemberVars: List[Variable] = excludedMembers.toList.map { t =>
+      val parts = t.split(":")
+      Variable.Collection(parts.head, Some(parts.tail.mkString(":").toLowerCase))
+    }
     // 1) extract values from variables (filtering out excluded targets)
     val filteredVariables = rule.variables.variables.filterNot { v =>
       val name = v match {
         case Variable.Simple(n) => n.toUpperCase
         case Variable.Collection(n, _) => n.toUpperCase
       }
-      excludedTargets.contains(name)
+      excludedCollections.contains(name)
     }
     val filteredNegatedVariables = rule.variables.negatedVariables.filterNot { v =>
       val name = v match {
         case Variable.Simple(n) => n.toUpperCase
         case Variable.Collection(n, _) => n.toUpperCase
       }
-      excludedTargets.contains(name)
+      excludedCollections.contains(name)
+    } ++ excludedMemberVars
+    // each value now travels with the name it was resolved under, so `ARGS` yields
+    // ("ARGS:comment" -> "…") rather than an anonymous list of strings
+    def declaredName(v: Variable): String = v match {
+      case Variable.Simple(name)              => name
+      case Variable.Collection(name, None)    => name
+      case Variable.Collection(name, Some(k)) => s"$name:$k"
     }
-    val negatedVariables: List[(String, List[String])] = filteredNegatedVariables.map {
-      case v @ Variable.Simple(name) => (name, EngineVariables.resolveVariable(v, false, true, ctx, debug, st, integration))
-      case v @ Variable.Collection(name, key) => (s"$name:${key.getOrElse("")}", EngineVariables.resolveVariable(v, false, true, ctx, debug, st, integration))
+    val negatedVariables: List[(String, List[(String, String)])] = filteredNegatedVariables.map { v =>
+      (declaredName(v), EngineVariables.resolveNamedVariable(v, false, true, ctx, debug, st, integration))
     }
-    val extracted: List[(String, List[String])] = {
-      val vrbls = filteredVariables.map {
-        case v @ Variable.Simple(name) => (name, EngineVariables.resolveVariable(v, rule.variables.count, rule.variables.negated, ctx, debug, st, integration))
-        case v @ Variable.Collection(name, key) => (s"$name:${key.getOrElse("")}", EngineVariables.resolveVariable(v, rule.variables.count, rule.variables.negated, ctx, debug, st, integration))
+    val extracted: List[(String, List[(String, String)])] = {
+      val vrbls = filteredVariables.map { v =>
+        (declaredName(v), EngineVariables.resolveNamedVariable(v, rule.variables.count, rule.variables.negated, ctx, debug, st, integration))
       }
       if (rule.variables.count) {
-        List((vrbls.headOption.map(v => s"&${v._1}").getOrElse("--"), vrbls.flatMap(_._2).size.toString :: Nil))
+        val name = vrbls.headOption.map(v => s"&${v._1}").getOrElse("--")
+        List((name, List((name, vrbls.flatMap(_._2).size.toString))))
       } else {
         vrbls
       }
@@ -350,6 +387,9 @@ final class SecLangEngine(
     val actionsList = rule.actions.toList.flatMap(_.actions).toList
     val transforms = actionsList.collect { case Action.Transform(name) => name }.filterNot(_ == "none")
     val isMultiMatch = actionsList.contains(Action.MultiMatch)
+    // TX.0 belongs to `capture`. Writing it on every match let a later link of a chain overwrite
+    // what an earlier one captured, so `%{TX.0}` in the chain's logdata reported the wrong slice.
+    val captures = actionsList.exists { case _: Action.Capture => true; case _ => false }
 
     // For multiMatch, we need to test after each transformation step
     def applyTransformsWithMultiMatch(value: String, name: String, transforms: List[String]): List[String] = {
@@ -364,45 +404,36 @@ final class SecLangEngine(
     }
 
     val transformed = extracted.map {
-      case (name, values) => (name, values.flatMap(v => applyTransformsWithMultiMatch(v, name, transforms)))
-    }
-    val negatedTransformed = negatedVariables.map {
-      case (name, values) => (name, values.flatMap(v => applyTransformsWithMultiMatch(v, name, transforms)))
+      case (name, members) => (name, members.flatMap { case (n, v) => applyTransformsWithMultiMatch(v, name, transforms).map(tv => (n, tv)) })
     }
     // Pre-index for O(1) lookups instead of O(n²)
     val negatedNamesSet = negatedVariables.map(_._1).toSet
-    val negatedTransformedMap = negatedTransformed.toMap
-    // Pre-compute negated values as Sets for O(1) contains check
-    val negatedValuesSets: Map[String, Set[String]] = negatedTransformedMap.map { case (k, v) => k -> v.toSet }
+    // the members a `!ARGS:comment` takes off the table, by name. matching them by value is what
+    // made an exclusion for one parameter silently shield every other parameter that happened to
+    // carry the same string
+    val negatedMemberNames: Set[String] = negatedVariables.flatMap(_._2.map(_._1)).toSet
 
     // 3) operator match on ANY extracted value
     val matched_vars = ArrayBuffer.empty[String]
     val matched_var_names = ArrayBuffer.empty[String]
     val matched = transformed.map {
-      case (name, values) => {
+      case (name, members) => {
         if (negatedNamesSet.contains(name)) {
-          (name, List.empty[String])
+          (name, List.empty[(String, String)])
+        } else if (negatedMemberNames.isEmpty) {
+          (name, members)
         } else {
-          // Find negated variables that start with this name and collect their values
-          val negatedValuesToExclude = negatedVariables
-            .filter(_._1.startsWith(name))
-            .flatMap(nv => negatedValuesSets.getOrElse(nv._1, Set.empty))
-            .toSet
-          val filteredValues = if (negatedValuesToExclude.isEmpty) values else values.filterNot(negatedValuesToExclude.contains)
-          (name, filteredValues)
+          (name, members.filterNot { case (n, _) => negatedMemberNames.contains(n) })
         }
       }
     }.filterNot(_._2.isEmpty).filter {
-      case (name, values) =>
-        values.filter { v =>
+      case (_, members) =>
+        members.filter { case (fullName, v) =>
           val m = EngineOperators.evalOperator(lastRuleId.getOrElse(-1), rule.operator, v, files, st, integration)
           if (m) {
-            // For variables without a key (like ARGS_NAMES), include the matched value in the name
-            // This matches ModSecurity behavior where MATCHED_VAR_NAME includes the specific item
-            val fullName = if (name.contains(":")) name else s"$name:$v"
             st.txMap.put("matched_var_name", fullName)
-            st.txMap.put("matched_var", v)//values.mkString(" "))
-            st.txMap.put("0", v)//values.mkString(" "))
+            st.txMap.put("matched_var", v)
+            if (captures) st.txMap.put("0", v)
             matched_vars += v
             matched_var_names += fullName
             f(fullName, v)

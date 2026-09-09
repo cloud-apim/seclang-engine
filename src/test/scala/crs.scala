@@ -22,6 +22,11 @@ object CRSTestUtils {
 
   val client = HttpClient.newHttpClient()
 
+  // the CRS as one configuration string, and its data files — kept so a test can compose the very
+  // same ruleset with something else instead of re-reading the tree
+  var crsRulesText: String = ""
+  var crsFiles: Map[String, String] = Map.empty
+
   def fetch(url: String): String = {
     val request = HttpRequest.newBuilder()
       .uri(URI.create(url))
@@ -128,6 +133,8 @@ object CRSTestUtils {
         |# DetectionOnly mode
         |SecRuleEngine DetectionOnly
         |""".stripMargin
+    crsRulesText = finalRules
+    crsFiles = files
     val config = SecLang.parse(finalRules, true, false).toOption.get
     val program = SecLang.compile(config)
     SecLang.engine(program, SecLangEngineConfig.test.copy(debugRules = debugRules), files = files, integration = new NoLogSecLangIntegration())
@@ -368,9 +375,6 @@ class SecLangCRSTest extends munit.FunSuite {
     ("920230", 3), // weird double urlencoding issue that cant be solved botch ways
     ("921180", 2), // weird double urlencoding issue that cant be solved botch ways
     ("921180", 5), // weird double urlencoding issue that cant be solved botch ways
-    ("932200", 13), // this one works but doesn't log what's expected. Needs to evaluate ARGS with separate named values
-    ("932207", 7), // this one works but doesn't log what's expected. Needs to evaluate ARGS with separate named values
-    ("933120", 2), // this one works but doesn't log what's expected. Needs to evaluate ARGS with separate named values
   )
   private lazy val engine = CRSTestUtils.setupCRSEngine(testOnly.map(_._1.toInt))
   private val counter = new AtomicLong(0L)

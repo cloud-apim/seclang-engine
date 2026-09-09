@@ -1830,7 +1830,7 @@ object RuntimeState {
   // Single pattern to capture all %{...} expressions - O(n) single pass
   private val AllExpr: Regex = RegexPool.regex("""(?i)%\{([a-z0-9_.:-]+)\}""")
 }
-final case class RuntimeState(mode: EngineMode, webAppId: Option[String], disabledIds: Set[Int], events: List[MatchEvent], txMap: TrieMap[String, String], envMap: TrieMap[String, String], uidRef: AtomicReference[String], logs: List[String], removedTargetsByTag: Map[String, Set[String]] = Map.empty, matchedVarsLists: TrieMap[String, Seq[String]] = new TrieMap[String, Seq[String]]()) {
+final case class RuntimeState(mode: EngineMode, webAppId: Option[String], disabledIds: Set[Int], events: List[MatchEvent], txMap: TrieMap[String, String], envMap: TrieMap[String, String], uidRef: AtomicReference[String], logs: List[String], removedTargetsByTag: Map[String, Set[String]] = Map.empty, matchedVarsLists: TrieMap[String, Seq[String]] = new TrieMap[String, Seq[String]](), disabledTags: Set[String] = Set.empty, removedTargetsById: Map[Int, Set[String]] = Map.empty) {
 
   def evalTxExpressions(input: String): String = {
     if (!input.contains("%{")) return input
@@ -1890,12 +1890,76 @@ object EngineMode {
   }
 }
 
+/** The targets a `SecRuleUpdateTargetBy*` adds to a rule, and the ones it takes away from it. */
+final case class TargetUpdate(added: List[Variable], excluded: List[Variable])
+
+/**
+ * What a program says about rules it does not necessarily contain.
+ *
+ * A configuration is compiled one entry at a time and composed afterwards, and a preset is compiled
+ * on its own long before anyone references it — so an exclusion and the rule it excludes almost
+ * never share a compilation unit, and with the CRS they never do. `SecRuleRemoveById` already
+ * crossed that boundary, through the runtime `containsRemovedRuleId` check. The other four
+ * directives were applied at compile time only, which meant they worked in a single-string test and
+ * silently did nothing in the one arrangement anybody deploys: a preset, plus a few lines of local
+ * tuning. Carrying all five here puts them on the same footing.
+ */
+final case class RuleExclusions(
+  removedIds: Set[Int] = Set.empty,
+  removedTags: Set[String] = Set.empty,
+  removedMsgs: Set[String] = Set.empty,
+  updatedTargetsById: Map[Int, TargetUpdate] = Map.empty,
+  updatedTargetsByTag: Map[String, TargetUpdate] = Map.empty,
+  updatedTargetsByMsg: Map[String, TargetUpdate] = Map.empty,
+) {
+
+  /** The hot path asks this first: with nothing declared anywhere, no rule pays for the feature. */
+  val isEmpty: Boolean =
+    removedIds.isEmpty && removedTags.isEmpty && removedMsgs.isEmpty &&
+      updatedTargetsById.isEmpty && updatedTargetsByTag.isEmpty && updatedTargetsByMsg.isEmpty
+
+  val hasTargetUpdates: Boolean =
+    updatedTargetsById.nonEmpty || updatedTargetsByTag.nonEmpty || updatedTargetsByMsg.nonEmpty
+
+  val hasRemovals: Boolean = removedIds.nonEmpty || removedTags.nonEmpty || removedMsgs.nonEmpty
+
+  def ++(other: RuleExclusions): RuleExclusions = RuleExclusions(
+    removedIds ++ other.removedIds,
+    removedTags ++ other.removedTags,
+    removedMsgs ++ other.removedMsgs,
+    updatedTargetsById ++ other.updatedTargetsById,
+    updatedTargetsByTag ++ other.updatedTargetsByTag,
+    updatedTargetsByMsg ++ other.updatedTargetsByMsg,
+  )
+
+  def removes(id: Option[Int], tags: Iterable[String], msgs: Iterable[String]): Boolean =
+    hasRemovals && (
+      id.exists(removedIds.contains) ||
+        tags.exists(removedTags.contains) ||
+        msgs.exists(removedMsgs.contains)
+    )
+
+  /** Every update that names this rule, by id, by tag or by message. */
+  def targetUpdatesFor(id: Option[Int], tags: Iterable[String], msgs: Iterable[String]): List[TargetUpdate] =
+    if (!hasTargetUpdates) Nil
+    else {
+      id.flatMap(updatedTargetsById.get).toList :::
+        tags.flatMap(updatedTargetsByTag.get).toList :::
+        msgs.flatMap(updatedTargetsByMsg.get).toList
+    }
+}
+
+object RuleExclusions {
+  val empty: RuleExclusions = RuleExclusions()
+}
+
 sealed trait CompiledProgram {
   def mode: Option[EngineMode]
   def webAppId: Option[String]
   def hash: String
   def itemsForPhase(phase: Int): Vector[CompiledItem]
   def containsRemovedRuleId(id: Int): Boolean
+  def exclusions: RuleExclusions
 }
 
 final case class SimpleCompiledProgram(
@@ -1904,6 +1968,7 @@ final case class SimpleCompiledProgram(
   mode: Option[EngineMode],
   webAppId: Option[String],
   hash: String,
+  exclusions: RuleExclusions = RuleExclusions.empty,
 ) extends CompiledProgram {
   def itemsForPhase(phase: Int): Vector[CompiledItem] = itemsByPhase.getOrElse(phase, Vector.empty)
   def containsRemovedRuleId(id: Int): Boolean = removedRuleIds.contains(id)
@@ -1915,6 +1980,8 @@ final case class ComposedCompiledProgram(programs: List[CompiledProgram]) extend
   def hash: String = HashUtilsFast.sha512Hex(programs.map(_.hash).mkString("."))
   def itemsForPhase(phase: Int): Vector[CompiledItem] = programs.flatMap(_.itemsForPhase(phase)).toVector
   def containsRemovedRuleId(id: Int): Boolean = programs.exists(_.containsRemovedRuleId(id))
+  // folded once, not once per rule: this is read on the hot path for every chain of every request
+  lazy val exclusions: RuleExclusions = programs.map(_.exclusions).foldLeft(RuleExclusions.empty)(_ ++ _)
 }
 
 trait SecLangIntegration {

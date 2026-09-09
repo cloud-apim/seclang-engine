@@ -78,8 +78,10 @@ object Compiler {
                 ))
               }
             }
+            // guarded on tags, so it has to be looked up by tag — looking it up by msg made the
+            // by-tag form a no-op even inside a single compilation unit
             case rule if rule.tags.exists(m => updatedTargetsByTag.contains(m)) => {
-              rule.msgs.flatMap(m => updatedTargetsByTag.get(m)).foldLeft(rule) {
+              rule.tags.flatMap(m => updatedTargetsByTag.get(m)).foldLeft(rule) {
                 case (rule, t) => rule.copy(variables = rule.variables.copy(
                   variables = rule.variables.variables ++ t.variables.variables,
                   negatedVariables = rule.variables.negatedVariables ++ t.negatedVariables.variables,
@@ -181,7 +183,18 @@ object Compiler {
       // TODO: support all statements here
     }
 
-    SimpleCompiledProgram(byPhase.toMap, removed, mode, webAppId, configuration.hash)
+    // the same five directives, kept for rules this compilation unit does not contain. the
+    // compile-time rewrite above still runs, so a config written as one string behaves exactly as
+    // before; this is what makes the identical directive work against a preset or another entry.
+    val exclusions = RuleExclusions(
+      removedIds = removed,
+      removedTags = removedRuleTags,
+      removedMsgs = removedRuleMsgs,
+      updatedTargetsById = updatedTargetsById.map { case (k, u) => k -> TargetUpdate(u.variables.variables, u.negatedVariables.variables) },
+      updatedTargetsByTag = updatedTargetsByTag.map { case (k, u) => k -> TargetUpdate(u.variables.variables, u.negatedVariables.variables) },
+      updatedTargetsByMsg = updatedTargetsByMsg.map { case (k, u) => k -> TargetUpdate(u.variables.variables, u.negatedVariables.variables) },
+    )
+    SimpleCompiledProgram(byPhase.toMap, removed, mode, webAppId, configuration.hash, exclusions)
   }
   def compile(configuration: Configuration): Either[SecLangError, CompiledProgram] = try {
     Right(compileUnsafe(configuration))
