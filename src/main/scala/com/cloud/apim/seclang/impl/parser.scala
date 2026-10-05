@@ -126,6 +126,9 @@ class AstBuilderVisitor(includeRawRule: Boolean, includeComments: Boolean) exten
     } else if (stmt == "SecRuleEngineDetectionOnly" || stmt == "SecRuleEngineOn" || stmt == "SecRuleEngineOff") {
       val param = stmt.replaceFirst("SecRuleEngine", "")
       ConfigDirective.RuleEngine(param)
+    } else if (stmt.startsWith("SecGeoLookupDb")) {
+      val path = Option(ctx.values()).map(_.getText.replaceAll("\"", "")).getOrElse("")
+      ConfigDirective.GeoLookupDb(path)
     } else {
       println(s"unknown engine config directive: ${stmt}")
       ConfigDirective.Raw("unknown", "")

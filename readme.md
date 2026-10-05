@@ -281,6 +281,25 @@ class SecLangFactoryTest extends munit.FunSuite {
 }
 ```
 
+## Geolocation
+
+The engine ships no geolocation database. `@geoLookup` asks the host through `SecLangIntegration.geoLookup`, and fills the `GEO` collection with the answer. `SecGeoLookupDb` is accepted and ignored: the database is the host's.
+
+```scala
+class MyIntegration(db: MyGeoDatabase) extends DefaultSecLangIntegration {
+  // called during evaluation: answer from memory, never from the network
+  override def geoLookup(address: String): Option[Map[String, String]] =
+    db.find(address).map(loc => Map("COUNTRY_CODE" -> loc.isoCode, "COUNTRY_NAME" -> loc.name, "CITY" -> loc.city))
+}
+```
+
+```
+SecRule REMOTE_ADDR "@geoLookup" "id:1,phase:1,deny,status:403,msg:'blocked from %{GEO.COUNTRY_CODE}',chain"
+    SecRule GEO:COUNTRY_CODE "@within KP IR" "t:none"
+```
+
+Keys follow ModSecurity (`COUNTRY_CODE`, `COUNTRY_CODE3`, `COUNTRY_NAME`, `COUNTRY_CONTINENT`, `REGION`, `CITY`, `POSTAL_CODE`, `LATITUDE`, `LONGITUDE`, `DMA_CODE`, `AREA_CODE`) and are read case-insensitively. When the host returns `None` or throws, the operator does not match and `GEO` keeps what it held. `GEO` lives for one `evaluate` call: a response phase rule that needs it runs `@geoLookup` again. From Java, override `JSecLangIntegration.geoLookup`.
+
 ## Installation
 
 Add the following dependency to your `build.sbt`:
@@ -431,5 +450,3 @@ The file `crs-tests-status.json` contains the current status of the CRS test sui
 * `verifyCPF`
 * `verifySSN`
 * `rbl`
-* `rxGlobal`
-* `fuzzyHash`

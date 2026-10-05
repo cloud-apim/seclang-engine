@@ -80,6 +80,21 @@ public abstract class JSecLangIntegration {
     public abstract void audit(int ruleId, JRequestContext context, RuntimeState state, int phase, String msg, List<String> logdata);
 
     /**
+     * Locates an address for {@code @geoLookup}, which fills the {@code GEO} collection with the result.
+     *
+     * <p>Called synchronously during rule evaluation: answer from memory (a local database, or a
+     * warmed cache), never from the network. An empty result means the address could not be
+     * located, and the operator does not match. Keys follow ModSecurity's {@code GEO} collection
+     * ({@code COUNTRY_CODE}, {@code COUNTRY_NAME}, {@code CITY}, ...) and are read case-insensitively.
+     * Returns empty unless overridden.</p>
+     *
+     * @param address the address the rule targets, usually {@code REMOTE_ADDR}
+     */
+    public Optional<Map<String, String>> geoLookup(String address) {
+        return Optional.empty();
+    }
+
+    /**
      * Get the default integration implementation.
      */
     public static JSecLangIntegration defaultIntegration() {
@@ -184,6 +199,16 @@ public abstract class JSecLangIntegration {
                     msg,
                     JavaConverters.seqAsJavaListConverter(logdata).asJava()
             );
+        }
+
+        @Override
+        public Option<scala.collection.immutable.Map<String, String>> geoLookup(String address) {
+            Optional<Map<String, String>> location = self.geoLookup(address);
+            if (location.isPresent()) {
+                return scala.Some.apply(JavaCompat.toScalaMap(location.get()));
+            } else {
+                return scala.None$.empty();
+            }
         }
     }
 

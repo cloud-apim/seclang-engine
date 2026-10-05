@@ -202,6 +202,15 @@ object EngineVariables {
           }.toList
         case Some(key) => state.envMap.get(key).toList
       }
+      case "GEO" => key match {
+        case None => state.geoMap.values.toList
+        case Some(k) if k.startsWith("/") && k.endsWith("/") =>
+          val r = RegexPool.regex(s"(?i)${k.substring(1, k.length - 1)}")
+          state.geoMap.collect {
+            case (name, v) if r.findFirstIn(name).isDefined => v
+          }.toList
+        case Some(k) => state.geoMap.get(k).toList
+      }
       case "REQUEST_BODY" => {
         if (ctx.isXml) List.empty
         else ctx.body.toList.map(_.utf8String)
@@ -369,7 +378,6 @@ object EngineVariables {
       case "URLENCODED_ERROR" => unimplementedVariable("URLENCODED_ERROR", integration) // TODO: implement it
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       case "SDBM_DELETE_ERROR" => unsupportedV3Variable("SDBM_DELETE_ERROR", integration)
-      case "GEO" => unsupportedVariable("GEO", integration)
       case "PERF_ALL" => unsupportedV3Variable("PERF_ALL", integration)
       case "PERF_COMBINED" => unsupportedV3Variable("PERF_COMBINED", integration)
       case "PERF_GC" => unsupportedV3Variable("PERF_GC", integration)

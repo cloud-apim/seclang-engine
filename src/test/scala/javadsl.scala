@@ -235,6 +235,49 @@ class SecLangJavaApiTest extends munit.FunSuite {
     assertEquals(result.getDisposition.getMessage.orElse(""), "test rule")
   }
 
+  test("geoLookup via Java API") {
+    val rules =
+      """
+        |SecRule REMOTE_ADDR "@geoLookup" \
+        |    "id:12346,\
+        |    phase:1,\
+        |    deny,\
+        |    status:403,\
+        |    msg:'blocked from %{GEO.COUNTRY_CODE}',\
+        |    chain"
+        |    SecRule GEO:COUNTRY_CODE "@streq KP" "t:none"
+        |
+        |SecRuleEngine On
+        |""".stripMargin
+
+    val defaults = JSecLangIntegration.noLogIntegration()
+    val integration = new JSecLangIntegration {
+      override def logDebug(msg: String): Unit = ()
+      override def logInfo(msg: String): Unit = ()
+      override def logAudit(msg: String): Unit = ()
+      override def logError(msg: String): Unit = ()
+      override def getEnv: java.util.Map[String, String] = new java.util.HashMap[String, String]()
+      override def getExternalPreset(name: String) = defaults.getExternalPreset(name)
+      override def getCachedProgram(key: String) = defaults.getCachedProgram(key)
+      override def putCachedProgram(key: String, program: com.cloud.apim.seclang.model.CompiledProgram, ttl: java.time.Duration): Unit = defaults.putCachedProgram(key, program, ttl)
+      override def removeCachedProgram(key: String): Unit = defaults.removeCachedProgram(key)
+      override def audit(ruleId: Int, context: JRequestContext, state: com.cloud.apim.seclang.model.RuntimeState, phase: Int, msg: String, logdata: java.util.List[String]): Unit = ()
+      override def geoLookup(address: String): java.util.Optional[java.util.Map[String, String]] =
+        if (address == "1.2.3.4") java.util.Optional.of(java.util.Map.of("COUNTRY_CODE", "KP")) else java.util.Optional.empty()
+    }
+
+    val parseResult = SecLang.parse(rules)
+    assert(parseResult.isSuccess)
+    val engine = SecLang.engine(SecLang.compile(parseResult.getConfiguration), JSecLangEngineConfig.defaultConfig(), new java.util.HashMap[String, String](), integration)
+
+    val located = engine.evaluate(JRequestContext.builder().method("GET").uri("/").remoteAddr("1.2.3.4").build())
+    val unknown = engine.evaluate(JRequestContext.builder().method("GET").uri("/").remoteAddr("5.6.7.8").build())
+
+    assert(located.isBlocked, "an address located in KP should be blocked")
+    assertEquals(located.getDisposition.getMessage.orElse(""), "blocked from KP")
+    assert(unknown.isContinue, "an address the host cannot locate should continue")
+  }
+
   test("factory with presets via Java API") {
     // Create presets
     val presets = new HashMap[String, JSecLangPreset]()

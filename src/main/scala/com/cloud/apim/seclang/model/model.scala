@@ -1830,7 +1830,10 @@ object RuntimeState {
   // Single pattern to capture all %{...} expressions - O(n) single pass
   private val AllExpr: Regex = RegexPool.regex("""(?i)%\{([a-z0-9_.:-]+)\}""")
 }
-final case class RuntimeState(mode: EngineMode, webAppId: Option[String], disabledIds: Set[Int], events: List[MatchEvent], txMap: TrieMap[String, String], envMap: TrieMap[String, String], uidRef: AtomicReference[String], logs: List[String], removedTargetsByTag: Map[String, Set[String]] = Map.empty, matchedVarsLists: TrieMap[String, Seq[String]] = new TrieMap[String, Seq[String]](), disabledTags: Set[String] = Set.empty, removedTargetsById: Map[Int, Set[String]] = Map.empty) {
+// geoMap holds the GEO collection, keyed in lower case like txMap. it is filled by @geoLookup and
+// mutable on purpose: an operator cannot return a new state, and a chain that fails after the
+// lookup must not forget it
+final case class RuntimeState(mode: EngineMode, webAppId: Option[String], disabledIds: Set[Int], events: List[MatchEvent], txMap: TrieMap[String, String], envMap: TrieMap[String, String], uidRef: AtomicReference[String], logs: List[String], removedTargetsByTag: Map[String, Set[String]] = Map.empty, matchedVarsLists: TrieMap[String, Seq[String]] = new TrieMap[String, Seq[String]](), disabledTags: Set[String] = Set.empty, removedTargetsById: Map[Int, Set[String]] = Map.empty, geoMap: TrieMap[String, String] = new TrieMap[String, String]()) {
 
   def evalTxExpressions(input: String): String = {
     if (!input.contains("%{")) return input
@@ -1843,6 +1846,7 @@ final case class RuntimeState(mode: EngineMode, webAppId: Option[String], disabl
           case key if key.startsWith("tx.") => java.util.regex.Matcher.quoteReplacement(txMap.getOrElse(key.substring(3), m.matched))
           case key if key.startsWith("request_headers.") => java.util.regex.Matcher.quoteReplacement(txMap.getOrElse(key, m.matched))
           case key if key.startsWith("args.") => java.util.regex.Matcher.quoteReplacement(txMap.getOrElse(key, m.matched))
+          case key if key.startsWith("geo.") => java.util.regex.Matcher.quoteReplacement(geoMap.getOrElse(key.substring(4), m.matched))
           case _ => m.matched
         }
       })
@@ -1995,6 +1999,19 @@ trait SecLangIntegration {
   def putCachedProgram(key: String, program: CompiledProgram, ttl: FiniteDuration): Unit
   def removeCachedProgram(key: String): Unit
   def audit(ruleId: Int, context: RequestContext, state: RuntimeState, phase: Int, msg: String, logdata: List[String]): Unit
+  /**
+   * Locates an address for `@geoLookup`, which fills the `GEO` collection with the result.
+   *
+   * The engine owns no database: this is the host's. It is called synchronously during rule
+   * evaluation, so it must answer from memory (a local database, or a cache the host warmed) and
+   * never wait on the network. `None` means the address could not be located: the operator does
+   * not match and `GEO` keeps what it held.
+   *
+   * Keys follow ModSecurity's `GEO` collection and are read case-insensitively: `COUNTRY_CODE`,
+   * `COUNTRY_CODE3`, `COUNTRY_NAME`, `COUNTRY_CONTINENT`, `REGION`, `CITY`, `POSTAL_CODE`,
+   * `LATITUDE`, `LONGITUDE`, `DMA_CODE`, `AREA_CODE`. A host may add its own.
+   */
+  def geoLookup(address: String): Option[Map[String, String]] = None
 }
 
 class DefaultSecLangIntegration(maxCacheItems: Int = 1000, externalPresets: Map[String, SecLangPreset] = Map.empty) extends SecLangIntegration {

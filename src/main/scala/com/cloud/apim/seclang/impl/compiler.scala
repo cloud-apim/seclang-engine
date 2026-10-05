@@ -147,6 +147,8 @@ object Compiler {
         }
         case EngineConfigDirective(_, ConfigDirective.DataDir(_)) => ()
         case EngineConfigDirective(_, ConfigDirective.TmpDir(_)) => ()
+        // the database is the host's, reached through SecLangIntegration.geoLookup
+        case EngineConfigDirective(_, ConfigDirective.GeoLookupDb(_)) => ()
         case EngineConfigDirective(_, ConfigDirective.WebAppId(id)) => {
           webAppId = Some(id)
         }

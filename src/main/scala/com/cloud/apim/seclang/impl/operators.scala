@@ -158,6 +158,23 @@ object EngineOperators {
         case _: Throwable => false
       }
     }
+    case Operator.GeoLookup(_) => {
+      // the database is the host's: no answer, or a failing one, is simply not a match
+      val location = try {
+        integration.geoLookup(value.trim)
+      } catch {
+        case t: Throwable =>
+          integration.logError(s"geoLookup failed for '$value': ${t.getMessage}")
+          None
+      }
+      location match {
+        case Some(fields) if fields.nonEmpty =>
+          state.geoMap.clear()
+          fields.foreach { case (k, v) => state.geoMap.put(k.toLowerCase, v) }
+          true
+        case _ => false
+      }
+    }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     case Operator.Rbl(x) => unsupportedOperator("rbl", integration)
     case Operator.VerifyCC(x) => unsupportedOperator("verifyCC", integration)
@@ -165,7 +182,6 @@ object EngineOperators {
     case Operator.VerifySSN(x) => unsupportedOperator("verifySSN", integration)
     case Operator.ValidateDTD(x) => unsupportedOperator("validateDTD", integration)
     case Operator.ValidateSchema(x) => unsupportedOperator("validateSchema", integration)
-    case Operator.GeoLookup(x) => unsupportedOperator("geoLookup", integration)
     case Operator.InspectFile(x) => unsupportedOperator("inspectFile", integration)
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     case Operator.ValidateHash(x) => unsupportedV3Operator("validateHash", integration)
