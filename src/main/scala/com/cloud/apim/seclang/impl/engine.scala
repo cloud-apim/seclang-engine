@@ -130,13 +130,17 @@ final class SecLangEngine(
     var i = 0
     var st = st0
     val disps = ArrayBuffer.empty[Disposition]
+    // ctl:requestBodyProcessor changes how the rules after it read the body, in this phase and the next
+    // ones. The context is rebuilt only when the processor changes, so the body is parsed once per change
+    var cx = ctx.withBodyProcessor(st0.bodyProcessor.orElse(ctx.bodyProcessor))
 
     while (i < items.length) {
       items(i) match {
         // TODO: handle all needed statements
         case ActionItem(action) =>
-          val (matched, stAfterMatch, skipToIdxOpt, dispOpt) = evalAction(action, phase, ctx, st, markerIndex)
+          val (matched, stAfterMatch, skipToIdxOpt, dispOpt) = evalAction(action, phase, cx, st, markerIndex)
           st = stAfterMatch
+          if (st.bodyProcessor.isDefined) cx = cx.withBodyProcessor(st.bodyProcessor)
           dispOpt match {
             case Some(d) => return (d, st)
             case None =>
@@ -160,9 +164,10 @@ final class SecLangEngine(
             i += 1
           } else {
             val (matched, stAfterMatch, skipToIdxOpt, dispOpt) =
-              evalChain(rules, phase, ctx, st, markerIndex)
+              evalChain(rules, phase, cx, st, markerIndex)
 
             st = stAfterMatch
+            if (st.bodyProcessor.isDefined) cx = cx.withBodyProcessor(st.bodyProcessor)
 
             dispOpt match {
               case Some(d) if !st.mode.isDetectionOnly => return (d, st)

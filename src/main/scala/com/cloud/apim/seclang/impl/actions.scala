@@ -111,7 +111,13 @@ object EngineActions {
       case Action.CtlAction.AuditEngine(id) => println("AuditEngine not implemented yet")
       case Action.CtlAction.AuditLogParts(id) => println("AuditLogParts not implemented yet")
       case Action.CtlAction.RequestBodyAccess(id) => ()
-      case Action.CtlAction.RequestBodyProcessor(id) => println("RequestBodyProcessor not implemented yet")
+      // read by the rules that follow, which see the body through this processor (CRS 901350 to 901370)
+      case Action.CtlAction.RequestBodyProcessor(value) => {
+        value.trim.toUpperCase match {
+          case processor @ ("JSON" | "XML" | "URLENCODED" | "MULTIPART") => localState = localState.copy(bodyProcessor = Some(processor))
+          case other => integration.logDebug(s"ctl:requestBodyProcessor=$other is not a supported processor, ignored")
+        }
+      }
       case Action.CtlAction.RuleEngine(value) => {
         localState = localState.copy(mode = EngineMode(value))
       }

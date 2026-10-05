@@ -1558,6 +1558,18 @@ object SeverityValue {
 }
 
 object RequestContext {
+
+  // the subtype characters RFC 6838 allows, "+" included so that application/vc+ld+json matches
+  private val StructuredJson = "^application/[a-z0-9.!#$&_^+-]+\\+json$".r
+  private val AwsJson        = "^application/x-amz-json-1\\.[01]$".r
+
+  /** `application/json`, `text/json`, any `+json` suffixed application type, and the AWS JSON types. Lowercase in. */
+  def isJsonContentType(contentType: String): Boolean = {
+    val mediaType = contentType.split(';').head.trim
+    contentType.contains("application/json") || contentType.contains("text/json") ||
+      StructuredJson.pattern.matcher(mediaType).matches() || AwsJson.pattern.matcher(mediaType).matches()
+  }
+
   def jsToStr(js: JsValue): List[String] = js match {
     case JsString(s) => List(s)
     case JsNull => List("null")
@@ -1602,7 +1614,14 @@ final case class RequestContext(
   protocol: String = "HTTP/1.1",
   secure: Boolean = false,
   variables: Map[String, String] = Map.empty,
+  // what ctl:requestBodyProcessor forced (JSON, XML, URLENCODED, MULTIPART), over what the Content-Type says
+  bodyProcessor: Option[String] = None,
 ) {
+
+  // the shape before bodyProcessor, kept for the Java DSL and for code compiled against it
+  def this(requestId: String, method: String, uri: String, headers: Headers, cookies: Map[String, List[String]], query: Map[String, List[String]], body: Option[ByteString], status: Option[Int], statusTxt: Option[String], startTime: Long, remoteAddr: String, remotePort: Int, protocol: String, secure: Boolean, variables: Map[String, String]) =
+    this(requestId, method, uri, headers, cookies, query, body, status, statusTxt, startTime, remoteAddr, remotePort, protocol, secure, variables, None)
+
   lazy val isResponse: Boolean = status.isDefined
   lazy val isRequest: Boolean = !isResponse
   lazy val requestLine: String = s"${method.toUpperCase()} ${uri} ${protocol}"
@@ -1673,12 +1692,28 @@ final case class RequestContext(
     auth.filter(_.contains(" ")).flatMap(_.split(" ").headOption)
   }
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  lazy val isXwwwFormUrlEncoded: Boolean = {
-    contentType.exists(_.contains("application/www-form-urlencoded")) || contentType.exists(_.contains("application/x-www-form-urlencoded"))
+  /** The context as a rule sees it once `ctl:requestBodyProcessor` has picked the body processor. */
+  def withBodyProcessor(processor: Option[String]): RequestContext =
+    if (processor == bodyProcessor) this else copy(bodyProcessor = processor)
+
+  /**
+   * How the body is read: what `ctl:requestBodyProcessor` forced, or else what the Content-Type says.
+   *
+   * JSON covers every `+json` structured syntax suffix (RFC 6839: `application/vnd.api+json`,
+   * `application/problem+json`, ...) and the AWS JSON types, the ones CRS 4 forces to JSON with
+   * rules 901360 and 901370. Without them a JSON:API body was never split into `ARGS`, and every
+   * rule inspecting `ARGS` missed what it carried.
+   */
+  lazy val effectiveBodyProcessor: Option[String] = bodyProcessor.map(_.trim.toUpperCase).filter(_.nonEmpty).orElse {
+    contentType.map(_.toLowerCase).collect {
+      case ct if ct.contains("application/www-form-urlencoded") || ct.contains("application/x-www-form-urlencoded") => "URLENCODED"
+      case ct if ct.contains("multipart/form-data")                                                                 => "MULTIPART"
+      case ct if ct.contains("application/xml") || ct.contains("text/xml")                                          => "XML"
+      case ct if RequestContext.isJsonContentType(ct)                                                               => "JSON"
+    }
   }
-  lazy val isWwwFormUrlEncoded: Boolean = {
-    contentType.exists(_.contains("application/www-form-urlencoded")) || contentType.exists(_.contains("application/x-www-form-urlencoded"))
-  }
+  lazy val isXwwwFormUrlEncoded: Boolean = effectiveBodyProcessor.contains("URLENCODED")
+  lazy val isWwwFormUrlEncoded: Boolean  = isXwwwFormUrlEncoded
   lazy val wwwFormEncodedBody: Option[Map[String, List[String]]] = {
     body match {
       case Some(body) if isXwwwFormUrlEncoded => Some(FormUrlEncoded.parse(body.utf8String))
@@ -1686,9 +1721,7 @@ final case class RequestContext(
     }
   }
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  lazy val isXml: Boolean = {
-    contentType.exists(_.contains("application/xml")) || contentType.exists(_.contains("text/xml"))
-  }
+  lazy val isXml: Boolean = effectiveBodyProcessor.contains("XML")
   lazy val xmlBody: Option[Map[String, List[String]]] = {
     body match {
       case Some(body) if isXml => Some(SimpleXmlSelector.selectAttributesAndText(body.utf8String))
@@ -1696,9 +1729,7 @@ final case class RequestContext(
     }
   }
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  lazy val isJson: Boolean = {
-    contentType.exists(_.contains("application/json")) || contentType.exists(_.contains("text/json"))
-  }
+  lazy val isJson: Boolean = effectiveBodyProcessor.contains("JSON")
   lazy val jsonBody: Option[JsValue] = {
     body match {
       case Some(body) if isJson => Try(Json.parse(body.utf8String)).toOption
@@ -1716,9 +1747,7 @@ final case class RequestContext(
     } else Map.empty
   }
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  lazy val isMultipartFormData: Boolean = {
-    contentType.exists(_.contains("multipart/form-data"))
-  }
+  lazy val isMultipartFormData: Boolean = effectiveBodyProcessor.contains("MULTIPART")
   lazy val multipartFormDataBody: Option[Map[String, List[String]]] = {
     body match {
       case Some(body) if isMultipartFormData => MultipartVars.multipartPartHeadersFromCtx(body.utf8String, contentType)
@@ -1749,14 +1778,7 @@ final case class RequestContext(
   lazy val files: List[String] = filesAndNames._1
   lazy val filesNames: List[String] = filesAndNames._2
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  lazy val requestBodyProcessor: List[String] = contentType
-    .map(_.toLowerCase)
-    .collect {
-      case ct if ct.startsWith("application/x-www-form-urlencoded")            => "URLENCODED"
-      case ct if ct.startsWith("multipart/form-data")                          => "MULTIPART"
-      case ct if ct.startsWith("application/xml") || ct.startsWith("text/xml") => "XML"
-      case ct if ct.startsWith("application/json")                             => "JSON"
-    }.toList
+  lazy val requestBodyProcessor: List[String] = effectiveBodyProcessor.toList
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   def json: JsValue = Json.obj(
     "requestId" -> requestId,
@@ -1774,6 +1796,7 @@ final case class RequestContext(
     "protocol" -> protocol,
     "secure" -> secure,
     "variables" -> variables,
+    "bodyProcessor" -> bodyProcessor,
   )
 }
 
@@ -1837,7 +1860,7 @@ object RuntimeState {
 // geoMap holds the GEO collection, keyed in lower case like txMap. it is filled by @geoLookup and
 // mutable on purpose: an operator cannot return a new state, and a chain that fails after the
 // lookup must not forget it
-final case class RuntimeState(mode: EngineMode, webAppId: Option[String], disabledIds: Set[Int], events: List[MatchEvent], txMap: TrieMap[String, String], envMap: TrieMap[String, String], uidRef: AtomicReference[String], logs: List[String], removedTargetsByTag: Map[String, Set[String]] = Map.empty, matchedVarsLists: TrieMap[String, Seq[String]] = new TrieMap[String, Seq[String]](), disabledTags: Set[String] = Set.empty, removedTargetsById: Map[Int, Set[String]] = Map.empty, geoMap: TrieMap[String, String] = new TrieMap[String, String]()) {
+final case class RuntimeState(mode: EngineMode, webAppId: Option[String], disabledIds: Set[Int], events: List[MatchEvent], txMap: TrieMap[String, String], envMap: TrieMap[String, String], uidRef: AtomicReference[String], logs: List[String], removedTargetsByTag: Map[String, Set[String]] = Map.empty, matchedVarsLists: TrieMap[String, Seq[String]] = new TrieMap[String, Seq[String]](), disabledTags: Set[String] = Set.empty, removedTargetsById: Map[Int, Set[String]] = Map.empty, geoMap: TrieMap[String, String] = new TrieMap[String, String](), bodyProcessor: Option[String] = None) {
 
   def evalTxExpressions(input: String): String = {
     if (!input.contains("%{")) return input
