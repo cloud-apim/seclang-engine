@@ -149,6 +149,8 @@ object Compiler {
         case EngineConfigDirective(_, ConfigDirective.TmpDir(_)) => ()
         // the database is the host's, reached through SecLangIntegration.geoLookup
         case EngineConfigDirective(_, ConfigDirective.GeoLookupDb(_)) => ()
+        // the resolver is the host's, reached through SecLangIntegration.rblLookup, and so is the key
+        case EngineConfigDirective(_, ConfigDirective.HttpBlKey(_)) => ()
         case EngineConfigDirective(_, ConfigDirective.WebAppId(id)) => {
           webAppId = Some(id)
         }

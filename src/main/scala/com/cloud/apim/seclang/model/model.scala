@@ -796,6 +796,7 @@ object ConfigDirective {
         case "DebugLog" => DebugLog((json \ "value").as[String])
         case "DebugLogLevel" => DebugLogLevel((json \ "value").as[Int])
         case "GeoLookupDb" => GeoLookupDb((json \ "value").as[String])
+        case "HttpBlKey" => HttpBlKey((json \ "value").as[String])
         case "RuleEngine" => RuleEngine((json \ "value").as[String])
         case "RequestBodyAccess" => RequestBodyAccess((json \ "value").as[String])
         case "RequestBodyLimit" => RequestBodyLimit((json \ "value").as[Int])
@@ -856,6 +857,9 @@ object ConfigDirective {
   }
   final case class GeoLookupDb(value: String) extends ConfigDirective {
     def json: JsValue = Json.obj("type" -> "GeoLookupDb", "value" -> value)
+  }
+  final case class HttpBlKey(value: String) extends ConfigDirective {
+    def json: JsValue = Json.obj("type" -> "HttpBlKey", "value" -> value)
   }
   final case class RuleEngine(value: String) extends ConfigDirective {
     def json: JsValue = Json.obj("type" -> "RuleEngine", "value" -> value)
@@ -2012,6 +2016,14 @@ trait SecLangIntegration {
    * `LATITUDE`, `LONGITUDE`, `DMA_CODE`, `AREA_CODE`. A host may add its own.
    */
   def geoLookup(address: String): Option[Map[String, String]] = None
+  /**
+   * Whether `address` is listed in the DNS blocklist `zone`, for `@rbl`.
+   *
+   * Called synchronously during rule evaluation, so it must answer from what the host already knows
+   * (a cache it warms asynchronously) and never wait on a DNS query. `false` covers both "not
+   * listed" and "not known yet": a blocklist that cannot be reached must never block anyone.
+   */
+  def rblLookup(address: String, zone: String): Boolean = false
 }
 
 class DefaultSecLangIntegration(maxCacheItems: Int = 1000, externalPresets: Map[String, SecLangPreset] = Map.empty) extends SecLangIntegration {

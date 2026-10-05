@@ -95,6 +95,20 @@ public abstract class JSecLangIntegration {
     }
 
     /**
+     * Whether an address is listed in a DNS blocklist, for {@code @rbl}.
+     *
+     * <p>Called synchronously during rule evaluation: answer from what is already known (a cache
+     * warmed asynchronously), never from a DNS query. {@code false} covers both "not listed" and
+     * "not known yet". Returns false unless overridden.</p>
+     *
+     * @param address the address the rule targets, usually {@code REMOTE_ADDR}
+     * @param zone    the blocklist zone given to the operator, e.g. {@code zen.spamhaus.org}
+     */
+    public boolean rblLookup(String address, String zone) {
+        return false;
+    }
+
+    /**
      * Get the default integration implementation.
      */
     public static JSecLangIntegration defaultIntegration() {
@@ -199,6 +213,11 @@ public abstract class JSecLangIntegration {
                     msg,
                     JavaConverters.seqAsJavaListConverter(logdata).asJava()
             );
+        }
+
+        @Override
+        public boolean rblLookup(String address, String zone) {
+            return self.rblLookup(address, zone);
         }
 
         @Override

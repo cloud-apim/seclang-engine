@@ -278,6 +278,36 @@ class SecLangJavaApiTest extends munit.FunSuite {
     assert(unknown.isContinue, "an address the host cannot locate should continue")
   }
 
+  test("rbl via Java API") {
+    val rules =
+      """
+        |SecRule REMOTE_ADDR "@rbl zen.spamhaus.org" "id:12347,phase:1,deny,status:403,msg:'listed'"
+        |SecRuleEngine On
+        |""".stripMargin
+
+    val defaults = JSecLangIntegration.noLogIntegration()
+    val integration = new JSecLangIntegration {
+      override def logDebug(msg: String): Unit = ()
+      override def logInfo(msg: String): Unit = ()
+      override def logAudit(msg: String): Unit = ()
+      override def logError(msg: String): Unit = ()
+      override def getEnv: java.util.Map[String, String] = new java.util.HashMap[String, String]()
+      override def getExternalPreset(name: String) = defaults.getExternalPreset(name)
+      override def getCachedProgram(key: String) = defaults.getCachedProgram(key)
+      override def putCachedProgram(key: String, program: com.cloud.apim.seclang.model.CompiledProgram, ttl: java.time.Duration): Unit = defaults.putCachedProgram(key, program, ttl)
+      override def removeCachedProgram(key: String): Unit = defaults.removeCachedProgram(key)
+      override def audit(ruleId: Int, context: JRequestContext, state: com.cloud.apim.seclang.model.RuntimeState, phase: Int, msg: String, logdata: java.util.List[String]): Unit = ()
+      override def rblLookup(address: String, zone: String): Boolean = address == "1.2.3.4" && zone == "zen.spamhaus.org"
+    }
+
+    val parseResult = SecLang.parse(rules)
+    assert(parseResult.isSuccess)
+    val engine = SecLang.engine(SecLang.compile(parseResult.getConfiguration), JSecLangEngineConfig.defaultConfig(), new java.util.HashMap[String, String](), integration)
+
+    assert(engine.evaluate(JRequestContext.builder().method("GET").uri("/").remoteAddr("1.2.3.4").build()).isBlocked, "a listed address should be blocked")
+    assert(engine.evaluate(JRequestContext.builder().method("GET").uri("/").remoteAddr("5.6.7.8").build()).isContinue, "an unlisted address should continue")
+  }
+
   test("factory with presets via Java API") {
     // Create presets
     val presets = new HashMap[String, JSecLangPreset]()

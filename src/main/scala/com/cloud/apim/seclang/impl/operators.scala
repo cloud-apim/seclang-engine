@@ -175,8 +175,17 @@ object EngineOperators {
         case _ => false
       }
     }
+    case Operator.Rbl(x) => {
+      // the resolver is the host's, and so is the decision to fail open: an error is not a listing
+      try {
+        integration.rblLookup(value.trim, state.evalTxExpressions(x).trim)
+      } catch {
+        case t: Throwable =>
+          integration.logError(s"rbl lookup failed for '$value' in '$x': ${t.getMessage}")
+          false
+      }
+    }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    case Operator.Rbl(x) => unsupportedOperator("rbl", integration)
     case Operator.VerifyCC(x) => unsupportedOperator("verifyCC", integration)
     case Operator.VerifyCPF(x) => unsupportedOperator("verifyCPF", integration)
     case Operator.VerifySSN(x) => unsupportedOperator("verifySSN", integration)

@@ -300,6 +300,14 @@ SecRule REMOTE_ADDR "@geoLookup" "id:1,phase:1,deny,status:403,msg:'blocked from
 
 Keys follow ModSecurity (`COUNTRY_CODE`, `COUNTRY_CODE3`, `COUNTRY_NAME`, `COUNTRY_CONTINENT`, `REGION`, `CITY`, `POSTAL_CODE`, `LATITUDE`, `LONGITUDE`, `DMA_CODE`, `AREA_CODE`) and are read case-insensitively. When the host returns `None` or throws, the operator does not match and `GEO` keeps what it held. `GEO` lives for one `evaluate` call: a response phase rule that needs it runs `@geoLookup` again. From Java, override `JSecLangIntegration.geoLookup`.
 
+## DNS blocklists
+
+`@rbl` asks the host too, through `SecLangIntegration.rblLookup(address, zone)`. Evaluation is synchronous, so the host answers from what it already knows (a cache it fills asynchronously) and never waits on a DNS query; `false` means "not listed" as well as "not known yet", so an unreachable blocklist never blocks anyone. The zone goes through macro expansion, and `capture` puts the address in `TX:0`, as libmodsecurity does. `SecHttpBlKey` is accepted and ignored: the key belongs to the host's resolver.
+
+```
+SecRule REMOTE_ADDR "@rbl zen.spamhaus.org" "id:1,phase:1,deny,status:403,msg:'listed by Spamhaus'"
+```
+
 ## Installation
 
 Add the following dependency to your `build.sbt`:
@@ -449,4 +457,3 @@ The file `crs-tests-status.json` contains the current status of the CRS test sui
 * `verifyCC`
 * `verifyCPF`
 * `verifySSN`
-* `rbl`

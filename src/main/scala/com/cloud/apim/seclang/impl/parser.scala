@@ -129,6 +129,9 @@ class AstBuilderVisitor(includeRawRule: Boolean, includeComments: Boolean) exten
     } else if (stmt.startsWith("SecGeoLookupDb")) {
       val path = Option(ctx.values()).map(_.getText.replaceAll("\"", "")).getOrElse("")
       ConfigDirective.GeoLookupDb(path)
+    } else if (stmt.startsWith("SecHttpBlKey")) {
+      val key = Option(ctx.values()).map(_.getText.replaceAll("\"", "")).getOrElse("")
+      ConfigDirective.HttpBlKey(key)
     } else {
       println(s"unknown engine config directive: ${stmt}")
       ConfigDirective.Raw("unknown", "")
