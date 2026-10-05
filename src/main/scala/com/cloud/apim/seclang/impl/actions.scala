@@ -108,8 +108,10 @@ object EngineActions {
           state.txMap.put(normalized, "0")
         }
       }
-      case Action.CtlAction.AuditEngine(id) => println("AuditEngine not implemented yet")
-      case Action.CtlAction.AuditLogParts(id) => println("AuditLogParts not implemented yet")
+      // the host owns audit logging: these run on real traffic (CRS 905100 and 905110), so they are
+      // said at debug level rather than printed for every request
+      case Action.CtlAction.AuditEngine(value) => integration.logDebug(s"ctl:auditEngine=$value is not supported, ignored")
+      case Action.CtlAction.AuditLogParts(value) => integration.logDebug(s"ctl:auditLogParts=$value is not supported, ignored")
       case Action.CtlAction.RequestBodyAccess(id) => ()
       // read by the rules that follow, which see the body through this processor (CRS 901350 to 901370)
       case Action.CtlAction.RequestBodyProcessor(value) => {

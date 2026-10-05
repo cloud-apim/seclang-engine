@@ -16,41 +16,33 @@ class SecLangEngineFactory(
   cacheTtl: FiniteDuration = 10.minutes,
 ) {
 
-  def precompileAndCache(configs: List[String]): Unit = {
-    configs.foreach {
-      case line if line.trim.startsWith("@import_preset ") => ()
-      case line => {
-        val hash = HashUtilsFast.sha512Hex(line)
-        integration.getCachedProgram(hash) match {
-          case Some(p) => Some((p, Map.empty[String, String]))
-          case None => {
-            val compiled = Compiler.compileUnsafe(AntlrParser.parse(line, config.includeRawRule, config.includeComments).toOption.get)
-            integration.putCachedProgram(hash, compiled, cacheTtl)
-          }
+  private def isPreset(line: String): Boolean = line.trim.startsWith("@import_preset ")
+
+  /**
+   * One element of a rule list, compiled, from the host's cache when it holds it.
+   *
+   * A parse error is an error like a compile error: it used to be a `None.get` thrown from here,
+   * which made `engineSafe` throw on exactly what it exists to report.
+   */
+  private def programOf(line: String): Either[SecLangError, CompiledProgram] = {
+    val hash = HashUtilsFast.sha512Hex(line)
+    integration.getCachedProgram(hash) match {
+      case Some(p) => Right(p)
+      case None    =>
+        val log = (msg: String) => integration.logDebug(msg)
+        AntlrParser.parse(line, config.includeRawRule, config.includeComments, log).flatMap(Compiler.compile(_, log)).map { compiled =>
+          integration.putCachedProgram(hash, compiled, cacheTtl)
+          compiled
         }
-      }
     }
   }
 
-  def engine(configs: List[String]): SecLangEngine = {
-    val programsAndFiles: List[(CompiledProgram, Map[String, String])] = configs.flatMap {
-      case line if line.trim.startsWith("@import_preset ") => {
-        val presetName = line.replaceFirst("@import_preset ", "").trim
-        presets.get(presetName).orElse(integration.getExternalPreset(presetName)).map(p => (p.program, p.files))
-      }
-      case line => {
-        val hash = HashUtilsFast.sha512Hex(line)
-        integration.getCachedProgram(hash) match {
-          case Some(p) => Some((p, Map.empty[String, String]))
-          case None => {
-            val parsed = AntlrParser.parse(line, config.includeRawRule, config.includeComments).toOption.get
-            val compiled = Compiler.compileUnsafe(parsed)
-            integration.putCachedProgram(hash, compiled, cacheTtl)
-            Some((compiled, Map.empty[String, String]))
-          }
-        }
-      }
-    }
+  private def presetOf(line: String): Option[(CompiledProgram, Map[String, String])] = {
+    val presetName = line.replaceFirst("@import_preset ", "").trim
+    presets.get(presetName).orElse(integration.getExternalPreset(presetName)).map(p => (p.program, p.files))
+  }
+
+  private def build(programsAndFiles: List[(CompiledProgram, Map[String, String])]): SecLangEngine = {
     val programs = programsAndFiles.map(_._1)
     val files = programsAndFiles.map(_._2).flatMap(_.toList).toMap
     val program = ComposedCompiledProgram(programs)
@@ -58,40 +50,25 @@ class SecLangEngineFactory(
     new SecLangEngine(program, config: SecLangEngineConfig, files, Some(txMap), integration)
   }
 
+  def precompileAndCache(configs: List[String]): Unit = {
+    configs.filterNot(isPreset).foreach(line => programOf(line).fold(err => throw err.throwable, _ => ()))
+  }
+
+  def engine(configs: List[String]): SecLangEngine = {
+    build(configs.flatMap {
+      case line if isPreset(line) => presetOf(line)
+      case line => Some((programOf(line).fold(err => throw err.throwable, identity), Map.empty[String, String]))
+    })
+  }
+
   def engineSafe(configs: List[String]): Either[List[SecLangError], SecLangEngine] = {
     val programsAndFilesE: List[Either[SecLangError, (CompiledProgram, Map[String, String])]] = configs.flatMap {
-      case line if line.trim.startsWith("@import_preset ") => {
-        val presetName = line.replaceFirst("@import_preset ", "").trim
-        presets.get(presetName).orElse(integration.getExternalPreset(presetName)).map(p => Right((p.program, p.files)))
-      }
-      case line => {
-        val hash = HashUtilsFast.sha512Hex(line)
-        integration.getCachedProgram(hash) match {
-          case Some(p) => Some(Right((p, Map.empty[String, String])))
-          case None => {
-            val parsed = AntlrParser.parse(line, config.includeRawRule, config.includeComments).toOption.get
-            Compiler.compile(parsed) match {
-              case Left(err) => Some(Left(err))
-              case Right(compiled) => {
-                integration.putCachedProgram(hash, compiled, cacheTtl)
-                Some(Right((compiled, Map.empty[String, String])))
-              }
-            }
-          }
-        }
-      }
+      case line if isPreset(line) => presetOf(line).map(Right(_))
+      case line => Some(programOf(line).map(p => (p, Map.empty[String, String])))
     }
-    val (errors, programsAndFiles) = programsAndFilesE.partition(_.isLeft)
-    if (errors.nonEmpty) {
-      Left(errors.map(_.swap.toOption.get))
-    } else {
-      val pafs = programsAndFiles.map(_.toOption.get)
-      val programs = pafs.map(_._1)
-      val files = pafs.map(_._2).flatMap(_.toList).toMap
-      val program = ComposedCompiledProgram(programs)
-      val txMap = new TrieMap[String, String]()
-      Right(new SecLangEngine(program, config: SecLangEngineConfig, files, Some(txMap), integration))
-    }
+    val errors = programsAndFilesE.collect { case Left(err) => err }
+    if (errors.nonEmpty) Left(errors)
+    else Right(build(programsAndFilesE.collect { case Right(paf) => paf }))
   }
 
   def evaluate(configs: List[String], ctx: RequestContext, phases: List[Int] = List(1, 2), txMap: Option[TrieMap[String, String]] = None): EngineResult = {

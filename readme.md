@@ -312,6 +312,10 @@ SecRule REMOTE_ADDR "@rbl zen.spamhaus.org" "id:1,phase:1,deny,status:403,msg:'l
 
 The body is read as a form (`URLENCODED`), as `MULTIPART`, as `XML` or as `JSON`, which is what fills `ARGS` and `REQBODY_PROCESSOR`. The Content-Type picks the processor: `JSON` covers `application/json`, `text/json`, every `+json` suffixed type (`application/vnd.api+json`, `application/problem+json`, ...) and the AWS types `application/x-amz-json-1.0` and `1.1`. `ctl:requestBodyProcessor` overrides it for the rules that follow, as CRS 4 does with rules 901350 to 901370.
 
+## Logging
+
+The engine logs through its integration rather than to stdout. What it accepts and ignores (an unsupported `ctl:auditEngine`, a directive or a statement it does not implement) goes to `SecLangIntegration.logDebug`, the output of `debugRules` to `logInfo`. Rules loaded through a factory report to the factory's integration; `SecLang.parse` and `SecLang.compile` called directly stay silent. `DefaultSecLangIntegration` writes those logs to stdout, `NoLogSecLangIntegration` drops them.
+
 ## Installation
 
 Add the following dependency to your `build.sbt`:

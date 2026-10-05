@@ -452,27 +452,21 @@ final class SecLangEngine(
       st.matchedVarsLists.put("matched_var_names", matched_var_names.toSeq)
     }
     if (debug) {
-      println("---------------------------------------------------------")
-      println(s"debug for rule: ${lastRuleId.getOrElse(0)}")
-      println("---------------------------------------------------------")
-      //println(s"ctx: \n${Json.prettyPrint(ctx.json)}\n")
-      println(s"variables: \n${rule.variables.variables.map {
+      // asked for explicitly with debugRules, so said at info level, through the host's logs
+      val names = rule.variables.variables.map {
         case Variable.Simple(name) if rule.variables.count => s"&${name}"
         case Variable.Simple(name) => name
         case Variable.Collection(name, key) if rule.variables.count => s"&$name:$key"
         case Variable.Collection(name, key) => s"$name:$key"
-      }.mkString("\n")}\n")
-      // println(s"negated_variables: \n${rule.variables.negatedVariables.map {
-      //   case Variable.Simple(name) if rule.variables.count => s"&${name}"
-      //   case Variable.Simple(name) => name
-      //   case Variable.Collection(name, key) if rule.variables.count => s"&$name:$key"
-      //   case Variable.Collection(name, key) => s"$name:$key"
-      // }.mkString("\n")}\n")
-      println(s"extracted: \n${extracted.mkString("\n")}\n")
-      println(s"variables_values: ${transformed.mkString("\n")}\n")
-      println(s"matched_vars: \n${matched_vars.zipWithIndex.map { case (v, idx) => s"${matched_var_names(idx)}: ${v}" }.mkString("\n")}\n")
-      println(s"matched: ${matched}")
-      println("---------------------------------------------------------")
+      }
+      integration.logInfo(
+        s"""debug for rule: ${lastRuleId.getOrElse(0)}
+           |variables: \n${names.mkString("\n")}
+           |extracted: \n${extracted.mkString("\n")}
+           |variables_values: ${transformed.mkString("\n")}
+           |matched_vars: \n${matched_vars.zipWithIndex.map { case (v, idx) => s"${matched_var_names(idx)}: ${v}" }.mkString("\n")}
+           |matched: ${matched}""".stripMargin
+      )
     }
     matched
   }

@@ -6,11 +6,9 @@ import com.cloud.apim.seclang.model._
 
 object Compiler {
 
-  private def unimplementedStatement(name: String): Unit = {
-    println("unimplemented statement " + name)
-  }
-
-  def compileUnsafe(configuration: Configuration): CompiledProgram = {
+  // `log` hears the statements the compiler accepts and ignores; silent unless the caller says where it goes
+  def compileUnsafe(configuration: Configuration, log: String => Unit = _ => ()): CompiledProgram = {
+    def unimplementedStatement(name: String): Unit = log("unimplemented statement, ignored: " + name)
     val statements = configuration.statements
 
     // Single pass to collect all metadata
@@ -159,7 +157,7 @@ object Compiler {
           unimplementedStatement("EngineConfigDirective")
         }
         case s => {
-          println(s"unknown statement ${s.getClass.getSimpleName}")
+          log(s"unknown statement, ignored: ${s.getClass.getSimpleName}")
           // ignore for now (SecAction etc.)
         }
       }
@@ -200,8 +198,8 @@ object Compiler {
     )
     SimpleCompiledProgram(byPhase.toMap, removed, mode, webAppId, configuration.hash, exclusions)
   }
-  def compile(configuration: Configuration): Either[SecLangError, CompiledProgram] = try {
-    Right(compileUnsafe(configuration))
+  def compile(configuration: Configuration, log: String => Unit = _ => ()): Either[SecLangError, CompiledProgram] = try {
+    Right(compileUnsafe(configuration, log))
   } catch {
     case t: Throwable => Left(CompileError(t))
   }

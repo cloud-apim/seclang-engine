@@ -9,7 +9,8 @@ import scala.collection.JavaConverters._
 import scala.util.hashing.Hashing
 
 // https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-%28v3.x%29
-class AstBuilderVisitor(includeRawRule: Boolean, includeComments: Boolean) extends SecLangParserBaseVisitor[AstNode] {
+// `log` hears what the parser accepts and ignores; silent unless the caller says where it goes
+class AstBuilderVisitor(includeRawRule: Boolean, includeComments: Boolean, log: String => Unit = _ => ()) extends SecLangParserBaseVisitor[AstNode] {
 
   import com.cloud.apim.seclang.impl.utils.Implicits._
   
@@ -133,7 +134,7 @@ class AstBuilderVisitor(includeRawRule: Boolean, includeComments: Boolean) exten
       val key = Option(ctx.values()).map(_.getText.replaceAll("\"", "")).getOrElse("")
       ConfigDirective.HttpBlKey(key)
     } else {
-      println(s"unknown engine config directive: ${stmt}")
+      log(s"unknown engine config directive, ignored: ${stmt}")
       ConfigDirective.Raw("unknown", "")
     }
   }
@@ -374,7 +375,7 @@ class AstBuilderVisitor(includeRawRule: Boolean, includeComments: Boolean) exten
 }
 
 object AntlrParser {
-  def parseUnsafe(in: String, includeRawRule: Boolean = false, includeComments: Boolean = false): Configuration = {
+  def parseUnsafe(in: String, includeRawRule: Boolean = false, includeComments: Boolean = false, log: String => Unit = _ => ()): Configuration = {
     import org.antlr.v4.runtime._
     val hash = HashUtilsFast.sha512Hex(in)
     val input = CharStreams.fromString(in)
@@ -398,12 +399,12 @@ object AntlrParser {
     parser.addErrorListener(errorListener)
 
     val tree = parser.configuration()
-    val visitor = new AstBuilderVisitor(includeRawRule, includeComments)
+    val visitor = new AstBuilderVisitor(includeRawRule, includeComments, log)
     visitor.visitConfiguration(tree).copy(hash = hash)
   }
-  def parse(in: String, includeRawRule: Boolean = false, includeComments: Boolean = false): Either[SecLangError, Configuration] = {
+  def parse(in: String, includeRawRule: Boolean = false, includeComments: Boolean = false, log: String => Unit = _ => ()): Either[SecLangError, Configuration] = {
     try {
-      Right(parseUnsafe(in, includeRawRule, includeComments))
+      Right(parseUnsafe(in, includeRawRule, includeComments, log))
     } catch {
       case e: Exception => Left(ParseError(e))
     }

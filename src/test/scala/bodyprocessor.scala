@@ -6,6 +6,11 @@ import com.cloud.apim.seclang.scaladsl.SecLang
 
 class SecLangBodyProcessorTest extends munit.FunSuite {
 
+  private class RecordingIntegration extends NoLogSecLangIntegration() {
+    @volatile var debug: List[String] = Nil
+    override def logDebug(msg: String): Unit = debug = debug :+ msg
+  }
+
   private def engine(rules: String, integration: SecLangIntegration = new NoLogSecLangIntegration()) = {
     val loaded = SecLang.parse(rules).fold(err => throw err.throwable, identity)
     SecLang.engine(SecLang.compile(loaded), integration = integration)
@@ -82,5 +87,41 @@ class SecLangBodyProcessorTest extends munit.FunSuite {
         |""".stripMargin
     assertEquals(engine(argsRule).evaluate(post("text/plain", "q=attack")).disposition, Continue)
     assertEquals(engine(forcing).evaluate(post("text/plain", "q=attack")).disposition, blocked)
+  }
+
+  test("ctl:auditEngine is ignored and said at debug level, on the request path") {
+    val integration = new RecordingIntegration()
+    val waf = engine(
+      """
+        |SecAction "id:10,phase:1,pass,nolog,ctl:auditEngine=Off"
+        |SecRuleEngine On
+        |""".stripMargin,
+      integration
+    )
+    assertEquals(waf.evaluate(post("application/json", "{}")).disposition, Continue)
+    assert(integration.debug.exists(_.contains("ctl:auditEngine=Off")), integration.debug.toString)
+  }
+
+  test("engineSafe reports a rule that does not parse instead of throwing") {
+    val factory = SecLang.factory(Map.empty, integration = new NoLogSecLangIntegration())
+    factory.engineSafe(List("SecRuleEngine On", """SecRule ARGS "@contains x" "id:10,phase:2,deny""")) match {
+      case Left(errors) =>
+        assertEquals(errors.size, 1)
+        assert(errors.head.msg.startsWith("Parse error"), errors.head.msg)
+      case Right(_) => fail("a rule that does not parse must not build an engine")
+    }
+  }
+
+  test("engine throws the parse error itself, not a bare None.get") {
+    val factory = SecLang.factory(Map.empty, integration = new NoLogSecLangIntegration())
+    val err     = intercept[RuntimeException](factory.engine(List("""SecRule ARGS "@contains x" "id:10,phase:2,deny""")))
+    assert(err.getMessage.startsWith("Parse error"), err.getMessage)
+  }
+
+  test("what the parser and the compiler ignore goes to the host's debug log, not to stdout") {
+    val integration = new RecordingIntegration()
+    val factory     = SecLang.factory(Map.empty, integration = integration)
+    factory.engine(List("SecRuleEngine On\nSecUnicodeMapFile unicode.mapping 20127"))
+    assert(integration.debug.exists(_.contains("ignored")), integration.debug.toString)
   }
 }
