@@ -39,6 +39,24 @@ private[engine] object ExtractedActionInfo {
   }
 }
 
+/**
+ * Data files as rules name them.
+ *
+ * A rule names a file the way ModSecurity resolves it, relative to the configuration that uses it:
+ * `@pmFromFile sql-errors.data` from the file next to it. A preset scanned from a directory or from
+ * the classpath keys its files by their path under its root instead (`/rules/sql-errors.data`), so
+ * every `*FromFile` operator of such a preset looked up a name that was not there and never
+ * matched. Each file is reachable by its bare name as well, unless two of them share it.
+ */
+private[seclang] object DataFiles {
+  def resolvable(files: Map[String, String]): Map[String, String] = {
+    val bare = files.toSeq
+      .groupBy { case (path, _) => path.split('/').last }
+      .collect { case (name, Seq((_, content))) if !files.contains(name) => name -> content }
+    files ++ bare
+  }
+}
+
 final class SecLangEngine(
   val program: CompiledProgram,
   config: SecLangEngineConfig = SecLangEngineConfig.default,
@@ -49,6 +67,8 @@ final class SecLangEngine(
 
   // resolved once for the life of the engine — a composed program folds its parts to answer it
   private val exclusions: RuleExclusions = program.exclusions
+
+  private val dataFiles: Map[String, String] = DataFiles.resolvable(files)
 
   def evaluate(ctx: RequestContext, phases: List[Int] = List(1, 2), evalTxMap: Option[TrieMap[String, String]] = None): EngineResult = {
     val pmode = program.mode.getOrElse(EngineMode.On)
@@ -434,7 +454,7 @@ final class SecLangEngine(
     }.filterNot(_._2.isEmpty).filter {
       case (_, members) =>
         members.filter { case (fullName, v) =>
-          val m = EngineOperators.evalOperator(lastRuleId.getOrElse(-1), rule.operator, v, files, st, integration)
+          val m = EngineOperators.evalOperator(lastRuleId.getOrElse(-1), rule.operator, v, dataFiles, st, integration)
           if (m) {
             st.txMap.put("matched_var_name", fullName)
             st.txMap.put("matched_var", v)

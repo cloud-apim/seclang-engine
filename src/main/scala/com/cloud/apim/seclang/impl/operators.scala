@@ -95,7 +95,8 @@ object EngineOperators {
       }
     }
     case Operator.ValidateByteRange(x) => ByteRangeValidator.validateByteRange(value, x)
-    case Operator.IpMatch(x) => IpMatch.ipMatch(x, value)
+    // the address under test first, the list second: the other way round a CIDR never matched
+    case Operator.IpMatch(x) => IpMatch.ipMatch(value, x)
     case Operator.IpMatchFromFile(xs) => {
       val fileName = state.evalTxExpressions(xs)
       files.get(fileName) match {
@@ -106,7 +107,7 @@ object EngineOperators {
             .filter(_.trim.nonEmpty)
             .filterNot(_.startsWith("#"))
             //.exists(ex => ex.split(" ").exists(it => IpMatch.ipMatch(it, value)))
-            .exists(ex => IpMatch.ipMatch(ex, value))
+            .exists(ex => IpMatch.ipMatch(value, ex))
         }
       }
     }
