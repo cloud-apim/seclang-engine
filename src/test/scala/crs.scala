@@ -46,30 +46,12 @@ object CRSTestUtils {
   }
 
   def setupCRSEngine(debugRules: List[Int]): SecLangEngine = {
-    val files: Map[String, String] = List(
-      "asp-dotnet-errors.data",
-      "iis-errors.data",
-      "java-classes.data",
-      "lfi-os-files.data",
-      "php-errors.data",
-      "php-function-names-933150.data",
-      "php-variables.data",
-      "restricted-files.data",
-      "restricted-upload.data",
-      "ruby-errors.data",
-      "scanners-user-agents.data",
-      "sql-errors.data",
-      "ssrf.data",
-      "unix-shell-builtins.data",
-      "unix-shell.data",
-      "web-shells-asp.data",
-      "web-shells-php.data",
-      "windows-powershell-commands.data",
-    )
-      .map(v => (v, s"./test-data/coreruleset/rules/${v}"))
-      .map {
-        case (key, url) => (key, Files.readString(new File(url).toPath))
-      }.toMap
+    // every data file the checked-out CRS ships: a hardcoded list goes stale as soon as CRS adds,
+    // renames or drops one, and setup then fails on a file that no longer exists
+    val files: Map[String, String] = Option(new File("./test-data/coreruleset/rules").listFiles()).toList.flatten
+      .filter(_.getName.endsWith(".data"))
+      .map(f => (f.getName, Files.readString(f.toPath)))
+      .toMap
 
     val rules = (Seq(
       "./test-data/coreruleset/crs-setup.conf.example"

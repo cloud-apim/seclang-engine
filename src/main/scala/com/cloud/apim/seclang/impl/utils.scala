@@ -239,8 +239,73 @@ object Implicits {
 
 object MultipartVars {
 
-  private val NameRx: Regex =
-    RegexPool.regex("""(?i)\bcontent-disposition\s*:\s*.*?\bname="([^"]+)"""")
+  private val DispositionRx: Regex = RegexPool.regex("""(?i)^\s*content-disposition\s*:(.*)$""")
+
+  /**
+   * The parameters of a Content-Disposition value, `form-data; name="f"; filename="a.png"`, by
+   * lower-cased name, the last one winning.
+   *
+   * Read the way PHP reads them: a value quoted with `"` or `'` runs to its closing quote, a bare
+   * value to the next `;`, other parameters may follow the name, and a segment with no `=` (the
+   * `form-data` type) is skipped rather than required. A part a backend reads a name from has to
+   * be one the rules see a name for.
+   */
+  def dispositionParams(value: String): Map[String, String] = {
+    val params = scala.collection.mutable.LinkedHashMap.empty[String, String]
+    var i      = 0
+    while (i < value.length) {
+      while (i < value.length && (value.charAt(i) == ';' || value.charAt(i).isWhitespace)) i += 1
+      val keyStart = i
+      while (i < value.length && value.charAt(i) != '=' && value.charAt(i) != ';') i += 1
+      val key = value.substring(keyStart, i).trim.toLowerCase
+      if (i < value.length && value.charAt(i) == '=') {
+        i += 1
+        while (i < value.length && value.charAt(i).isWhitespace) i += 1
+        val v = new StringBuilder
+        if (i < value.length && (value.charAt(i) == '"' || value.charAt(i) == '\'')) {
+          val quote = value.charAt(i)
+          i += 1
+          while (i < value.length && value.charAt(i) != quote) {
+            if (value.charAt(i) == '\\' && i + 1 < value.length && value.charAt(i + 1) == quote) i += 1
+            v.append(value.charAt(i))
+            i += 1
+          }
+          i += 1
+          while (i < value.length && value.charAt(i) != ';') i += 1
+          if (key.nonEmpty) params.update(key, v.toString)
+        } else {
+          while (i < value.length && value.charAt(i) != ';') {
+            v.append(value.charAt(i))
+            i += 1
+          }
+          if (key.nonEmpty) params.update(key, v.toString.trim)
+        }
+      }
+    }
+    params.toMap
+  }
+
+  /** The parameters of a part header line, if it is the part's Content-Disposition. */
+  def disposition(line: String): Option[Map[String, String]] =
+    DispositionRx.findFirstMatchIn(line).map(m => dispositionParams(m.group(1)))
+
+  private def partName(line: String): Option[String] =
+    disposition(line).flatMap(_.get("name")).filter(_.nonEmpty)
+
+  /**
+   * Whether a body line is a delimiter of `boundary`: `Some(false)` opening a part, `Some(true)`
+   * closing the body. Whitespace after it is transport padding, which RFC 2046 lets a sender add.
+   */
+  private def delimiter(line: String, boundary: String): Option[Boolean] = {
+    val dashed = "--" + boundary
+    if (!line.startsWith(dashed)) None
+    else {
+      val rest = line.substring(dashed.length)
+      if (rest.forall(_.isWhitespace)) Some(false)
+      else if (rest.startsWith("--") && rest.substring(2).forall(_.isWhitespace)) Some(true)
+      else None
+    }
+  }
 
   // Extrait boundary depuis Content-Type: multipart/form-data; boundary=...
   def boundaryFromContentType(contentTypeOpt: Option[String]): Option[String] = {
@@ -256,9 +321,6 @@ object MultipartVars {
   }
 
   def multipartPartHeaders(body: String, boundary: String): Map[String, List[String]] = {
-    val startBoundary = s"--$boundary"
-    val endBoundary   = s"--$boundary--"
-
     var inPart = false
     var inHeaders = false
     var currentPartName: Option[String] = None
@@ -269,15 +331,11 @@ object MultipartVars {
     body.linesIterator.foreach { raw =>
       val line = raw.stripLineEnd
 
-      if (line == startBoundary) {
-        // nouveau part
-        inPart = true
-        inHeaders = true
-        currentPartName = None
-      } else if (line == endBoundary) {
-        // fin du multipart
-        inPart = false
-        inHeaders = false
+      val delim = delimiter(line, boundary)
+      if (delim.isDefined) {
+        // a new part, or the end of the body
+        inPart = !delim.get
+        inHeaders = inPart
         currentPartName = None
       } else if (inPart && inHeaders) {
         if (line.isEmpty) {
@@ -285,12 +343,12 @@ object MultipartVars {
         } else {
           // Always store raw header lines for security inspection
           allHeaders += line
-          line match {
-            case NameRx(name) =>
+          partName(line) match {
+            case Some(name) =>
               currentPartName = Some(name)
               acc.update(name, acc(name) :+ line)
 
-            case _ =>
+            case None =>
               currentPartName.foreach { name =>
                 acc.update(name, acc(name) :+ line)
               }
@@ -306,40 +364,43 @@ object MultipartVars {
   def multipartPartHeadersFromCtx(body: String, contentTypeOpt: Option[String]): Option[Map[String, List[String]]] =
     boundaryFromContentType(contentTypeOpt).map(b => multipartPartHeaders(body, b))
 
-  /** Parse multipart form-data and extract field values (not headers) */
+  /**
+   * Parse multipart form-data and extract field values (not headers). A file part is not a field:
+   * its content is FILES's business, as in ModSecurity, so it does not land in ARGS.
+   */
   def multipartPartValues(body: String, boundary: String): Map[String, List[String]] = {
-    val startBoundary = s"--$boundary"
-    val endBoundary   = s"--$boundary--"
-
     var inPart = false
     var inHeaders = false
     var inContent = false
     var currentPartName: Option[String] = None
+    var currentIsFile = false
     val contentBuffer = new StringBuilder
     val acc = scala.collection.mutable.HashMap.empty[String, List[String]].withDefaultValue(List.empty)
 
     body.linesIterator.foreach { raw =>
       val line = raw.stripLineEnd
 
-      if (line == startBoundary || line == endBoundary) {
+      val delim = delimiter(line, boundary)
+      if (delim.isDefined) {
         // Save previous part content if any
-        if (inContent && currentPartName.isDefined) {
+        if (inContent && currentPartName.isDefined && !currentIsFile) {
           val content = contentBuffer.toString.stripSuffix("\n")
           acc.update(currentPartName.get, acc(currentPartName.get) :+ content)
         }
         contentBuffer.clear()
-        inPart = line == startBoundary
+        inPart = !delim.get
         inHeaders = inPart
         inContent = false
         currentPartName = None
+        currentIsFile = false
       } else if (inPart && inHeaders) {
         if (line.isEmpty) {
           inHeaders = false
           inContent = true
         } else {
-          line match {
-            case NameRx(name) => currentPartName = Some(name)
-            case _ => ()
+          disposition(line).foreach { params =>
+            currentPartName = params.get("name").filter(_.nonEmpty)
+            currentIsFile = params.contains("filename")
           }
         }
       } else if (inPart && inContent) {

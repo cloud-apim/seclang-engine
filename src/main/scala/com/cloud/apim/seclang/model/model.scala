@@ -1758,17 +1758,14 @@ final case class RequestContext(
   private lazy val filesAndNames: (List[String], List[String]) = {
     body match {
       case Some(body) if isMultipartFormData =>
-        val filenamePattern = RegexPool.regex("""filename="([^"]+)"""")
-        val namePattern = RegexPool.regex("""(?:^|[;\s])name="([^"]+)"""")
         val (files, names) = body.utf8String.linesIterator.foldLeft((List.empty[String], List.empty[String])) {
           case ((fileAcc, nameAcc), line) =>
-            val lowerLine = line.toLowerCase
-            if (lowerLine.startsWith("content-disposition:") && lowerLine.contains("filename=")) {
-              val file = filenamePattern.findFirstMatchIn(line).map(_.group(1))
-              val name = namePattern.findFirstMatchIn(line).map(_.group(1))
-              (file.toList ::: fileAcc, name.toList ::: nameAcc)
-            } else {
-              (fileAcc, nameAcc)
+            MultipartVars.disposition(line).filter(_.contains("filename")) match {
+              case Some(params) =>
+                val file = params.get("filename").filter(_.nonEmpty)
+                val name = params.get("name").filter(_.nonEmpty)
+                (file.toList ::: fileAcc, name.toList ::: nameAcc)
+              case None => (fileAcc, nameAcc)
             }
         }
         (files.reverse, names.reverse)
